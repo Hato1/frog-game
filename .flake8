@@ -1,0 +1,50 @@
+[flake8]
+max-line-length = 88
+# mccabe config
+max-complexity = 12
+extend-exclude =
+    .mypy_cache
+    .pytest_cache
+    .venv
+    dist
+select =
+    # TODO: enable complexity checks
+    # mccabe
+    #C9,
+    # pycodestyle
+    E,W,
+    # pyflakes
+    F,
+    # flake8-bugbear
+    B,B9,
+    # flake8-comprehensions
+    C4,
+    # flake8-requirements
+    I,
+    # pep8-naming
+    N
+ignore =
+    # TODO: fix line lengths
+    E501,
+    # TODO: fix formatting
+    E126,E226,E252,E265,E303,N802,N806,W291,W293,W504,
+    # pycodestyle (for black)
+    E203,W503,
+    # pycodestyle (overlaps with bugbear)
+    E722,
+    # Allow ### comments
+    E266,
+    # pyflakes (allow star imports)
+    F403,F405,
+    # flake8-bugbear (overlaps with E501 and D404/5)
+    B902,B950,
+    # flake8-comprehensions (allow dict() calls)
+    C408,
+    # (allow first line of docstring to wrap)
+    D415,
+# pep8-naming
+classmethod-decorators =
+    classmethod
+    # pydantic
+    validator
+    root_validator

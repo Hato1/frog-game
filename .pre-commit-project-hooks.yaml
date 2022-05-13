@@ -1,0 +1,40 @@
+# These use Poetry's versions of the tools and run in this directory, to make sure
+# we get the same versions and config.
+repos:
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [mypy]
+        types: [python]
+      - id: isort
+        name: isort
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [isort]
+        types: [python]
+      - id: black
+        name: black
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [black]
+        types: [python]
+      - id: flake8
+        name: flake8
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [flake8]
+        types: [python]
+      - id: check_logging_context
+        name: check_logging_context
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [python]
+        types: [python]

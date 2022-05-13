@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "jamminwiththebois"
+version = "0.1.0"
+description = ""
+authors = ["Jacob Rogers <jacob.p.r@hotmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pygame = "^2.1.2"
+pydantic = "^1.9.0"
+mypy = "^0.942"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^4.0.1"
+flake8-bugbear = "^22.3.23"
+flake8-requirements = "^1.5.3"
+pre-commit = "^2.18.1"
+black = "^22.3.0"
+mypy = "^0.942"
+pylint = "^2.13.7"
+isort = "^5.10.1"
+yesqa = "^1.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.mypy]
+# Specify default files
+files = "code"
+# Use pydantic plugin
+plugins = "pydantic.mypy"
+
+# Check the body of every function, regardless of whether it has type annotations
+check_untyped_defs = true
+# Warn about casts that do nothing
+warn_redundant_casts = true
+# Warn about "type: ignore" comments that do nothing
+warn_unused_ignores = true
+# Warn when a function is missing return statements in some execution paths
+warn_no_return = true
+# Warn about code determined to be unreachable or redundant after performing type analysis
+warn_unreachable = true
+# Allow variables to be redefined with a different type
+allow_redefinition = true
+# Prefixes each error with the relevant context
+show_error_context = true
+# Shows error codes in error messages, so you can use specific ignore comments i.e., "type: ignore[code]"
+show_error_codes = true
+# Use visually nicer output in error messages: use soft word wrap, show source code snippets, and show error location
+# markers.
+pretty = true
