@@ -1,4 +1,4 @@
-# jamminwiththebois
+# Frog Game
 
 Setup:
 
