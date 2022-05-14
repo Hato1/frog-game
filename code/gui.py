@@ -10,7 +10,7 @@ from game import Game
 pygame.init()
 
 
-def sprite_frame(row: int, col: int = 0) -> tuple:
+def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
     """takes a tuple, nrow,ncol"""
     return (col * 25, row * 25, 25, 25)
 
@@ -21,13 +21,13 @@ def inds_to_world(row: int, col: int) -> tuple:
     return offset
 
 
-def get_disp(frogloc) -> tuple:
+def get_disp(frogloc: tuple[int, int]) -> tuple[int, int, int, int]:
     frogx = (frogloc[1] + 8) * 25 - 188
     froggy = (frogloc[0] + 4 - 4) * 25
     return (frogx, froggy, frogx + 16 * 25, froggy + 9 * 25)
 
 
-def guiloop():
+def guiloop() -> None:
     # define a few variables
     # Make this init gui
     # size of window
