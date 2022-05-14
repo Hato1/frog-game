@@ -2,6 +2,7 @@
 from entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
+from typing import Iterator
 
 
 class Map():
@@ -35,6 +36,9 @@ class Map():
     @__getitem__.register
     def _(self, index: tuple) -> list:
         return self.map[index[0]][index[1]]
+
+    def __iter__(self) -> Iterator:
+        return iter(self.map)
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
