@@ -2,28 +2,31 @@
 from map import Map
 from pathlib import Path
 
-UP, LEFT, DOWN, RIGHT = (-1, 0), (0, -1), (1, 0), (0, 1)
-
 
 class Game():
     def __init__(self) -> None:
-        # Create map
-        # Set player pos
+        """Initialises the game with the first map"""
         self.map = Map(Path("maps/map1"))
 
-    def move(self, direction: tuple) -> None:
-        # reject/ignore invalid input (eg: moving into a wall)
-        # Call update game
+    def move(self, direction: tuple) -> bool:
+        """Read a move and if valid, perform it and update the game.
+
+        Args:
+            direction: A tuple showing the direction of movement
+
+        Returns True if the move was valid, False otherwise.
+        """
         pos, player = self.map.find_object('player')
         new_pos = pos + direction
 
         # Check valid movement
         for obj in self.map[new_pos]:
             if obj.solid:
-                return None
+                return False
 
         # Set the player's next move
         player.next_move = new_pos
+        return True
 
         # Update all creatures (including player!)
         self.map.update_creatures()
