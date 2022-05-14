@@ -56,6 +56,9 @@ class Map():
         human_friendly
         return human_friendly[:-1] + "-" * map_width
 
+    def __len__(self) -> int:
+        return len(self.map)
+
     def _read_map(self, map_file: Path) -> list:
         """Read map from file"""
         pre_map: list[list[list]] = []
