@@ -33,7 +33,7 @@ def guiloop():
     # black = 50, 0, 0
 
     # initialise the display window
-    screen = pygame.display.set_mode(size)
+    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
 
     # Initialise the game
     game = Game()

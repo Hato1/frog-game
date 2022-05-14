@@ -32,10 +32,12 @@ class Map():
 
     @multimethod
     def __getitem__(self, index: int) -> list[list]:
+        """Index into map with an int"""
         return self.map[index]
 
     @__getitem__.register
     def _(self, index: tuple) -> list:
+        """Index into map with a tuple"""
         return self.map[index[0]][index[1]]
 
     def __iter__(self) -> Iterator:
