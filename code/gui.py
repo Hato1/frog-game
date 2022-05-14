@@ -7,6 +7,7 @@ import sys
 import pygame
 import random
 from game import Game
+from map import Map
 pygame.init()
 
 
@@ -40,38 +41,33 @@ def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
     return (col * 25, row * 25, 25, 25)
 
 
-def inds_to_world(row: int, col: int) -> tuple:
+def inds_to_basemap(row: int, col: int) -> tuple:
+    """takes row and column on sprite map and returns pixel coordinates on basemap"""
+    """and of course, row is col and col is row"""
     offset = ((8 + col) * 25,
               4 * 25 + row * 25)
     return offset
 
 
 def get_disp(frogloc: tuple[int, int]) -> tuple[int, int, int, int]:
+    """takes players location, returns the pixel corners on basemap to display"""
     frogx = (frogloc[1] + 8) * 25 - 188
     froggy = (frogloc[0] + 4 - 4) * 25
     return (frogx, froggy, frogx + 16 * 25, froggy + 9 * 25)
 
 
-def guiloop() -> None:
-    # define a few variables
-    # Make this init gui
-    # size of window
-    size = width, height = 16 * 25, 9 * 25
-
-    # Initialise the game
-    game = Game()
-
-    # Load the map
-    c_map = game.get_map()
-
-    # load assets into dict # SEPERATE FUN
+def get_image_assets() -> dict:
     image_assets = {
         "Player": pygame.image.load("assets/Frog.png"),
         "Barrel": pygame.image.load("assets/Barrel.png"),
         "Frog": pygame.image.load("assets/BadFrog.png"),
         "Tileset": pygame.image.load("assets/Tileset.png")
     }
+    return image_assets
 
+
+def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
+    """creates the background, should run once"""
     # nrow is number of elements in a row
     obj_nrow = len(c_map)
     # ncol is number of elements in a col
@@ -82,36 +78,65 @@ def guiloop() -> None:
     # This is the number of rows
     wld_ncol = obj_ncol + 8
 
-    # Initialises the entire world (width, height)
-    world = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
+    # Initialises the entire basemap (width, height)
+    basemap = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
 
     # Pretty sure row is col and col is row
     for row in range(wld_nrow):
         for col in range(wld_ncol):
 
             rand_tile = random.randint(0, 3)
-            world.blit(image_assets["Tileset"],
+            basemap.blit(image_assets["Tileset"],
                        (row * 25, col * 25),
                        sprite_frame(rand_tile, 1))
             rand_tile = random.randint(0, 15)
-            world.blit(image_assets["Tileset"],
+            basemap.blit(image_assets["Tileset"],
                        (row * 25, col * 25),
                        sprite_frame(rand_tile, 11))
 
-    # Make drawworld a fn
-    # make world_with_objects = world a thing
-    # make add objects a fn
+    return basemap
 
-    # populate it with onjects
+
+def make_current_frame(c_map: Map, image_assets: dict, basemap: pygame.Surface, ) -> pygame.Surface:
+    """ adds sprites to the basemap"""
+    # nrow is number of elements in a row
+    obj_nrow = len(c_map)
+    # ncol is number of elements in a col
+    obj_ncol = len(c_map[0])
+
+    # # This is the nmber of columns/nmber of elements in each row
+    # wld_nrow = obj_nrow + 16
+    # # This is the number of rows
+    # wld_ncol = obj_ncol + 8
+
     for row in range(obj_nrow):
         for col in range(obj_ncol):
             for k in c_map[row][col]:
                 imgk = image_assets[k.name]
-                world.blit(imgk, inds_to_world(row, col), sprite_frame(3))
+                basemap.blit(imgk, inds_to_basemap(row, col), sprite_frame(3))
 
+
+    return basemap
+
+
+def guiloop() -> None:
+    # Initialising stuff
+    # size of window
+    size = width, height = 16 * 25, 9 * 25
+    game = Game()
+    image_assets = get_image_assets()
+
+    # Load the map
+    c_map = game.get_map()
+    basemap = make_basemap(c_map, image_assets)
+
+    #
+    current_frame = make_current_frame(c_map, image_assets, basemap)
+
+    # pull section to display and flip
     froglocation, null = c_map.find_object("Player")
     screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
-    screen.blit(world, (0, 0), get_disp(froglocation))
+    screen.blit(current_frame, (0, 0), get_disp(froglocation))
     pygame.display.flip()
 
     # start the loop
