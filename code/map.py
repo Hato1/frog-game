@@ -55,8 +55,8 @@ class Map():
                         pre_map[-1][-1].append(Creature("Player"))
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("Frog"))
-                    elif col == "R":
-                        pre_map[-1][-1].append(Entity("Rock"))
+                    elif col == "B":
+                        pre_map[-1][-1].append(Entity("Barrel"))
         return pre_map
 
     def _conflict_resolver(self, objects: list, map: list[list[list]]) -> None:
