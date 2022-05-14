@@ -16,7 +16,7 @@ class Game():
 
         Returns True if the move was valid, False otherwise.
         """
-        pos, player = self.map.find_object('player')
+        pos, player = self.map.find_object('Player')
         new_pos = pos + direction
 
         # Check valid movement

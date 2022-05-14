@@ -117,7 +117,7 @@ def guiloop() -> None:
     # start the loop
     while True:
         for event in pygame.event.get():
-            process_event(event)
+            process_event(event, game)
     #     # other conditions here
 
     #     # update map thing here
