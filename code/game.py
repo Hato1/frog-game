@@ -1,28 +1,33 @@
-import sys
-import pygame
+"""Module for game logic"""
+from entity import Entity
+from map import Map
 
-pygame.init()
 
-size = width, height = 320 * 4, 240 * 4
-speed = [2, 2]
-black = 0, 0, 0
+class Game():
+    def __init__(self) -> None:
+        # Create map
+        # Set player pos
+        self.map = Map
 
-screen = pygame.display.set_mode(size)
+    def move(self, direction: int) -> None:
+        # reject/ignore invalid input (eg: moving into a wall)
+        # Update player pos
+        # Update all Creatures
+        # Run conflict resolver
+        pass
 
-ball = pygame.image.load("assets/intro_ball.gif")
-ballrect = ball.get_rect()
+    def _conflict_resolver(self, objects: list, map: Map) -> None:
+        # Update the conflicting square
+        # 
+        pass
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            sys.exit()
+    def update_game(self) -> None:
+        pass
 
-    ballrect = ballrect.move(speed)
-    if ballrect.left < 0 or ballrect.right > width:
-        speed[0] = -speed[0]
-    if ballrect.top < 0 or ballrect.bottom > height:
-        speed[1] = -speed[1]
+    def get_position(self) -> tuple:
+        # returns postition
+        pass
 
-    screen.fill(black)
-    screen.blit(ball, ballrect)
-    pygame.display.flip()
+    def get_map(self) -> list[list]:
+        # return full map
+        pass
