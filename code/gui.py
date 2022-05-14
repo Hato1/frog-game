@@ -10,6 +10,31 @@ from game import Game
 pygame.init()
 
 
+def process_event(event: pygame.event.Event, game: Game) -> None:
+    """Accepts user input
+
+    W: move up
+    A: move left
+    S: move down
+    D: move right
+    Q: quits the game
+    """
+    UP, LEFT, DOWN, RIGHT = (-1, 0), (0, -1), (1, 0), (0, 1)
+    if event.type == pygame.QUIT:
+        sys.exit()
+    elif event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_q:
+            sys.exit()
+        if event.key == pygame.K_w:
+            game.move(UP)
+        elif event.key == pygame.K_a:
+            game.move(LEFT)
+        elif event.key == pygame.K_s:
+            game.move(DOWN)
+        elif event.key == pygame.K_d:
+            game.move(RIGHT)
+
+
 def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
     """takes a tuple, nrow,ncol"""
     return (col * 25, row * 25, 25, 25)
@@ -92,8 +117,7 @@ def guiloop() -> None:
     # start the loop
     while True:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
+            process_event(event)
     #     # other conditions here
 
     #     # update map thing here

@@ -5,7 +5,7 @@ class Entity():
     def __init__(self, name: str, solid: bool = False) -> None:
         """
         Args:
-            name: A human friendly
+            name: A human friendly name
             solid: Does the object block the path?
         """
         # sprite?
