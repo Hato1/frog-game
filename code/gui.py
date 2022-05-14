@@ -11,29 +11,27 @@ pygame.init()
 
 
 def sprite_frame(row: int, col: int = 0) -> tuple:
-    """takes a """
+    """takes a tuple, nrow,ncol"""
     return (col * 25, row * 25, 25, 25)
 
 
 def inds_to_world(row: int, col: int) -> tuple:
-    offset = (7.5 * 25 + 0.5 + 25 * col,
+    offset = ((8 + col) * 25,
               4 * 25 + row * 25)
     return offset
 
 
 def get_disp(frogloc) -> tuple:
     frogx = (frogloc[1] + 8) * 25 - 188
-    frogy = (frogloc[0] + 4 - 4) * 25
-    return (frogx, frogy, frogx + 16 * 25, frogy + 9 * 25)
+    froggy = (frogloc[0] + 4 - 4) * 25
+    return (frogx, froggy, frogx + 16 * 25, froggy + 9 * 25)
 
 
 def guiloop():
     # define a few variables
+    # Make this init gui
+    # size of window
     size = width, height = 16 * 25, 9 * 25
-    # black = 50, 0, 0
-
-    # initialise the display window
-    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
 
     # Initialise the game
     game = Game()
@@ -41,52 +39,54 @@ def guiloop():
     # Load the map
     c_map = game.get_map()
 
-    # load assets into dict
-
+    # load assets into dict # SEPERATE FUN
     image_assets = {
         "Player": pygame.image.load("assets/Frog.png"),
         "Barrel": pygame.image.load("assets/Barrel.png"),
         "Frog": pygame.image.load("assets/BadFrog.png"),
         "Tileset": pygame.image.load("assets/Tileset.png")
     }
-    # print(spriteframe(3))
-    # print(c_map) ## This is a temp thing
-    # c_mmap = c_map
-    # c_map = c_map.map
+
+    # nrow is number of elements in a row
     obj_nrow = len(c_map)
+    # ncol is number of elements in a col
     obj_ncol = len(c_map[0])
-    wld_nrow = obj_nrow + 8
-    wld_ncol = obj_ncol + 16
 
-    # print(c_map)
-    # pl_frogrect = pl_frog_all.get_rect()
+    # This is the nmber of columns/nmber of elements in each row
+    wld_nrow = obj_nrow + 16
+    # This is the number of rows
+    wld_ncol = obj_ncol + 8
 
-    # Initialises the entire world
-    world = pygame.Surface((len(c_map) * 25, len(c_map[0] * 25)))
+    # Initialises the entire world (width, height)
+    world = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
+
+    # Pretty sure row is col and col is row
     for row in range(wld_nrow):
         for col in range(wld_ncol):
+
             rand_tile = random.randint(0, 3)
             world.blit(image_assets["Tileset"],
-                       (col * 25, row * 25),
+                       (row * 25, col * 25),
                        sprite_frame(rand_tile, 1))
             rand_tile = random.randint(0, 15)
             world.blit(image_assets["Tileset"],
-                       (col * 25, row * 25),
+                       (row * 25, col * 25),
                        sprite_frame(rand_tile, 11))
 
+    # Make drawworld a fn
+    # make world_with_objects = world a thing
+    # make add objects a fn
+
     # populate it with onjects
-    for row in range(obj_nrow):           # i is x
-        for col in range(obj_ncol):    # row is y
+    for row in range(obj_nrow):
+        for col in range(obj_ncol):
             for k in c_map[row][col]:
                 imgk = image_assets[k.name]
-                # imgkrect.move((-col * 25, -row * 25))
-                # world.blit(imgk, imgkrect)
                 world.blit(imgk, inds_to_world(row, col), sprite_frame(3))
 
-    froglocation, null = c_map.find_object("Frog")
-    # print((froglocation[0] * 25, froglocation[1] * 25))
+    froglocation, null = c_map.find_object("Player")
+    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
     screen.blit(world, (0, 0), get_disp(froglocation))
-
     pygame.display.flip()
 
     # start the loop
@@ -108,27 +108,3 @@ def guiloop():
 
 
 guiloop()
-# pygame.init()
-
-# speed = [2, 2]
-# black = 0, 0, 0
-
-# screen = pygame.display.set_mode(size)
-
-# ball = pygame.image.load("assets/intro_ball.gif")
-# ballrect = ball.get_rect()
-
-# while True:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             sys.exit()
-
-#     ballrect = ballrect.move(speed)
-#     if ballrect.left < 0 or ballrect.right > width:
-#         speed[0] = -speed[0]
-#     if ballrect.top < 0 or ballrect.bottom > height:
-#         speed[1] = -speed[1]
-
-#     #screen.fill(black)
-#     screen.blit(ball, ballrect) # blit is put on top
-#     pygame.display.flip()       # flip is render/put on scree
