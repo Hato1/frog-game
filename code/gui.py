@@ -9,6 +9,9 @@ from game import Game
 pygame.init()
 
 
+def spriteframe(row: int, col: int = 0) -> tuple: return (row * 25, col * 25, 25, 25)
+
+
 def guiloop():
     # define a few variables
     size = width, height = 16 * 25, 9 * 25
@@ -28,7 +31,7 @@ def guiloop():
     image_assets = {
         "Player": pygame.image.load("assets/Frog.png"),
         "Barrel": pygame.image.load("assets/Barrel.png"),
-        "Frog": pygame.image.load("assets/Frog.png"),
+        "Frog": pygame.image.load("assets/BadFrog.png"),
     }
     # print(c_map)
     c_map = c_map.map
