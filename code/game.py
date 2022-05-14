@@ -3,7 +3,7 @@ import pygame
 
 pygame.init()
 
-size = width, height = 320*4, 240*4
+size = width, height = 320 * 4, 240 * 4
 speed = [2, 2]
 black = 0, 0, 0
 
@@ -16,7 +16,6 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
-            ##HELLO_JACOB
 
     ballrect = ballrect.move(speed)
     if ballrect.left < 0 or ballrect.right > width:
