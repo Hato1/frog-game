@@ -11,6 +11,10 @@ class Game():
 
     def move(self, direction: int) -> None:
         # reject/ignore invalid input (eg: moving into a wall)
+        # Call update game
+        pass
+
+    def _update_game(self) -> None:
         # Update player pos
         # Update all Creatures
         # Run conflict resolver
@@ -18,10 +22,7 @@ class Game():
 
     def _conflict_resolver(self, objects: list, map: Map) -> None:
         # Update the conflicting square
-        # 
-        pass
-
-    def update_game(self) -> None:
+        # resolve each in turn
         pass
 
     def get_position(self) -> tuple:
