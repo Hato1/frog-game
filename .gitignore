@@ -126,3 +126,5 @@ dmypy.json
 *.sublime-workspace
 
 *.sublime-project
+
+.idea/workspace.xml
