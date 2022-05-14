@@ -2,18 +2,18 @@
 
 
 class Entity():
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
         # sprite
         # orientation [1-4]
         # blocking?
-        pass
+        self.name = name
 
 
 class Creature(Entity):
-    def __init__(self) -> None:
+    def __init__(self, name: str) -> None:
         # state
         # super init
-        pass
+        super(Creature, self).__init__(name)
 
     def update(self) -> tuple:
         # get position object wants to move to
