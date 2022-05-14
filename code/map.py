@@ -24,9 +24,10 @@ class Map():
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
         for row in self.map:
-            for obj in row:
-                if obj.name == obj_name:
-                    return (self.map.index(row), row.index(obj)), obj
+            for col in row:
+                for obj in col:
+                    if obj.name == obj_name:
+                        return (self.map.index(row), row.index(col)), obj
         return (-1, -1)
 
     @multimethod
