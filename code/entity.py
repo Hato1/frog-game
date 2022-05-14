@@ -18,3 +18,8 @@ class Creature(Entity):
     def update(self) -> tuple:
         # get position object wants to move to
         pass
+
+
+class ai():
+    def __init__(self, ai: str):
+        pass
