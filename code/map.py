@@ -1,6 +1,7 @@
 """Module for reading and maniuplating the game board"""
 from entity import Creature, Entity
 from pathlib import Path
+from multimethod import multimethod
 
 
 class Map():
@@ -19,11 +20,24 @@ class Map():
         """Uses conflict resolver"""
         pass
 
+    def find_object(self, obj_name: str) -> tuple:
+        """Get the coordinates of an object, if it exists"""
+        for row in self.map:
+            for obj in row:
+                if obj.name == obj_name:
+                    return (self.map.index(row), row.index(obj)), obj
+        return (-1, -1)
+
+    @multimethod
     def __getitem__(self, index: int) -> list[list]:
         return self.map[index]
 
+    @__getitem__.register
+    def _(self, index: tuple) -> list:
+        return self.map[index[0]][index[1]]
+
     def __str__(self) -> str:
-        """Returns a human friendly representation of the map"""
+        """Get a human friendly representation of the map"""
         map_width = len(self.map[0]) + 2
         human_friendly = "-" * map_width + "\n|"
         for x in self.map:
@@ -56,7 +70,7 @@ class Map():
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("Frog"))
                     elif col == "B":
-                        pre_map[-1][-1].append(Entity("Barrel"))
+                        pre_map[-1][-1].append(Entity("Barrel", True))
         return pre_map
 
     def _conflict_resolver(self, objects: list, map: list[list[list]]) -> None:
