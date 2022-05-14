@@ -18,15 +18,10 @@ class Game():
         # Update player pos
         self.map.update_creatures()
 
-    def _conflict_resolver(self, objects: list, map: Map) -> None:
-        # Update the conflicting square
-        # resolve each in turn
-        pass
-
     def get_position(self) -> tuple:
         # returns postition
         pass
 
-    def get_map(self) -> list[list]:
+    def get_map(self) -> Map:
         # return full map
-        pass
+        return self.map
