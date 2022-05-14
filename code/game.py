@@ -1,13 +1,13 @@
 """Module for game logic"""
-from entity import Entity
 from map import Map
+from pathlib import Path
 
 
 class Game():
     def __init__(self) -> None:
         # Create map
         # Set player pos
-        self.map = Map
+        self.map = Map(Path("maps/map1"))
 
     def move(self, direction: int) -> None:
         # reject/ignore invalid input (eg: moving into a wall)
@@ -16,9 +16,7 @@ class Game():
 
     def _update_game(self) -> None:
         # Update player pos
-        # Update all Creatures
-        # Run conflict resolver
-        pass
+        self.map.update_creatures()
 
     def _conflict_resolver(self, objects: list, map: Map) -> None:
         # Update the conflicting square
