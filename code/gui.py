@@ -10,7 +10,38 @@ from game import Game
 from map import Map
 from copy import copy
 pygame.init()
+TSize = 25
 
+def return_num_col(tileset: pygame.image, dimension: str = "height") -> int:
+    """Returns an integer of the number of rows (0 indexed)of sprites based on the global sprite resolution"""
+    # rect = tileset.rect
+    num_px = None
+
+    if dimension == "height":
+        num_px = tileset.get_height()
+
+    if dimension == "width":
+        num_px = tileset.get_width()
+
+    assert num_px != None, f"invalid dimension {dimension}"
+    assert (num_px % TSize == 0), f"image height({num_px}) is not a multiple of {TSize}"
+
+    num_tile = (num_px/TSize)-1
+
+    # print(num_tile)
+    return num_tile
+
+def parse_assests(images: dict) -> dict:
+    """Returns the number of usable permutations of each image based on the image dimention"""
+    asset_dims = {}
+
+    for i in images:
+        k = int(return_num_col(images[i],"width"))+1
+        data = []
+        for j in range(k):
+            data.append(return_num_col(images[i]))
+        asset_dims[i] = data
+    return asset_dims
 
 def process_event(event: pygame.event.Event, game: Game) -> None:
     """Accepts user input
@@ -97,6 +128,8 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
     tileset_playarea = "Grass"
     tileset_oob = "Stone"
 
+    dims = parse_assests(image_assets)
+
     # Pretty sure row is col and col is row
     for row in range(wld_nrow):
         for col in range(wld_ncol):
@@ -106,7 +139,7 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
             else:
                 ts = tileset_oob
 
-            rand_tile = random.randint(0, 3) # <--------- This is where we make cliffs
+            rand_tile = random.randint(0, dims["Stone"][0]) # <--------- This is where we make cliffs
             basemap.blit(image_assets[ts],
                        (row * 25, col * 25),
                        sprite_frame(rand_tile, 0)) # <--------- This is where we make cliffs
