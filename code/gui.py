@@ -12,6 +12,7 @@ from copy import copy
 from helper import assets, UP, LEFT, RIGHT, DOWN
 pygame.init()
 TSIZE = 25
+ANIMATIONS = True
 
 
 def return_num_col(tileset: pygame.Surface) -> tuple[int, int]:
@@ -27,7 +28,7 @@ def return_num_col(tileset: pygame.Surface) -> tuple[int, int]:
 
 
 def parse_assests(images: dict) -> dict:
-    """Returns the number of usable permutations of each image based on the image dimention"""
+    """Returns the number of usable permutations of each image based on the image dims"""
     asset_dims = {}
 
     for img in images:
@@ -46,7 +47,7 @@ def parse_assests(images: dict) -> dict:
     return asset_dims
 
 
-def process_event(event: pygame.event.Event, game: Game) -> None:
+def process_event(event: pygame.event.Event, game: Game) -> bool:
     """Accepts user input
 
     W: move up
@@ -61,13 +62,14 @@ def process_event(event: pygame.event.Event, game: Game) -> None:
         if event.key == pygame.K_q:
             sys.exit()
         if event.key in [pygame.K_w, pygame.K_UP]:
-            game.move(UP)
+            return game.move(UP)
         elif event.key in [pygame.K_a, pygame.K_LEFT]:
-            game.move(LEFT)
+            return game.move(LEFT)
         elif event.key in [pygame.K_s, pygame.K_DOWN]:
-            game.move(DOWN)
+            return game.move(DOWN)
         elif event.key in [pygame.K_d, pygame.K_RIGHT]:
-            game.move(RIGHT)
+            return game.move(RIGHT)
+    return False
 
 
 
@@ -77,8 +79,8 @@ def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
 
 
 def inds_to_basemap(row: int, col: int) -> tuple:
-    """takes row and column on sprite map and returns pixel coordinates on basemap"""
-    """and of course, row is col and col is row"""
+    """takes row and column on sprite map and returns pixel coordinates on basemap
+    and of course, row is col and col is row"""
     offset = ((8 + col) * 25,
               4 * 25 + row * 25)
     return offset
@@ -163,6 +165,25 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
     return basemap
 
 
+def pan_screen(
+    current_frame: pygame.Surface,
+    screen: pygame.surface.Surface,
+    oldmap: Map,
+    newmap: Map,
+    oldcenter: tuple[int, int],
+    newcenter: tuple[int, int]
+) -> None:
+    ydiff = int(newcenter[0] - oldcenter[0])
+    xdiff = int(newcenter[1] - oldcenter[1])
+    disp = get_disp(oldcenter)
+    for i in range(10):
+        xpos = int(disp[0] + xdiff * 25 * (i/10))
+        ypos = int(disp[1] + ydiff * 25 * (i/10))
+        screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
+        pygame.display.flip()
+        pygame.time.wait(5)
+
+
 def guiloop() -> None:
     # Initialising stuff
     # size of window
@@ -171,22 +192,33 @@ def guiloop() -> None:
     screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
 
     # Load the map
-    c_map = game.get_map()
+    c_map = copy(game.get_map())
+    froglocation, null = c_map.find_object("Player")
     basemap = make_basemap(c_map)
+    map_changed = True
 
     while True:
         for event in pygame.event.get():
-            process_event(event, game)
+            if process_event(event, game):
+                map_changed = True
         # other conditions here
 
         # update map thing here
-        c_map = game.get_map()
-        current_frame = make_current_frame(c_map, copy(basemap))
+        if map_changed:
+            new_map = game.get_map()
+            current_frame = make_current_frame(new_map, copy(basemap))
+            new_froglocation, null = new_map.find_object("Player")
 
-        # find frog and display
-        froglocation, null = c_map.find_object("Player")
-        screen.blit(current_frame, (0, 0), get_disp(froglocation))
-        pygame.display.flip()
+            if ANIMATIONS and froglocation != new_froglocation:
+                pan_screen(copy(basemap), screen, c_map, new_map, froglocation, new_froglocation)
+
+            # find frog and display
+            screen.blit(current_frame, (0, 0), get_disp(new_froglocation))
+            pygame.display.flip()
+            map_changed = False
+
+            c_map = new_map
+            froglocation = new_froglocation
 
 
 guiloop()
