@@ -29,18 +29,26 @@ def return_num_col(tileset: pygame.image, dimension: str = "height") -> int:
     num_tile = (num_px/TSize)-1
 
     # print(num_tile)
-    return num_tile
+    return int(num_tile)
 
 def parse_assests(images: dict) -> dict:
     """Returns the number of usable permutations of each image based on the image dimention"""
     asset_dims = {}
 
-    for i in images:
-        k = int(return_num_col(images[i],"width"))+1
+    for img in images:
+        ncol = return_num_col(images[img], "width")+1
         data = []
-        for j in range(k):
-            data.append(return_num_col(images[i]))
-        asset_dims[i] = data
+        for col in range(ncol):
+            zeros = 0
+            nrow = return_num_col(images[img])+1
+            for row in range(nrow):
+                sprite_surface = images[img].subsurface(col*TSize, row*TSize, TSize, TSize).convert_alpha()
+                surface_alpha = pygame.transform.average_color(sprite_surface)[-1]
+                if surface_alpha == 0:
+                    zeros = zeros + 1
+            number_of_states = nrow - zeros
+            data.append(number_of_states-1)
+        asset_dims[img] = data
     return asset_dims
 
 def process_event(event: pygame.event.Event, game: Game) -> None:
@@ -97,7 +105,9 @@ def get_image_assets() -> dict:
         "Grass": pygame.image.load("assets/Grass.png"),
         "Stone": pygame.image.load("assets/Stone.png"),
     }
+
     return image_assets
+
 
 
 def is_in_play(row: int, col: int, obj_nrow: int, obj_ncol: int) -> bool:
@@ -128,6 +138,7 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
     tileset_playarea = "Grass"
     tileset_oob = "Stone"
 
+    # define the number of sprites for each texture
     dims = parse_assests(image_assets)
 
     # Pretty sure row is col and col is row
