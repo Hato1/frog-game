@@ -5,6 +5,8 @@ AI_DICT = {"NormalNorman": NormalNorman, "DeadDoug": DeadDoug}
 
 
 class Entity():
+    next_id = 0
+
     def __init__(self, name: str, solid: bool = False) -> None:
         """
         Args:
@@ -13,6 +15,8 @@ class Entity():
         """
         # sprite?
         # orientation [1-4]
+        self.id = Entity.next_id
+        Entity.next_id += 1
         self.name = name
         self.solid = solid
 

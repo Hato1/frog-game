@@ -27,8 +27,10 @@ class Map():
                         new_pos = entity.get_next_move(pos, self.map)
                         assert self.in_map(new_pos), f"{entity.name} Cheated!"
                         moves_made.append([entity, pos, new_pos])
-                        for i in range(len(new_map[pos])):
-                            if new_map[pos][i].name == entity.name:
+                        for i in range(len(new_map[pos]))[::-1]:
+                            y = new_map[pos]
+                            x = y[i]
+                            if x.id == entity.id:
                                 new_map[pos].pop(i)
                         new_map[new_pos].append(entity)
         self.map = new_map.map
