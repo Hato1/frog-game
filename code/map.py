@@ -25,8 +25,11 @@ class Map():
                 for entity in self[pos]:
                     if type(entity) == Creature:
                         new_pos = entity.get_next_move(pos, self.map)
+                        assert self.in_map(new_pos), f"{entity.name} Cheated!"
                         moves_made.append([entity, pos, new_pos])
-                        new_map[pos].remove(entity)
+                        for i in range(len(new_map[pos])):
+                            if new_map[pos][i].name == entity.name:
+                                new_map[pos].pop(i)
                         new_map[new_pos].append(entity)
         self.map = new_map.map
 
@@ -45,8 +48,15 @@ class Map():
 
     def copy(self) -> Map:
         new = copy.deepcopy(self)
-        new.map = copy.copy(self.map)
+        #new.map = copy.copy(self.map)
         return new
+
+    def in_map(self, pos: tuple) -> bool:
+        if 0 > pos[0] or 0 > pos[1]:
+            return False
+        if self.height()-1 < pos[0] or self.width()-1 < pos[1]:
+            return False
+        return True
 
     def height(self) -> int:
         return len(self.map[0])
@@ -102,7 +112,7 @@ class Map():
                     if col == "P":
                         pre_map[-1][-1].append(Creature("Player"))
                     elif col == "F":
-                        pre_map[-1][-1].append(Creature("Frog"))
+                        pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
                     elif col == "B":
                         pre_map[-1][-1].append(Entity("Barrel", True))
         return pre_map
