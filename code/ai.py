@@ -59,6 +59,7 @@ class SpiralingStacy(Ai):
             self.state = 4
             return add_tuple(position, LEFT)
 
+
 class BarrelingBarrel(Ai):
     """Moves not at all, up/down/left/right in state (0/1/2/3/4+) untill stat"""
     def get_move(self, position: tuple, map: list) -> tuple:
@@ -72,6 +73,7 @@ class BarrelingBarrel(Ai):
             return add_tuple(position, LEFT)
         else: # self.state == 4:
             return add_tuple(position, RIGHT)
+
 
 class DirtyDan(Ai):
     """mirrors the player's movements"""

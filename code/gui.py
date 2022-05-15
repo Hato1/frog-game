@@ -104,6 +104,7 @@ def get_image_assets() -> dict:
         "Tileset": pygame.image.load("assets/Tileset.png"),
         "Grass": pygame.image.load("assets/Grass.png"),
         "Stone": pygame.image.load("assets/Stone.png"),
+        "rockwall": pygame.image.load("assets/rockwall.png"),
     }
 
     return image_assets
