@@ -173,15 +173,16 @@ def pan_screen(
     oldcenter: tuple[int, int],
     newcenter: tuple[int, int]
 ) -> None:
+    speed = 4
     ydiff = int(newcenter[0] - oldcenter[0])
     xdiff = int(newcenter[1] - oldcenter[1])
     disp = get_disp(oldcenter)
-    for i in range(10):
-        xpos = int(disp[0] + xdiff * 25 * (i/10))
-        ypos = int(disp[1] + ydiff * 25 * (i/10))
+    for i in range(speed):
+        xpos = int(disp[0] + xdiff * 25 * (i/speed))
+        ypos = int(disp[1] + ydiff * 25 * (i/speed))
         screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
         pygame.display.flip()
-        pygame.time.wait(5)
+        pygame.time.wait(15)
 
 
 def guiloop() -> None:
