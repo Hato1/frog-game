@@ -66,6 +66,11 @@ def get_image_assets() -> dict:
     return image_assets
 
 
+def is_in_play(row: int, col: int, obj_nrow: int, obj_ncol: int) -> bool:
+    """this finds if a row/col pair (basemap coords) is in the play area"""
+    return row in range(9, 9 + obj_nrow) and col in range(5, 5 + obj_ncol)
+
+
 def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
     """creates the background, should run once"""
     # nrow is number of elements in a row
@@ -81,14 +86,23 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
     # Initialises the entire basemap (width, height)
     basemap = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
 
+    # ###This is probably bad, but is fone for now
+    tileset_playarea = 1
+    tileset_oob = 6
+
     # Pretty sure row is col and col is row
     for row in range(wld_nrow):
         for col in range(wld_ncol):
+            in_play = is_in_play(row, col, obj_nrow, obj_ncol)
+            if in_play:
+                ts = tileset_playarea
+            else:
+                ts = tileset_oob
 
             rand_tile = random.randint(0, 3)
             basemap.blit(image_assets["Tileset"],
                        (row * 25, col * 25),
-                       sprite_frame(rand_tile, 1))
+                       sprite_frame(rand_tile, ts))
             rand_tile = random.randint(0, 15)
             basemap.blit(image_assets["Tileset"],
                        (row * 25, col * 25),
@@ -125,6 +139,7 @@ def guiloop() -> None:
     size = width, height = 16 * 25, 9 * 25
     game = Game()
     image_assets = get_image_assets()
+    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
 
     # Load the map
     c_map = game.get_map()
@@ -134,26 +149,24 @@ def guiloop() -> None:
     current_frame = make_current_frame(c_map, image_assets, basemap)
 
     # pull section to display and flip
-    froglocation, null = c_map.find_object("Player")
-    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
-    screen.blit(current_frame, (0, 0), get_disp(froglocation))
-    pygame.display.flip()
+    # froglocation, null = c_map.find_object("Player")
+    # screen.blit(current_frame, (0, 0), get_disp(froglocation))
+    # pygame.display.flip()
 
     # start the loop
     while True:
         for event in pygame.event.get():
             process_event(event, game)
-    #     # other conditions here
+        # other conditions here
 
-    #     # update map thing here
-    #     # include searches of current and old map to interpolate
-    #     # tempmap:
-    #     c_map = [[["f"]] * 25] * 25
+        # update map thing here
+        c_map = game.get_map()
+        current_frame = make_current_frame(c_map, image_assets, basemap)
 
-    #     # Draw the things
-    #     screen.fill(black)
-    #     screen.blit(pl_frog_all, pl_frogrect)
-    #     pygame.display.flip()
+        # find frog and display
+        froglocation, null = c_map.find_object("Player")
+        screen.blit(current_frame, (0, 0), get_disp(froglocation))
+        pygame.display.flip()
 
 
 guiloop()
