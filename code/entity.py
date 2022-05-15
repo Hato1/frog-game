@@ -1,7 +1,7 @@
 """Module for animate objects"""
 from typing import Optional
-from ai import NormalNorman, DeadDoug
-AI_DICT = {"NormalNorman": NormalNorman, "DeadDoug": DeadDoug}
+from ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel
+AI_DICT = {"NormalNorman": NormalNorman, "DeadDoug": DeadDoug, "SpiralingStacy": SpiralingStacy, "BarrelingBarrel": BarrelingBarrel}
 
 
 class Entity():
