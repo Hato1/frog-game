@@ -71,7 +71,7 @@ def get_image_assets() -> dict:
 
 def is_in_play(row: int, col: int, obj_nrow: int, obj_ncol: int) -> bool:
     """this finds if a row/col pair (basemap coords) is in the play area"""
-    return row in range(9, 9 + obj_nrow) and col in range(5, 5 + obj_ncol)
+    return row in range(8, 8 + obj_nrow) and col in range(4, 4 + obj_ncol)
 
 
 def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
@@ -153,7 +153,7 @@ def guiloop() -> None:
     basemap = make_basemap(c_map, image_assets)
 
     #
-    current_frame = make_current_frame(c_map, image_assets, basemap)
+    #current_frame = make_current_frame(c_map, image_assets, basemap)
 
     # pull section to display and flip
     # froglocation, null = c_map.find_object("Player")
