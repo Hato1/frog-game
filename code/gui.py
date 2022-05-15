@@ -8,6 +8,7 @@ import pygame
 import random
 from game import Game
 from map import Map
+from copy import copy
 pygame.init()
 
 
@@ -167,7 +168,7 @@ def guiloop() -> None:
 
         # update map thing here
         c_map = game.get_map()
-        current_frame = make_current_frame(c_map, image_assets, basemap)
+        current_frame = make_current_frame(c_map, image_assets, copy(basemap))
 
         # find frog and display
         froglocation, null = c_map.find_object("Player")
