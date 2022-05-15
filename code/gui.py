@@ -210,7 +210,7 @@ def guiloop() -> None:
             new_froglocation, null = new_map.find_object("Player")
 
             if ANIMATIONS and froglocation != new_froglocation:
-                pan_screen(copy(basemap), screen, c_map, new_map, froglocation, new_froglocation)
+                pan_screen(current_frame, screen, c_map, new_map, froglocation, new_froglocation)
 
             # find frog and display
             screen.blit(current_frame, (0, 0), get_disp(new_froglocation))
