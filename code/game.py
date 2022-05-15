@@ -7,7 +7,7 @@ from helper import add_tuple
 class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map2"))
+        self.map = Map(Path("maps/map1"))
 
     def move(self, direction: tuple) -> bool:
         """Read a move and if valid, perform it and update the game.
@@ -38,7 +38,7 @@ class Game():
 
     def _update_game(self) -> None:
         # Update player pos
-        self.map.update_creatures()
+        pass
 
     def get_position(self) -> tuple:
         # returns postition
