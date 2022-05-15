@@ -4,6 +4,7 @@ from entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
 from typing import Iterator, Optional
+from helper import Vector
 
 
 class Map():
@@ -26,7 +27,7 @@ class Map():
                 pos = row, col
                 for entity in self[pos]:
                     if type(entity) == Creature:
-                        new_pos = entity.get_next_move(pos, self.map)
+                        new_pos = entity.get_next_move(Vector(pos), self.map)
                         assert self.in_map(new_pos), f"{entity.name} Cheated!"
                         moves_made.append([entity, pos, new_pos])
                         for i in range(len(new_map[pos]))[::-1]:
@@ -123,9 +124,9 @@ class Map():
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
                     elif col == "B":
-                        pre_map[-1][-1].append(Entity("Barrel", True))
+                        pre_map[-1][-1].append(Entity("Barrel"))
                     elif col == "W":
-                        pre_map[-1][-1].append(Creature("rockwall", "DeadDoug"))
+                        pre_map[-1][-1].append(Entity("rockwall", True))
                     elif col == "S":
                         pre_map[-1][-1].append(Creature("Frog", "SpiralingStacy"))
         return pre_map

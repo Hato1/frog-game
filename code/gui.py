@@ -9,29 +9,21 @@ import random
 from game import Game
 from map import Map
 from copy import copy
-from helper import assets
+from helper import assets, UP, LEFT, RIGHT, DOWN
 pygame.init()
-TSize = 25
+TSIZE = 25
 
 
-def return_num_col(tileset: pygame.image, dimension: str = "height") -> int:
-    """Returns an integer of the number of rows (0 indexed)of sprites based on the global sprite resolution"""
-    # rect = tileset.rect
-    num_px = None
+def return_num_col(tileset: pygame.Surface) -> tuple[int, int]:
+    """Get the number of tiles wide/high an image is"""
+    height = tileset.get_height()
+    width = tileset.get_width()
 
-    if dimension == "height":
-        num_px = tileset.get_height()
-
-    if dimension == "width":
-        num_px = tileset.get_width()
-
-    assert num_px != None, f"invalid dimension {dimension}"
-    assert (num_px % TSize == 0), f"image height({num_px}) is not a multiple of {TSize}"
-
-    num_tile = (num_px/TSize)-1
-
-    # print(num_tile)
-    return int(num_tile)
+    assert width, "invalid dimension"
+    assert height, "invalid dimension"
+    assert (width % TSIZE == 0), f"image height({width}) is not a multiple of {TSIZE}"
+    assert (height % TSIZE == 0), f"image height({height}) is not a multiple of {TSIZE}"
+    return int(width/TSIZE), int(height/TSIZE)
 
 
 def parse_assests(images: dict) -> dict:
@@ -39,13 +31,12 @@ def parse_assests(images: dict) -> dict:
     asset_dims = {}
 
     for img in images:
-        ncol = return_num_col(images[img], "width")+1
+        ncol, nrow = return_num_col(images[img])
         data = []
         for col in range(ncol):
             zeros = 0
-            nrow = return_num_col(images[img])+1
             for row in range(nrow):
-                sprite_surface = images[img].subsurface(col*TSize, row*TSize, TSize, TSize).convert_alpha()
+                sprite_surface = images[img].subsurface(col*TSIZE, row*TSIZE, TSIZE, TSIZE).convert_alpha()
                 surface_alpha = pygame.transform.average_color(sprite_surface)[-1]
                 if surface_alpha == 0:
                     zeros = zeros + 1
@@ -64,7 +55,6 @@ def process_event(event: pygame.event.Event, game: Game) -> None:
     D: move right
     Q: quits the game
     """
-    UP, LEFT, DOWN, RIGHT = (-1, 0), (0, -1), (1, 0), (0, 1)
     if event.type == pygame.QUIT:
         sys.exit()
     elif event.type == pygame.KEYDOWN:
@@ -140,10 +130,10 @@ def make_basemap(c_map: Map) -> pygame.Surface:
             else:
                 ts = tileset_oob
 
-            rand_tile = random.randint(0, dims["Stone"][0]) # <--------- This is where we make cliffs
+            rand_tile = random.randint(0, dims["Stone"][0])  # <--------- This is where we make cliffs
             basemap.blit(assets[ts],
                        (row * 25, col * 25),
-                       sprite_frame(rand_tile, 0)) # <--------- This is where we make cliffs
+                       sprite_frame(rand_tile, 0))  # <--------- This is where we make cliffs
             rand_tile = random.randint(0, 15)
             basemap.blit(assets["Tileset"],
                        (row * 25, col * 25),
@@ -183,15 +173,6 @@ def guiloop() -> None:
     c_map = game.get_map()
     basemap = make_basemap(c_map)
 
-    #
-    #current_frame = make_current_frame(c_map, assets, basemap)
-
-    # pull section to display and flip
-    # froglocation, null = c_map.find_object("Player")
-    # screen.blit(current_frame, (0, 0), get_disp(froglocation))
-    # pygame.display.flip()
-
-    # start the loop
     while True:
         for event in pygame.event.get():
             process_event(event, game)

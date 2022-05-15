@@ -1,7 +1,6 @@
 """Module for game logic"""
 from map import Map
 from pathlib import Path
-from helper import add_tuple
 
 
 class Game():
@@ -18,7 +17,7 @@ class Game():
         Returns True if the move was valid, False otherwise.
         """
         pos, player = self.map.find_object('Player')
-        new_pos = add_tuple(pos, direction)
+        new_pos = direction + pos
 
         # Check valid movement
         if 0 > new_pos[0] or 0 > new_pos[1]:

@@ -1,7 +1,13 @@
 """Module for animate objects"""
 from typing import Optional
+from helper import Vector
 from ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel
-AI_DICT = {"NormalNorman": NormalNorman, "DeadDoug": DeadDoug, "SpiralingStacy": SpiralingStacy, "BarrelingBarrel": BarrelingBarrel}
+AI_DICT = {
+    "NormalNorman": NormalNorman,
+    "DeadDoug": DeadDoug,
+    "SpiralingStacy": SpiralingStacy,
+    "BarrelingBarrel": BarrelingBarrel
+}
 
 
 class Entity():
@@ -43,9 +49,9 @@ class Creature(Entity):
                 return self.next_move
             finally:
                 self.next_move = None
-        move = self.strategy.get_move(position, _map)
-        assert type(move) == tuple, f"{self.name} has a bad AI and you should feel bad."
-        assert len(move) == 2, f"{self.name} has a bad AI and you should feel bad."
+        move = self.strategy.make_move(position, _map)
+        assert type(move) == Vector, f"{self.name} returned invalid move: {type(move)}."
+        assert len(move) == 2, f"{self.name} requests invalid move: {move}"
         return move
 
 
