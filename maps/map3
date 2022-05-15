@@ -1,12 +1,25 @@
----------------
-|         W    |
-|       B W    |
-| B       W    |
-|         W    |
-|    P    F    |
-|        F     |
-|         W    |
-|F W      W    |
-|  W    F W    |
-|  W      W    |
----------------
+-----------------------
+| WWWWWW    W           |
+|      W B W            |
+|W BW      W            |
+|W    W    W            |
+|        F       S      |
+|W       FF    S        |
+|    WP    W      S     |
+|WF W      W    S       |
+|W  W    F W            |
+|W  W      W            |
+|W  WWWWWWWWWWWWWWWWWWWW|
+|W         W            |
+|W F       W            |
+|W  WF WWWWW            |
+|W  W                   |
+|W  W                   |
+|W  W      W            |
+|W  W      W            |
+|W  W      W            |
+|W  W      W            |
+|W  W      W            |
+|W  W      W            |
+|W  W      W            |
+-----------------------

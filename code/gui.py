@@ -167,7 +167,7 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
     for row in range(obj_nrow):
         for col in range(obj_ncol):
             for k in c_map[row][col]:
-                basemap.blit(assets[k.name], inds_to_basemap(row, col), sprite_frame(3))
+                basemap.blit(assets[k.name], inds_to_basemap(row, col), sprite_frame(0))
 
     return basemap
 
