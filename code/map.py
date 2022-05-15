@@ -1,8 +1,10 @@
 """Module for reading and maniuplating the game board"""
+from __future__ import annotations
 from entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
 from typing import Iterator
+import copy
 
 
 class Map():
@@ -15,7 +17,18 @@ class Map():
         Update all Creatures using move_object
         Run conflict resolver
         """
-        pass
+        new_map = self.copy()
+        moves_made: list = []
+        for row in range(len(self)):
+            for col in range(len(self[row])):
+                pos = row, col
+                for entity in self[pos]:
+                    if type(entity) == Creature:
+                        new_pos = entity.get_next_move(pos, self.map)
+                        moves_made.append([entity, pos, new_pos])
+                        new_map[pos].remove(entity)
+                        new_map[new_pos].append(entity)
+        self.map = new_map.map
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -29,6 +42,17 @@ class Map():
                     if obj.name == obj_name:
                         return (self.map.index(row), row.index(col)), obj
         return (-1, -1)
+
+    def copy(self) -> Map:
+        new = copy.deepcopy(self)
+        new.map = copy.copy(self.map)
+        return new
+
+    def height(self) -> int:
+        return len(self.map[0])
+
+    def width(self) -> int:
+        return len(self.map)
 
     @multimethod
     def __getitem__(self, index: int) -> list[list]:
