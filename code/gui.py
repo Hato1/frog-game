@@ -60,14 +60,15 @@ def process_event(event: pygame.event.Event, game: Game) -> None:
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_q:
             sys.exit()
-        if event.key == pygame.K_w:
+        if event.key in [pygame.K_w, pygame.K_UP]:
             game.move(UP)
-        elif event.key == pygame.K_a:
+        elif event.key in [pygame.K_a, pygame.K_LEFT]:
             game.move(LEFT)
-        elif event.key == pygame.K_s:
+        elif event.key in [pygame.K_s, pygame.K_DOWN]:
             game.move(DOWN)
-        elif event.key == pygame.K_d:
+        elif event.key in [pygame.K_d, pygame.K_RIGHT]:
             game.move(RIGHT)
+
 
 
 def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
