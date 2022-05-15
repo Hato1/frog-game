@@ -61,7 +61,9 @@ def get_image_assets() -> dict:
         "Player": pygame.image.load("assets/Frog.png"),
         "Barrel": pygame.image.load("assets/Barrel.png"),
         "Frog": pygame.image.load("assets/BadFrog.png"),
-        "Tileset": pygame.image.load("assets/Tileset.png")
+        "Tileset": pygame.image.load("assets/Tileset.png"),
+        "Grass": pygame.image.load("assets/Grass.png"),
+        "Stone": pygame.image.load("assets/Stone.png"),
     }
     return image_assets
 
@@ -87,8 +89,12 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
     basemap = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
 
     # ###This is probably bad, but is fone for now
-    tileset_playarea = 1
-    tileset_oob = 6
+    # tileset_playarea = 1
+    # tileset_oob = 6
+
+    # Pull this from c_map eventually
+    tileset_playarea = "Grass"
+    tileset_oob = "Stone"
 
     # Pretty sure row is col and col is row
     for row in range(wld_nrow):
@@ -99,10 +105,10 @@ def make_basemap(c_map: Map, image_assets: dict) -> pygame.Surface:
             else:
                 ts = tileset_oob
 
-            rand_tile = random.randint(0, 3)
-            basemap.blit(image_assets["Tileset"],
+            rand_tile = random.randint(0, 3) # <--------- This is where we make cliffs
+            basemap.blit(image_assets[ts],
                        (row * 25, col * 25),
-                       sprite_frame(rand_tile, ts))
+                       sprite_frame(rand_tile, 0)) # <--------- This is where we make cliffs
             rand_tile = random.randint(0, 15)
             basemap.blit(image_assets["Tileset"],
                        (row * 25, col * 25),
