@@ -136,7 +136,6 @@ def make_current_frame(c_map: Map, image_assets: dict, basemap: pygame.Surface, 
                 imgk = image_assets[k.name]
                 basemap.blit(imgk, inds_to_basemap(row, col), sprite_frame(3))
 
-
     return basemap
 
 

@@ -1,4 +1,5 @@
 """Module for animate objects"""
+from typing import Optional
 
 
 class Entity():
@@ -16,10 +17,17 @@ class Entity():
 
 class Creature(Entity):
     def __init__(self, name: str) -> None:
-        # state
-        # super init
-        self.next_move = None
+        self.state = 0
+        self.next_move: Optional[tuple] = None
         super(Creature, self).__init__(name)
+
+    def get_next_move(self, position: tuple, map: list) -> tuple:
+        if self.next_move:
+            try:
+                return self.next_move
+            finally:
+                self.next_move = None
+        return position
 
     def update(self) -> tuple:
         # get position object wants to move to
