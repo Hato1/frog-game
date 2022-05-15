@@ -126,6 +126,8 @@ class Map():
                         pre_map[-1][-1].append(Entity("Barrel", True))
                     elif col == "W":
                         pre_map[-1][-1].append(Creature("rockwall", "DeadDoug"))
+                    elif col == "S":
+                        pre_map[-1][-1].append(Creature("Frog", "SpiralingStacy"))
         return pre_map
 
     def _conflict_resolver(self, objects: list, map: list[list[list]]) -> None:
