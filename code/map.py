@@ -3,14 +3,16 @@ from __future__ import annotations
 from entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
-from typing import Iterator
-import copy
+from typing import Iterator, Optional
 
 
 class Map():
-    def __init__(self, map_file: Path) -> None:
+    def __init__(self, map_file: Optional[Path]) -> None:
         # Map is structured as map[x][y][object]
-        self.map = self._read_map(map_file)
+        if map_file:
+            self.map = self._read_map(map_file)
+        else:
+            self.map = []
 
     def update_creatures(self) -> None:
         """
@@ -49,9 +51,14 @@ class Map():
         return (-1, -1)
 
     def copy(self) -> Map:
-        new = copy.deepcopy(self)
-        #new.map = copy.copy(self.map)
-        return new
+        new_map = Map(None)
+        for row in self.map:
+            new_map.map.append([])
+            for entities in row:
+                new_map.map[-1].append([])
+                for entity in entities:
+                    new_map.map[-1][-1].append(entity)
+        return new_map
 
     def in_map(self, pos: tuple) -> bool:
         if 0 > pos[0] or 0 > pos[1]:
