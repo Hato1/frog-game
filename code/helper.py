@@ -1,6 +1,9 @@
 """Various helper functions"""
 from __future__ import annotations
 import pygame
+from gui_helper import get_dims
+
+TSIZE = 25
 
 
 def add_tuple(x: tuple, y: tuple) -> tuple:
@@ -34,14 +37,3 @@ def facing(vector, original_direction):
         else:
             return 3
     return original_direction
-
-
-assets = {
-    "Player": pygame.image.load("assets/Frog.png"),
-    "Barrel": pygame.image.load("assets/Barrel.png"),
-    "Frog": pygame.image.load("assets/BadFrog.png"),
-    "Tileset": pygame.image.load("assets/Tileset.png"),
-    "Grass": pygame.image.load("assets/Grass.png"),
-    "Stone": pygame.image.load("assets/Stone.png"),
-    "rockwall": pygame.image.load("assets/rockwall.png"),
-}

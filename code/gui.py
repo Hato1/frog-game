@@ -11,11 +11,12 @@ Rows/Columns are coordinates in the game map/grid.
 import sys
 import pygame
 import random
+
 from game import Game
 from map import Map
 from copy import copy
-from helper import assets, UP, LEFT, RIGHT, DOWN
-from gui_helper import get_dims, get_sprite_box
+from helper import UP, LEFT, RIGHT, DOWN
+from gui_helper import get_sprite_box, assets, parse_assets
 
 # Asset tile size
 TSIZE = 25
@@ -24,26 +25,6 @@ WINDOW_COLUMNS = 16
 ANIMATIONS = True
 
 pygame.init()
-
-
-def parse_assets(images: dict) -> dict:
-    """Returns the number of usable permutations of each image based on the image dims"""
-    asset_dims = {}
-    for img in images:
-        ncol, nrow = get_dims(images[img])
-        data = []
-        for col in range(ncol):
-            empty_spots = 0
-            for row in range(nrow):
-                # TODO: A simpler way of checking for an empty spritesheet slot
-                sprite_surface = images[img].subsurface(col*TSIZE, row*TSIZE, TSIZE, TSIZE).convert_alpha()
-                surface_alpha = pygame.transform.average_color(sprite_surface)[-1]
-                if surface_alpha == 0:
-                    empty_spots = empty_spots + 1
-            number_of_states = nrow - empty_spots
-            data.append(number_of_states)
-        asset_dims[img] = data
-    return asset_dims
 
 
 def process_event(event: pygame.event.Event, game: Game) -> bool:
@@ -124,9 +105,8 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     # TODO: Map objects should map backgrounds. Let's pull this from c_map eventually.
     tileset_playarea = "Grass"
     tileset_oob = "Stone"
-
-    # define the number of sprites for each texture
-    dims = parse_assets(assets)
+    global spritesheet_dims
+    spritesheet_dims = parse_assets(assets)
 
     for row in range(padded_map_ncols):
         for col in range(padded_map_nrows):
@@ -136,14 +116,14 @@ def make_basemap(c_map: Map) -> pygame.Surface:
                 ts = tileset_oob
             # Randomise which column the tile is taken from.
             PLAIN_TILE_INDEX = 0
-            rand_tile = random.randrange(dims[ts][PLAIN_TILE_INDEX])
+            rand_tile = random.randrange(spritesheet_dims[ts][PLAIN_TILE_INDEX])
             basemap.blit(assets[ts],
                          (row * TSIZE, col * TSIZE),
                          get_sprite_box(col=rand_tile))
             # 25% chance of adding a random particle to a tile.
             if random.random() < 0.25:
                 PARTICLE_INDEX = 11
-                rand_tile = random.randrange(dims["Tileset"][PARTICLE_INDEX])
+                rand_tile = random.randrange(spritesheet_dims["Tileset"][PARTICLE_INDEX])
                 basemap.blit(assets["Tileset"],
                              (row * TSIZE, col * TSIZE),
                              get_sprite_box(11, rand_tile))
@@ -158,15 +138,22 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
         for col in range(c_map.get_ncols()):
             for entity in c_map[row][col]:
                 sprite = assets[entity.name]
+                sprite_index = (0, 0)
                 # TODO: Rotation breaks when not using first image of spritesheet,
                 # as the entire image is rotated. Current hacky workaround is to only
                 # rotate Creatures
                 if str(type(entity)) == "<class 'entity.Creature'>":
                     sprite = pygame.transform.rotate(sprite, 90*entity.direction)
+                if entity.name == "Stone":
+                    # TODO: Delete this hacky fix to prevent rock textures randomising.
+                    random.seed(f"{row}{col}")
+                    PLAIN_TILE_INDEX = 0
+                    spritenum = random.randrange(spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
+                    sprite_index = (PLAIN_TILE_INDEX, spritenum)
                 basemap.blit(
                     sprite,
                     coords_to_pixels(row, col),
-                    get_sprite_box()
+                    get_sprite_box(*sprite_index)
                 )
     return basemap
 

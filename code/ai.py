@@ -62,6 +62,21 @@ class SpiralingStacy(Ai):
         assert False
 
 
+class TrickyTrent(Ai):
+    """Moves clockwise in a diamond"""
+    def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
+        match self.state:
+            case 0:
+                return UP + RIGHT, 1
+            case 1:
+                return RIGHT + DOWN, 2
+            case 2:
+                return DOWN + LEFT, 3
+            case 3:
+                return LEFT + UP, 0
+        assert False
+
+
 class BarrelingBarrel(Ai):
     """Moves not at all, up/down/left/right in state (0/1/2/3/4+) untill stat"""
     def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
