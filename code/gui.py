@@ -10,39 +10,30 @@ from game import Game
 from map import Map
 from copy import copy
 from helper import assets, UP, LEFT, RIGHT, DOWN
+from gui_helper import get_dims, get_sprite_box
 pygame.init()
 TSIZE = 25
+WINDOW_HEIGHT = 9
+WINDOW_WIDTH = 16
 ANIMATIONS = True
 
 
-def return_num_col(tileset: pygame.Surface) -> tuple[int, int]:
-    """Get the number of tiles wide/high an image is"""
-    height = tileset.get_height()
-    width = tileset.get_width()
-
-    assert width, "invalid dimension"
-    assert height, "invalid dimension"
-    assert (width % TSIZE == 0), f"image height({width}) is not a multiple of {TSIZE}"
-    assert (height % TSIZE == 0), f"image height({height}) is not a multiple of {TSIZE}"
-    return int(width/TSIZE), int(height/TSIZE)
-
-
-def parse_assests(images: dict) -> dict:
+def parse_assets(images: dict) -> dict:
     """Returns the number of usable permutations of each image based on the image dims"""
     asset_dims = {}
-
     for img in images:
-        ncol, nrow = return_num_col(images[img])
+        ncol, nrow = get_dims(images[img])
         data = []
         for col in range(ncol):
-            zeros = 0
+            empty_spots = 0
             for row in range(nrow):
+                # TODO: A simpler way of checking for an empty spritesheet slot
                 sprite_surface = images[img].subsurface(col*TSIZE, row*TSIZE, TSIZE, TSIZE).convert_alpha()
                 surface_alpha = pygame.transform.average_color(sprite_surface)[-1]
                 if surface_alpha == 0:
-                    zeros = zeros + 1
-            number_of_states = nrow - zeros
-            data.append(number_of_states-1)
+                    empty_spots = empty_spots + 1
+            number_of_states = nrow - empty_spots
+            data.append(number_of_states)
         asset_dims[img] = data
     return asset_dims
 
@@ -72,91 +63,87 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
     return False
 
 
-def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
-    """Get the box of a sprite from spritesheet"""
-    return (col * 25, row * 25, 25, 25)
-
-
 def coords_to_pixels(row: int, col: int) -> tuple:
     """takes row and column on sprite map and returns pixel coordinates on basemap
     and of course, row is col and col is row"""
-    offset = ((8 + col) * 25,
-              4 * 25 + row * 25)
+    offset = ((8 + col) * TSIZE,
+              4 * TSIZE + row * TSIZE)
     return offset
 
 
-def get_disp(frogloc: tuple[int, int]) -> tuple[int, int, int, int]:
-    """takes players location, returns the pixel corners on basemap to display"""
-    frogx = (frogloc[1] + 8) * 25 - 188
-    froggy = (frogloc[0] + 4 - 4) * 25
-    return (frogx, froggy, frogx + 16 * 25, froggy + 9 * 25)
+def get_disp(y: int, x: int) -> tuple[int, int, int, int]:
+    """Get the window-sized box centering the coordinate
 
+    TODO: Clean this up for any window size."""
 
-def is_in_play(row: int, col: int, obj_nrow: int, obj_ncol: int) -> bool:
-    """this finds if a row/col pair (basemap coords) is in the play area"""
-    return row in range(8, 8 + obj_nrow) and col in range(4, 4 + obj_ncol)
+    # Since this function is for working on the padded basemap,
+    # We should account for that. Need a better solution!
+    x = x + WINDOW_WIDTH/2
+    y = y + WINDOW_HEIGHT/2
+
+    # Not sure why the left edge has to be pushed 0.5
+    return (
+        (x - WINDOW_WIDTH/2 + 0.5) * TSIZE,
+        (y - WINDOW_HEIGHT/2) * TSIZE,
+        (x + WINDOW_WIDTH/2) * TSIZE,
+        (y + WINDOW_HEIGHT/2) * TSIZE
+    )
 
 
 def make_basemap(c_map: Map) -> pygame.Surface:
-    """creates the background, should run once"""
-    # nrow is number of elements in a row
-    obj_nrow = len(c_map)
-    # ncol is number of elements in a col
-    obj_ncol = len(c_map[0])
+    """creates the background, should run once
 
-    # This is the nmber of columns/nmber of elements in each row
-    wld_nrow = obj_nrow + 16
-    # This is the number of rows
-    wld_ncol = obj_ncol + 8
+    TODO: Extract variables ending in INDEX elsewhere...
+    TODO: Is it good or bad style to nest functions where possible?
+    """
+    def is_in_play(row: int, col: int, width: int, height: int) -> bool:
+        """Check whether a coordinate on a padded map lies in the map"""
+        return row in range(4, 4 + height) and col in range(8, 8 + width)
 
-    # Initialises the entire basemap (width, height)
-    basemap = pygame.Surface((wld_nrow * 25, wld_ncol * 25))
+    map_width = c_map.get_width()
+    map_height = c_map.get_height()
 
-    # ###This is probably bad, but is fone for now
-    # tileset_playarea = 1
-    # tileset_oob = 6
+    # The map is padded such that the user won't be able to see out of bounds.
+    # The actual map will be placed in the center of the padded map.
+    padded_map_width = map_width + WINDOW_WIDTH
+    padded_map_height = map_height + WINDOW_HEIGHT
+    basemap = pygame.Surface((padded_map_width * TSIZE, padded_map_height * TSIZE))
 
-    # Pull this from c_map eventually
+    # TODO: Map objects should map backgrounds. Let's pull this from c_map eventually.
     tileset_playarea = "Grass"
     tileset_oob = "Stone"
 
     # define the number of sprites for each texture
-    dims = parse_assests(assets)
+    dims = parse_assets(assets)
 
-    # Pretty sure row is col and col is row
-    for row in range(wld_nrow):
-        for col in range(wld_ncol):
-            in_play = is_in_play(row, col, obj_nrow, obj_ncol)
-            if in_play:
+    for col in range(padded_map_width):
+        for row in range(padded_map_height):
+            if is_in_play(row, col, map_width, map_height):
                 ts = tileset_playarea
             else:
                 ts = tileset_oob
-
-            rand_tile = random.randint(0, dims["Stone"][0])  # <-This is where we make cliffs
+            # Randomise which column the tile is taken from.
+            PLAIN_TILE_INDEX = 0
+            rand_tile = random.randrange(dims[ts][PLAIN_TILE_INDEX])
             basemap.blit(assets[ts],
-                         (row * 25, col * 25),
-                         sprite_frame(rand_tile, 0))  # <-This is where we make cliffs
-            rand_tile = random.randint(0, 15)
-            basemap.blit(assets["Tileset"],
-                         (row * 25, col * 25),
-                         sprite_frame(rand_tile, 11))
+                         (col * TSIZE, row * TSIZE),
+                         get_sprite_box(col=rand_tile))
+            # 25% chance of adding a random particle to a tile.
+            if random.random() < 0.25:
+                PARTICLE_INDEX = 11
+                rand_tile = random.randrange(dims["Tileset"][PARTICLE_INDEX])
+                basemap.blit(assets["Tileset"],
+                             (col * TSIZE, row * TSIZE),
+                             get_sprite_box(11, rand_tile))
 
     return basemap
 
 
 def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
-    """ adds sprites to the basemap"""
-    # nrow is number of elements in a row
-    obj_nrow = len(c_map)
-    # ncol is number of elements in a col
-    obj_ncol = len(c_map[0])
-
-    # # This is the nmber of columns/nmber of elements in each row
-    # wld_nrow = obj_nrow + 16
-    # # This is the number of rows
-    # wld_ncol = obj_ncol + 8
-    for row in range(obj_nrow):
-        for col in range(obj_ncol):
+    """Draws entities on basemap"""
+    # TODO: Make a nicer way of iterating through map objects while keeping the indexes
+    for row in range(c_map.get_width()):
+        for col in range(c_map.get_height()):
             for entity in c_map[row][col]:
                 sprite = assets[entity.name]
                 # TODO: Rotation breaks when not using first image of spritesheet,
@@ -164,13 +151,11 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
                 # rotate Creatures
                 if str(type(entity)) == "<class 'entity.Creature'>":
                     sprite = pygame.transform.rotate(sprite, 90*entity.direction)
-
                 basemap.blit(
                     sprite,
                     coords_to_pixels(row, col),
-                    sprite_frame(0)
+                    get_sprite_box()
                 )
-
     return basemap
 
 
@@ -182,13 +167,17 @@ def pan_screen(
     oldcenter: tuple[int, int],
     newcenter: tuple[int, int]
 ) -> None:
+    """Smoothly pan the screen from old to new center
+
+    TODO: Slide creatures from oldmap position to newmap position (Warning: Hard)
+    """
     speed = 4
     ydiff = int(newcenter[0] - oldcenter[0])
     xdiff = int(newcenter[1] - oldcenter[1])
-    disp = get_disp(oldcenter)
+    disp = get_disp(*oldcenter)
     for i in range(speed):
-        xpos = int(disp[0] + xdiff * 25 * (i/speed))
-        ypos = int(disp[1] + ydiff * 25 * (i/speed))
+        xpos = int(disp[0] + xdiff * TSIZE * (i/speed))
+        ypos = int(disp[1] + ydiff * TSIZE * (i/speed))
         screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
         pygame.display.flip()
         pygame.time.wait(15)
@@ -196,24 +185,17 @@ def pan_screen(
 
 def guiloop() -> None:
     # Initialising stuff
-    # size of window
-    size = width, height = 16 * 25, 9 * 25
     game = Game()
-    screen = pygame.display.set_mode(size, pygame.SCALED | pygame.RESIZABLE)
+    screen = pygame.display.set_mode((WINDOW_WIDTH*TSIZE, WINDOW_HEIGHT*TSIZE), pygame.SCALED | pygame.RESIZABLE)
 
-    # Load the map
-    c_map = copy(game.get_map())
+    # Load the map. This will be a function when we have multiple maps tp go between.
+    c_map = game.get_map()
     froglocation, null = c_map.find_object("Player")
     basemap = make_basemap(c_map)
     map_changed = True
 
     while True:
-        for event in pygame.event.get():
-            if process_event(event, game):
-                map_changed = True
-        # other conditions here
-
-        # update map thing here
+        # Update game
         if map_changed:
             new_map = game.get_map()
             current_frame = make_current_frame(new_map, copy(basemap))
@@ -223,12 +205,17 @@ def guiloop() -> None:
                 pan_screen(current_frame, screen, c_map, new_map, froglocation, new_froglocation)
 
             # find frog and display
-            screen.blit(current_frame, (0, 0), get_disp(new_froglocation))
+            screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
             pygame.display.flip()
             map_changed = False
 
             c_map = new_map
             froglocation = new_froglocation
+
+        # Resolve pending user inputs
+        for event in pygame.event.get():
+            if process_event(event, game):
+                map_changed = True
 
 
 guiloop()
