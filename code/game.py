@@ -22,7 +22,7 @@ class Game():
         # Check valid movement
         if 0 > new_pos[0] or 0 > new_pos[1]:
             return False
-        if self.map.height()-1 < new_pos[0] or self.map.width()-1 < new_pos[1]:
+        if self.map.get_height()-1 < new_pos[0] or self.map.get_width()-1 < new_pos[1]:
             return False
         for obj in self.map[new_pos]:
             if obj.solid:

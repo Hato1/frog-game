@@ -9,7 +9,7 @@ from helper import Vector
 
 class Map():
     def __init__(self, map_file: Optional[Path]) -> None:
-        # Map is structured as map[x][y][object]
+        # Map is structured as map[col][row][object]
         if map_file:
             self.map = self._read_map(map_file)
         else:
@@ -64,14 +64,14 @@ class Map():
     def in_map(self, pos: tuple) -> bool:
         if 0 > pos[0] or 0 > pos[1]:
             return False
-        if self.height()-1 < pos[0] or self.width()-1 < pos[1]:
+        if self.get_height()-1 < pos[0] or self.get_width()-1 < pos[1]:
             return False
         return True
 
-    def height(self) -> int:
+    def get_height(self) -> int:
         return len(self.map[0])
 
-    def width(self) -> int:
+    def get_width(self) -> int:
         return len(self.map)
 
     @multimethod
