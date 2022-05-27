@@ -123,6 +123,9 @@ class Map():
                         pre_map[-1][-1].append(Creature("Player"))
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
+                    elif col == "G":
+                        pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
+                        pre_map[-1][-1][-1].strategy.state = 3
                     elif col == "B":
                         pre_map[-1][-1].append(Entity("Barrel"))
                     elif col == "W":
