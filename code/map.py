@@ -44,8 +44,8 @@ class Map():
 
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
-        for row in range(self.get_ncols()):
-            for col in range(self.get_nrows()):
+        for row in range(self.get_nrows()):
+            for col in range(self.get_ncols()):
                 for obj in self[row, col]:
                     if obj.name == obj_name:
                         return (row, col), obj
@@ -64,7 +64,7 @@ class Map():
     def in_map(self, pos: tuple) -> bool:
         if 0 > pos[0] or 0 > pos[1]:
             return False
-        if self.get_ncols()-1 < pos[0] or self.get_nrows()-1 < pos[1]:
+        if self.get_width()-1 < pos[1] or self.get_height()-1 < pos[0]:
             return False
         return True
 

@@ -79,10 +79,14 @@ def coords_to_pixels(row: int, col: int) -> tuple:
     return offset
 
 
-def get_disp(y: int, x: int) -> tuple[int, int, int, int]:
+def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
     """Get the window-sized box centering the coordinate
 
-    TODO: Clean this up for any window size."""
+    TODO: Clean this up for any window size.
+    """
+
+    # Why?
+    x, y = y, x
 
     # Since this function is for working on the padded basemap,
     # We should account for that. Need a better solution!
