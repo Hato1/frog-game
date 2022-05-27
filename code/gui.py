@@ -72,13 +72,12 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
     return False
 
 
-
 def sprite_frame(row: int, col: int = 0) -> tuple[int, int, int, int]:
-    """takes a tuple, nrow,ncol"""
+    """Get the box of a sprite from spritesheet"""
     return (col * 25, row * 25, 25, 25)
 
 
-def inds_to_basemap(row: int, col: int) -> tuple:
+def coords_to_pixels(row: int, col: int) -> tuple:
     """takes row and column on sprite map and returns pixel coordinates on basemap
     and of course, row is col and col is row"""
     offset = ((8 + col) * 25,
@@ -133,14 +132,14 @@ def make_basemap(c_map: Map) -> pygame.Surface:
             else:
                 ts = tileset_oob
 
-            rand_tile = random.randint(0, dims["Stone"][0])  # <--------- This is where we make cliffs
+            rand_tile = random.randint(0, dims["Stone"][0])  # <-This is where we make cliffs
             basemap.blit(assets[ts],
-                       (row * 25, col * 25),
-                       sprite_frame(rand_tile, 0))  # <--------- This is where we make cliffs
+                         (row * 25, col * 25),
+                         sprite_frame(rand_tile, 0))  # <-This is where we make cliffs
             rand_tile = random.randint(0, 15)
             basemap.blit(assets["Tileset"],
-                       (row * 25, col * 25),
-                       sprite_frame(rand_tile, 11))
+                         (row * 25, col * 25),
+                         sprite_frame(rand_tile, 11))
 
     return basemap
 
@@ -156,11 +155,21 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
     # wld_nrow = obj_nrow + 16
     # # This is the number of rows
     # wld_ncol = obj_ncol + 8
-
     for row in range(obj_nrow):
         for col in range(obj_ncol):
-            for k in c_map[row][col]:
-                basemap.blit(assets[k.name], inds_to_basemap(row, col), sprite_frame(0))
+            for entity in c_map[row][col]:
+                sprite = assets[entity.name]
+                # TODO: Rotation breaks when not using first image of spritesheet,
+                # as the entire image is rotated. Current hacky workaround is to only
+                # rotate Creatures
+                if str(type(entity)) == "<class 'entity.Creature'>":
+                    sprite = pygame.transform.rotate(sprite, 90*entity.direction)
+
+                basemap.blit(
+                    sprite,
+                    coords_to_pixels(row, col),
+                    sprite_frame(0)
+                )
 
     return basemap
 
