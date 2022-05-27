@@ -9,7 +9,7 @@ from helper import Vector
 
 class Map():
     def __init__(self, map_file: Optional[Path]) -> None:
-        # Map is structured as map[col][row][object]
+        # Map is structured as map[row][col][object]
         if map_file:
             self.map = self._read_map(map_file)
         else:
@@ -44,11 +44,11 @@ class Map():
 
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
-        for row in self.map:
-            for col in row:
-                for obj in col:
+        for row in range(self.get_width()):
+            for col in range(self.get_height()):
+                for obj in self[row, col]:
                     if obj.name == obj_name:
-                        return (self.map.index(row), row.index(col)), obj
+                        return (row, col), obj
         return (-1, -1)
 
     def copy(self) -> Map:
@@ -64,15 +64,15 @@ class Map():
     def in_map(self, pos: tuple) -> bool:
         if 0 > pos[0] or 0 > pos[1]:
             return False
-        if self.get_height()-1 < pos[0] or self.get_width()-1 < pos[1]:
+        if self.get_width()-1 < pos[0] or self.get_height()-1 < pos[1]:
             return False
         return True
 
     def get_height(self) -> int:
-        return len(self.map[0])
+        return len(self.map)
 
     def get_width(self) -> int:
-        return len(self.map)
+        return len(self.map[0])
 
     @multimethod
     def __getitem__(self, index: int) -> list[list]:

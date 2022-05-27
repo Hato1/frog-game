@@ -98,7 +98,7 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     """
     def is_in_play(row: int, col: int, width: int, height: int) -> bool:
         """Check whether a coordinate on a padded map lies in the map"""
-        return row in range(4, 4 + height) and col in range(8, 8 + width)
+        return row in range(8, 8 + width) and col in range(4, 4 + height)
 
     map_width = c_map.get_width()
     map_height = c_map.get_height()
@@ -116,8 +116,8 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     # define the number of sprites for each texture
     dims = parse_assets(assets)
 
-    for col in range(padded_map_width):
-        for row in range(padded_map_height):
+    for row in range(padded_map_width):
+        for col in range(padded_map_height):
             if is_in_play(row, col, map_width, map_height):
                 ts = tileset_playarea
             else:
@@ -126,14 +126,14 @@ def make_basemap(c_map: Map) -> pygame.Surface:
             PLAIN_TILE_INDEX = 0
             rand_tile = random.randrange(dims[ts][PLAIN_TILE_INDEX])
             basemap.blit(assets[ts],
-                         (col * TSIZE, row * TSIZE),
+                         (row * TSIZE, col * TSIZE),
                          get_sprite_box(col=rand_tile))
             # 25% chance of adding a random particle to a tile.
             if random.random() < 0.25:
                 PARTICLE_INDEX = 11
                 rand_tile = random.randrange(dims["Tileset"][PARTICLE_INDEX])
                 basemap.blit(assets["Tileset"],
-                             (col * TSIZE, row * TSIZE),
+                             (row * TSIZE, col * TSIZE),
                              get_sprite_box(11, rand_tile))
 
     return basemap
