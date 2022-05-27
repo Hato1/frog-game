@@ -1,8 +1,13 @@
-# gui.py  - displays things
-#         - recieves the input
-# This will send the input to the game.py
-#       Recieve back the new_map
-# display the new map
+"""Viewer/Controller model for Frog Game.
+
+Controller:
+    Accepts user input which is parsed to send to Frog Game.
+Viewer:
+    Shows a visual representation of the game state.
+
+Height/Width refer to pixel values to be displayed.
+Rows/Columns are coordinates in the game map/grid.
+"""
 import sys
 import pygame
 import random
@@ -11,11 +16,14 @@ from map import Map
 from copy import copy
 from helper import assets, UP, LEFT, RIGHT, DOWN
 from gui_helper import get_dims, get_sprite_box
-pygame.init()
+
+# Asset tile size
 TSIZE = 25
-WINDOW_HEIGHT = 9
-WINDOW_WIDTH = 16
+WINDOW_ROWS = 9
+WINDOW_COLUMNS = 16
 ANIMATIONS = True
+
+pygame.init()
 
 
 def parse_assets(images: dict) -> dict:
@@ -78,15 +86,15 @@ def get_disp(y: int, x: int) -> tuple[int, int, int, int]:
 
     # Since this function is for working on the padded basemap,
     # We should account for that. Need a better solution!
-    x = x + WINDOW_WIDTH/2
-    y = y + WINDOW_HEIGHT/2
+    x = x + WINDOW_COLUMNS/2
+    y = y + WINDOW_ROWS/2
 
     # Not sure why the left edge has to be pushed 0.5
     return (
-        (x - WINDOW_WIDTH/2 + 0.5) * TSIZE,
-        (y - WINDOW_HEIGHT/2) * TSIZE,
-        (x + WINDOW_WIDTH/2) * TSIZE,
-        (y + WINDOW_HEIGHT/2) * TSIZE
+        (x - WINDOW_COLUMNS/2 + 0.5) * TSIZE,
+        (y - WINDOW_ROWS/2) * TSIZE,
+        (x + WINDOW_COLUMNS/2) * TSIZE,
+        (y + WINDOW_ROWS/2) * TSIZE
     )
 
 
@@ -96,18 +104,18 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     TODO: Extract variables ending in INDEX elsewhere...
     TODO: Is it good or bad style to nest functions where possible?
     """
-    def is_in_play(row: int, col: int, width: int, height: int) -> bool:
+    def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
         """Check whether a coordinate on a padded map lies in the map"""
-        return row in range(8, 8 + width) and col in range(4, 4 + height)
+        return row in range(8, 8 + ncols) and col in range(4, 4 + nrows)
 
-    map_width = c_map.get_width()
-    map_height = c_map.get_height()
+    map_ncols = c_map.get_ncols()
+    map_nrows = c_map.get_nrows()
 
     # The map is padded such that the user won't be able to see out of bounds.
     # The actual map will be placed in the center of the padded map.
-    padded_map_width = map_width + WINDOW_WIDTH
-    padded_map_height = map_height + WINDOW_HEIGHT
-    basemap = pygame.Surface((padded_map_width * TSIZE, padded_map_height * TSIZE))
+    padded_map_ncols = map_ncols + WINDOW_COLUMNS
+    padded_map_nrows = map_nrows + WINDOW_ROWS
+    basemap = pygame.Surface((padded_map_ncols * TSIZE, padded_map_nrows * TSIZE))
 
     # TODO: Map objects should map backgrounds. Let's pull this from c_map eventually.
     tileset_playarea = "Grass"
@@ -116,9 +124,9 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     # define the number of sprites for each texture
     dims = parse_assets(assets)
 
-    for row in range(padded_map_width):
-        for col in range(padded_map_height):
-            if is_in_play(row, col, map_width, map_height):
+    for row in range(padded_map_ncols):
+        for col in range(padded_map_nrows):
+            if is_in_play(row, col, map_nrows, map_ncols):
                 ts = tileset_playarea
             else:
                 ts = tileset_oob
@@ -142,8 +150,8 @@ def make_basemap(c_map: Map) -> pygame.Surface:
 def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
-    for row in range(c_map.get_width()):
-        for col in range(c_map.get_height()):
+    for row in range(c_map.get_nrows()):
+        for col in range(c_map.get_ncols()):
             for entity in c_map[row][col]:
                 sprite = assets[entity.name]
                 # TODO: Rotation breaks when not using first image of spritesheet,
@@ -186,7 +194,7 @@ def pan_screen(
 def guiloop() -> None:
     # Initialising stuff
     game = Game()
-    screen = pygame.display.set_mode((WINDOW_WIDTH*TSIZE, WINDOW_HEIGHT*TSIZE), pygame.SCALED | pygame.RESIZABLE)
+    screen = pygame.display.set_mode((WINDOW_COLUMNS*TSIZE, WINDOW_ROWS*TSIZE), pygame.SCALED | pygame.RESIZABLE)
 
     # Load the map. This will be a function when we have multiple maps tp go between.
     c_map = game.get_map()

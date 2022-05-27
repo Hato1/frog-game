@@ -44,8 +44,8 @@ class Map():
 
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
-        for row in range(self.get_width()):
-            for col in range(self.get_height()):
+        for row in range(self.get_ncols()):
+            for col in range(self.get_nrows()):
                 for obj in self[row, col]:
                     if obj.name == obj_name:
                         return (row, col), obj
@@ -64,14 +64,24 @@ class Map():
     def in_map(self, pos: tuple) -> bool:
         if 0 > pos[0] or 0 > pos[1]:
             return False
-        if self.get_width()-1 < pos[0] or self.get_height()-1 < pos[1]:
+        if self.get_ncols()-1 < pos[0] or self.get_nrows()-1 < pos[1]:
             return False
         return True
 
+    def get_nrows(self) -> int:
+        """Get the height of the map"""
+        return len(self.map)
+
+    def get_ncols(self) -> int:
+        """Get the width of the map"""
+        return len(self.map[0])
+
     def get_height(self) -> int:
+        """Get the number of rows"""
         return len(self.map)
 
     def get_width(self) -> int:
+        """Get the number of cols"""
         return len(self.map[0])
 
     @multimethod
@@ -89,8 +99,8 @@ class Map():
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
-        map_width = len(self.map[0]) + 2
-        human_friendly = "-" * map_width + "\n|"
+        map_ncols = len(self.map[0]) + 2
+        human_friendly = "-" * map_ncols + "\n|"
         for x in self.map:
             for y in x:
                 # Add blank if this is a empty space
@@ -101,7 +111,7 @@ class Map():
                     human_friendly += y[0].name[0]
             human_friendly += "|\n|"
         human_friendly
-        return human_friendly[:-1] + "-" * map_width
+        return human_friendly[:-1] + "-" * map_ncols
 
     def __len__(self) -> int:
         return len(self.map)
