@@ -6,7 +6,7 @@ from pathlib import Path
 class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map3"))
+        self.map = Map(Path("maps/map4"))
 
     def move(self, direction: tuple) -> bool:
         """Read a move and if valid, perform it and update the game.
@@ -22,7 +22,7 @@ class Game():
         # Check valid movement
         if 0 > new_pos[0] or 0 > new_pos[1]:
             return False
-        if self.map.get_width()-1 < new_pos[0] or self.map.get_height()-1 < new_pos[1]:
+        if self.map.get_width()-1 < new_pos[1] or self.map.get_height()-1 < new_pos[0]:
             return False
         for obj in self.map[new_pos]:
             if obj.solid:
