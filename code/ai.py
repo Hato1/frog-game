@@ -20,13 +20,13 @@ class Ai():
 
 class DeadDoug(Ai):
     """Dead dougs don't die"""
-    def _get_move(self, position: tuple, **args) -> tuple[tuple, int]:
+    def _get_move(self, position: tuple, *args) -> tuple[tuple, int]:
         return position, 0
 
 
 class NormalNorman(Ai):
     """Move right and left (0 or 1) or up and down (2 or 3)"""
-    def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
+    def _get_move(self, *args) -> tuple[tuple, int]:
         match self.state:
             case 0:
                 return RIGHT, 1
@@ -41,7 +41,7 @@ class NormalNorman(Ai):
 
 class SpiralingStacy(Ai):
     """Moves anticlockwise (0 is bottom left) or clockwise (4 is bottom left)"""
-    def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
+    def _get_move(self, *args) -> tuple[tuple, int]:
         match self.state:
             case 0:
                 return RIGHT, 1
@@ -64,7 +64,7 @@ class SpiralingStacy(Ai):
 
 class TrickyTrent(Ai):
     """Moves clockwise in a diamond"""
-    def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
+    def _get_move(self, *args) -> tuple[tuple, int]:
         match self.state:
             case 0:
                 return UP + RIGHT, 1
