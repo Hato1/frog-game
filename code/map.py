@@ -132,9 +132,9 @@ class Map():
                     if col == "P":
                         pre_map[-1][-1].append(Creature("Player"))
                     elif col == "F":
-                        pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
+                        pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
                     elif col == "G":
-                        pre_map[-1][-1].append(Creature("Frog", "NormalNorman"))
+                        pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
                         pre_map[-1][-1][-1].strategy.state = 3
                     elif col == "B":
                         pre_map[-1][-1].append(Entity("Barrel"))
@@ -143,9 +143,9 @@ class Map():
                     elif col == "O":
                         pre_map[-1][-1].append(Entity("Stone", True))
                     elif col == "S":
-                        pre_map[-1][-1].append(Creature("Frog", "SpiralingStacy"))
+                        pre_map[-1][-1].append(Creature("FrogY", "SpiralingStacy"))
                     elif col == "T":
-                        pre_map[-1][-1].append(Creature("Frog", "TrickyTrent"))
+                        pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
         return pre_map
 
     def _conflict_resolver(self, objects: list, map: list[list[list]]) -> None:

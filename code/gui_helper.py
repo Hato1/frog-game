@@ -23,7 +23,10 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
 assets = {
     "Player": pg.image.load("assets/Frog.png"),
     "Barrel": pg.image.load("assets/Barrel.png"),
-    "Frog": pg.image.load("assets/BadFrog.png"),
+    "FrogR": pg.image.load("assets/FrogR.png"),
+    "FrogP": pg.image.load("assets/FrogP.png"),
+    "FrogY": pg.image.load("assets/FrogY.png"),
+    # "Ball": pg.image.load("assets/intro_ball.gif"),
     "Tileset": pg.image.load("assets/Tileset.png"),
     "Grass": pg.image.load("assets/Grass.png"),
     "Stone": pg.image.load("assets/Stone.png"),
