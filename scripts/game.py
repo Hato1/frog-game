@@ -6,9 +6,10 @@ from pathlib import Path
 class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map5"))
+        self.map = Map(Path("maps/map3"))
         # ToDo: Check if player is dead and update self.player.
         self.player = True
+        # ToDo: Load a player save file for any persistent items/preferences
 
     def move(self, direction: tuple) -> bool:
         """Read a move and if valid, perform it and update the game.
@@ -34,7 +35,10 @@ class Game():
         player.next_move = new_pos
 
         # Update all creatures (including player!)
-        self.map.update_creatures()
+        player_killed = self.map.update_creatures()
+        if player_killed:
+            self.player = False
+
         return True
 
     def _update_game(self) -> None:

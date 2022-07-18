@@ -13,6 +13,7 @@ UP, RIGHT, DOWN, LEFT = range(4)
 
 
 class Entity():
+    """Entities do not move"""
     next_id = 0
 
     def __init__(
@@ -32,8 +33,12 @@ class Entity():
         self.solid = solid
         self.direction = direction
 
+    def __str__(self):
+        return self.name
+
 
 class Creature(Entity):
+    """Creatures do move"""
     def __init__(
         self,
         name: str,

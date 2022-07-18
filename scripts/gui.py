@@ -13,10 +13,12 @@ import pygame
 import random
 import math
 import time
+import logging
 
 from pathlib import Path
 from .game import Game
 from .map import Map
+from .entity import Creature
 from copy import copy
 from .helper import UP, LEFT, RIGHT, DOWN
 from .gui_helper import get_sprite_box, assets, parse_assets
@@ -27,7 +29,11 @@ WINDOW_ROWS = 9
 WINDOW_COLUMNS = 16
 ANIMATIONS = True
 
+# Enable to print frametimes to console.
+BENCHMARK = False
+
 pygame.init()
+logging.basicConfig(level=1, format='')
 
 
 def process_event(event: pygame.event.Event, game: Game) -> bool:
@@ -179,8 +185,9 @@ def pan_screen(
     """Smoothly pan the screen from old to new center
 
     TODO: Slide creatures from oldmap position to newmap position (Warning: Hard)
+    Best to keep move history in entities and read the newmap and most recent move.
     """
-    speed = 4
+    speed = 5
     ydiff = int(newcenter[0] - oldcenter[0])
     xdiff = int(newcenter[1] - oldcenter[1])
     disp = get_disp(*oldcenter)
@@ -189,10 +196,13 @@ def pan_screen(
         ypos = int(disp[1] + ydiff * TSIZE * (i/speed))
         screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
         pygame.display.flip()
-        pygame.time.wait(15)
+        pygame.time.wait(20)
 
 
 def guiloop(screen) -> None:
+    last_frame_time = pygame.time.get_ticks()
+    old_time = pygame.time.get_ticks()
+    now = old_time
     game = Game()
     # Load the map. This will be a function when we have multiple maps to go between.
     c_map = game.get_map()
@@ -200,28 +210,35 @@ def guiloop(screen) -> None:
     basemap = make_basemap(c_map)
     current_map = None
     map_changed = True
-
+    frame = 0
     while True:
+        if not BENCHMARK:
+            difference = -old_time + (old_time := pygame.time.get_ticks())
+            logging.debug(msg=difference)
         # Update game
-        if map_changed:
+        # Set max fps to 30 (33ms).
+        if map_changed or (now := pygame.time.get_ticks()) - last_frame_time > 750:
+            last_frame_time = now
+            frame += 1
             new_map = game.get_map()
-            current_frame = make_current_frame(new_map, copy(basemap))
+            current_frame = make_current_frame(new_map, copy(basemap), game.player, frame)
             new_froglocation, null = new_map.find_object("Player")
 
+            # Could boost fps by multiprocessing collision alongside the animation?
             if ANIMATIONS and froglocation != new_froglocation:
                 pan_screen(
                     current_frame, screen, c_map, new_map, froglocation, new_froglocation
                 )
 
-            # find player (frog) and blit map around player
-            screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
-            current_map = current_frame
+        # find player (frog) and blit map around player
+        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
+        current_map = current_frame
 
-            pygame.display.flip()
-            map_changed = False
+        pygame.display.flip()
+        map_changed = False
 
-            c_map = new_map
-            froglocation = new_froglocation
+        c_map = new_map
+        froglocation = new_froglocation
 
         # This is incredibly ugly, needs rewrite.
         # Have text fade in, possibly have buttons unresponsive
@@ -230,39 +247,53 @@ def guiloop(screen) -> None:
         # B&W filter instead of darken background?
         # Sound effect here would be great!
         if not game.player:
-            font_title = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 36 * 3)
-            you_died = font_title.render("You  Died", 1, (40, 20, 20))
-            you_died = pygame.transform.rotate(you_died, math.sin(time.time() / 1.5) * 10)
-            you_died = pygame.transform.scale(
-                you_died,
-                (
-                    you_died.get_width() + int(math.sin(time.time() / 1) * 20),
-                    you_died.get_height() + int(math.sin(time.time() / 1) * 20),
-                ),
-            )
-            you_died_pos = you_died.get_rect(
-                centerx=screen.get_width() / 2,
-                centery=screen.get_height() / 3,
-            )
-            any_key_font = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 25)
-            any_key = any_key_font.render("(Press any button to continue)", 1, (120, 20, 20))
-            any_key_pos = any_key.get_rect(
-                centerx=screen.get_width() / 2,
-                centery=screen.get_height() * 5 / 6,
-            )
-
-            screen.blit(current_map, (0, 0), get_disp(*new_froglocation))
-            screen.blit(you_died, you_died_pos)
-            screen.blit(any_key, any_key_pos)
-            pygame.display.flip()
-
-            if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
-                return
+            break
 
         # Resolve pending user inputs
         for event in pygame.event.get():
             if process_event(event, game):
                 map_changed = True
+
+    # Player dead
+    magic_number = 0
+    while True:
+        pygame.time.delay(50)
+        font_title = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 36 * 3)
+        you_died = font_title.render("You  Died", 1, (130, 20, 60))
+        you_died = pygame.transform.rotate(you_died, math.sin(time.time() / 1.5) * 10)
+        you_died = pygame.transform.scale(
+            you_died,
+            (
+                you_died.get_width() + int(math.sin(time.time() / 1) * 20),
+                you_died.get_height() + int(math.sin(time.time() / 1) * 20),
+            ),
+        )
+        you_died_pos = you_died.get_rect(
+            centerx=screen.get_width() / 2,
+            centery=screen.get_height() / 3,
+        )
+        any_key_font = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 25)
+        any_key = any_key_font.render("(Press any key to continue)", 255, (130, 20, 60))
+        any_key_pos = any_key.get_rect(
+            centerx=screen.get_width() / 2,
+            centery=screen.get_height() * 5 / 6,
+        )
+
+        white = pygame.Surface(screen.get_size())
+
+        screen.blit(current_map, (0, 0), get_disp(*new_froglocation))
+
+        white.set_alpha(min((magic_number*3 - 100), 200))
+        screen.blit(white, (0, 0))
+        you_died.set_alpha(magic_number*5)
+        screen.blit(you_died, you_died_pos)
+        any_key.set_alpha(magic_number*3 - 100)
+        screen.blit(any_key, any_key_pos)
+        pygame.display.flip()
+
+        if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
+            return
+        magic_number += 1
 
 
 def main():
