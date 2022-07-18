@@ -312,8 +312,9 @@ def guiloop(screen) -> None:
         screen.blit(any_key, any_key_pos)
         pygame.display.flip()
 
-        if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
-            return
+        if magic_number > 20:
+            if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
+                return
         magic_number += 1
 
 
