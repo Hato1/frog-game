@@ -11,7 +11,10 @@ Rows/Columns are coordinates in the game map/grid.
 import sys
 import pygame
 import random
+import math
+import time
 
+from pathlib import Path
 from .game import Game
 from .map import Map
 from copy import copy
@@ -35,20 +38,25 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
     S: move down
     D: move right
     Q: quits the game
+    R: kills the player (Restart)
     """
     if event.type == pygame.QUIT:
         sys.exit()
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_q:
             sys.exit()
-        if event.key in [pygame.K_w, pygame.K_UP]:
-            return game.move(UP)
-        elif event.key in [pygame.K_a, pygame.K_LEFT]:
-            return game.move(LEFT)
-        elif event.key in [pygame.K_s, pygame.K_DOWN]:
-            return game.move(DOWN)
-        elif event.key in [pygame.K_d, pygame.K_RIGHT]:
-            return game.move(RIGHT)
+        if event.key == pygame.K_r:
+            game.player = False
+
+        if game.player:
+            if event.key in [pygame.K_w, pygame.K_UP]:
+                return game.move(UP)
+            elif event.key in [pygame.K_a, pygame.K_LEFT]:
+                return game.move(LEFT)
+            elif event.key in [pygame.K_s, pygame.K_DOWN]:
+                return game.move(DOWN)
+            elif event.key in [pygame.K_d, pygame.K_RIGHT]:
+                return game.move(RIGHT)
     return False
 
 
@@ -148,8 +156,10 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
                     # TODO: Delete this hacky fix to prevent rock textures randomising.
                     random.seed(f"{row}{col}")
                     PLAIN_TILE_INDEX = 0
-                    spritenum = random.randrange(spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
+                    spritenum = random.randrange(
+                        spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
                     sprite_index = (PLAIN_TILE_INDEX, spritenum)
+                    random.seed()
                 basemap.blit(
                     sprite,
                     coords_to_pixels(row, col),
@@ -182,15 +192,13 @@ def pan_screen(
         pygame.time.wait(15)
 
 
-def guiloop() -> None:
-    # Initialising stuff
+def guiloop(screen) -> None:
     game = Game()
-    screen = pygame.display.set_mode((WINDOW_COLUMNS*TSIZE, WINDOW_ROWS*TSIZE), pygame.SCALED | pygame.RESIZABLE)
-
-    # Load the map. This will be a function when we have multiple maps tp go between.
+    # Load the map. This will be a function when we have multiple maps to go between.
     c_map = game.get_map()
     froglocation, null = c_map.find_object("Player")
     basemap = make_basemap(c_map)
+    current_map = None
     map_changed = True
 
     while True:
@@ -201,15 +209,55 @@ def guiloop() -> None:
             new_froglocation, null = new_map.find_object("Player")
 
             if ANIMATIONS and froglocation != new_froglocation:
-                pan_screen(current_frame, screen, c_map, new_map, froglocation, new_froglocation)
+                pan_screen(
+                    current_frame, screen, c_map, new_map, froglocation, new_froglocation
+                )
 
-            # find frog and display
+            # find player (frog) and blit map around player
             screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
+            current_map = current_frame
+
             pygame.display.flip()
             map_changed = False
 
             c_map = new_map
             froglocation = new_froglocation
+
+        # This is incredibly ugly, needs rewrite.
+        # Have text fade in, possibly have buttons unresponsive
+        # for about 0.2 seconds so player doesn't skip death screen.
+        # darken background (current_map) so it's clear you can't interact.
+        # B&W filter instead of darken background?
+        # Sound effect here would be great!
+        if not game.player:
+            font_title = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 36 * 3)
+            you_died = font_title.render("You  Died", 1, (40, 20, 20))
+            you_died = pygame.transform.rotate(you_died, math.sin(time.time() / 1.5) * 10)
+            you_died = pygame.transform.scale(
+                you_died,
+                (
+                    you_died.get_width() + int(math.sin(time.time() / 1) * 20),
+                    you_died.get_height() + int(math.sin(time.time() / 1) * 20),
+                ),
+            )
+            you_died_pos = you_died.get_rect(
+                centerx=screen.get_width() / 2,
+                centery=screen.get_height() / 3,
+            )
+            any_key_font = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 25)
+            any_key = any_key_font.render("(Press any button to continue)", 1, (120, 20, 20))
+            any_key_pos = any_key.get_rect(
+                centerx=screen.get_width() / 2,
+                centery=screen.get_height() * 5 / 6,
+            )
+
+            screen.blit(current_map, (0, 0), get_disp(*new_froglocation))
+            screen.blit(you_died, you_died_pos)
+            screen.blit(any_key, any_key_pos)
+            pygame.display.flip()
+
+            if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
+                return
 
         # Resolve pending user inputs
         for event in pygame.event.get():
@@ -217,4 +265,14 @@ def guiloop() -> None:
                 map_changed = True
 
 
-guiloop()
+def main():
+    # Initialising stuff
+    screen = pygame.display.set_mode(
+        (WINDOW_COLUMNS*TSIZE, WINDOW_ROWS*TSIZE),
+        pygame.SCALED | pygame.RESIZABLE
+    )
+    while True:
+        guiloop(screen)
+
+
+main()

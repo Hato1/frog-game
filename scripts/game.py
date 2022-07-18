@@ -7,6 +7,8 @@ class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
         self.map = Map(Path("maps/map5"))
+        # ToDo: Check if player is dead and update self.player.
+        self.player = True
 
     def move(self, direction: tuple) -> bool:
         """Read a move and if valid, perform it and update the game.
