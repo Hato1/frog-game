@@ -145,22 +145,43 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     return basemap
 
 
-def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
+def make_current_frame(c_map: Map, basemap: pygame.Surface, player_alive: bool, frame: int) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
-    for row in range(c_map.get_nrows()):
-        for col in range(c_map.get_ncols()):
-            for entity in c_map[row][col]:
-                sprite = assets[entity.name]
-                sprite_index = (0, 0)
-                # TODO: Rotation breaks when not using first image of spritesheet,
-                # as the entire image is rotated. Current hacky workaround is to only
-                # rotate Creatures
-                if str(type(entity)) == "<class 'entity.Creature'>":
-                    sprite = pygame.transform.rotate(sprite, 90*entity.direction)
+    # for row in range(c_map.get_nrows()):
+    #     for col in range(c_map.get_ncols()):
+    #         for entity in c_map[row][col]:
+    animation_stage = [0, 2, 3][(frame) % 3]
+    #animation_stage = random.choice([0, 2, 3])
+    for pos, entities in c_map._iterate():
+        for entity in entities:
+            if not player_alive and entity.name == "Player":
+                continue
+            sprite = assets[entity.name]
+            sprite_index = (0, 0)
+            # TODO: Rotation breaks when not using first image of spritesheet,
+            # as the entire image is rotated. Current hacky workaround is to only
+            # rotate Creatures
+            if type(entity) == Creature:
+                sprite_index = (0, animation_stage)
+                creature_sprite = pygame.Surface((25, 25))
+                creature_sprite.fill((255, 255, 255))
+                creature_sprite.set_colorkey('white')
+                creature_sprite.blit(
+                    sprite,
+                    (0, 0),
+                    get_sprite_box(*sprite_index)
+                )
+                creature_sprite = pygame.transform.rotate(creature_sprite, 90*entity.direction)
+                basemap.blit(
+                    creature_sprite,
+                    coords_to_pixels(*pos)
+                )
+            else:
                 if entity.name == "Stone":
                     # TODO: Delete this hacky fix to prevent rock textures randomising.
-                    random.seed(f"{row}{col}")
+                    # TODO: Stone should be a part of basemap to improve fps.
+                    random.seed(f"{pos}")
                     PLAIN_TILE_INDEX = 0
                     spritenum = random.randrange(
                         spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
@@ -168,7 +189,7 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, ) -> pygame.Surface:
                     random.seed()
                 basemap.blit(
                     sprite,
-                    coords_to_pixels(row, col),
+                    coords_to_pixels(*pos),
                     get_sprite_box(*sprite_index)
                 )
     return basemap

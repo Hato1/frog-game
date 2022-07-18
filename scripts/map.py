@@ -22,21 +22,21 @@ class Map():
         """
         new_map = self.copy()
         moves_made: list = []
-        for row in range(len(self)):
-            for col in range(len(self[row])):
-                pos = row, col
-                for entity in self[pos]:
-                    if type(entity) == Creature:
-                        new_pos = entity.get_next_move(Vector(pos), self.map)
-                        assert self.in_map(new_pos), f"{entity.name} Cheated!"
-                        moves_made.append([entity, pos, new_pos])
-                        for i in range(len(new_map[pos]))[::-1]:
-                            y = new_map[pos]
-                            x = y[i]
-                            if x.id == entity.id:
-                                new_map[pos].pop(i)
-                        new_map[new_pos].append(entity)
+        for pos, entities in self._iterate():
+            for entity in entities:
+                if type(entity) == Creature:
+                    new_pos = entity.get_next_move(Vector(pos), self.map)
+                    assert self.in_map(new_pos), f"{entity.name} Cheated!"
+                    moves_made.append([entity, pos, new_pos])
+                    for i in range(len(new_map[pos]))[::-1]:
+                        y = new_map[pos]
+                        x = y[i]
+                        if x.id == entity.id:
+                            new_map[pos].pop(i)
+                    new_map[new_pos].append(entity)
         self.map = new_map.map
+        was_player_killed = self._collision_detector()
+        return was_player_killed
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -97,6 +97,11 @@ class Map():
     def __iter__(self) -> Iterator:
         return iter(self.map)
 
+    def _iterate(self):
+        for row in range(self.get_nrows()):
+            for col in range(self.get_ncols()):
+                yield (row, col), self[row][col]
+
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
         map_ncols = len(self.map[0]) + 2
@@ -148,7 +153,36 @@ class Map():
                         pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
         return pre_map
 
-    def _conflict_resolver(self, objects: list, map: list[list[list]]) -> None:
+    def _collision_detector(self):
+        was_player_killed = False
+        proposed_map = self.copy()
+        settling_collisions = True
+        while settling_collisions:
+            settling_collisions = False
+            for pos, entities in self._iterate():
+                creatures = [e for e in entities if type(e) == Creature]
+                if len(creatures) > 1:
+                    was_player_killed = was_player_killed | self._conflict_resolver(pos, creatures, proposed_map)
+                    # This should be uncommented, but my hacky player fixes stop me.
+                    # As a result, each tile only gets one iteration of resolving.
+                    # This would be a problem if the resolving of a tile affected the
+                    # contents of a tile that had previously been resolved.
+                    # settling_collisions = True
+            self.map = proposed_map
+        return was_player_killed
+
+    def _conflict_resolver(self, pos: tuple, creatures: list, new_map) -> None:
         # Update the conflicting square
-        #
-        pass
+        # ToDo: Creatures with duplicate names break this
+        was_player_killed = False
+        num_creatures = len(creatures)
+        names = {str(creature): creature for creature in creatures}
+        if "Player" in names:
+            # Always keep player alive so we know where to center screen. :S
+            # Just don't let gui draw missing player
+            # new_map[pos[0]][pos[1]].remove(names["Player"])
+            num_creatures -= 1
+            was_player_killed = True
+
+        # assert num_creatures <= 1
+        return was_player_killed
