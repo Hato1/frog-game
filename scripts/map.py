@@ -1,10 +1,10 @@
 """Module for reading and maniuplating the game board"""
 from __future__ import annotations
-from entity import Creature, Entity
+from .entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
 from typing import Iterator, Optional
-from helper import Vector
+from .helper import Vector
 
 
 class Map():

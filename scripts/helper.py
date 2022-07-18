@@ -1,7 +1,7 @@
 """Various helper functions"""
 from __future__ import annotations
-import pygame
-from gui_helper import get_dims
+# import pygame
+# from gui_helper import get_dims
 
 TSIZE = 25
 

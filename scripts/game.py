@@ -1,5 +1,5 @@
 """Module for game logic"""
-from map import Map
+from .map import Map
 from pathlib import Path
 
 

@@ -12,11 +12,11 @@ import sys
 import pygame
 import random
 
-from game import Game
-from map import Map
+from .game import Game
+from .map import Map
 from copy import copy
-from helper import UP, LEFT, RIGHT, DOWN
-from gui_helper import get_sprite_box, assets, parse_assets
+from .helper import UP, LEFT, RIGHT, DOWN
+from .gui_helper import get_sprite_box, assets, parse_assets
 
 # Asset tile size
 TSIZE = 25
