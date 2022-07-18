@@ -4,10 +4,6 @@ Collision detector
 
 Collision resolver
 
-Death screen + Restart
-
 Step limit before death.
 
-Object animations.
-
-Object directions.
+Boost fps. Hitting 14 while idle, and as low as 3 when spamming. Multiprocessing?
