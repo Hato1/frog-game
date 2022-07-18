@@ -1,4 +1,4 @@
-from helper import UP, LEFT, DOWN, RIGHT, IDLE, facing
+from .helper import UP, LEFT, DOWN, RIGHT, IDLE, facing
 
 
 class Ai():

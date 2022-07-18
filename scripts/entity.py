@@ -1,7 +1,7 @@
 """Module for animate objects"""
 from typing import Optional
-from helper import Vector, facing
-from ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel, TrickyTrent
+from .helper import Vector, facing
+from .ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel, TrickyTrent
 AI_DICT = {
     "NormalNorman": NormalNorman,
     "DeadDoug": DeadDoug,
