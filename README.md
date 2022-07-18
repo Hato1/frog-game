@@ -1,11 +1,23 @@
 # Frog Game
 
-Setup:
 
-Install Poetry
 
-navigate to  project directory
+##### Initial Setup
 
-run `poetry install` to install dependancies.
+1. Install Poetry (The internet knows how).
+2. Navigate to  project directory.
+3. Run `poetry install` to install dependancies.
 
-Now in future run `poetry shell` to enter project virtual environment for running code.
+
+
+##### Enter virtual environment
+
+​	Run `poetry shell` from project directory to enter project virtual environment for running code.
+
+​	The virtual environment fulfills many _exact_ prerequisites for developing & running the project such as Pygame.
+
+
+
+##### Run Frog Game
+
+The game can be run with `./run` while in virtural environment.
