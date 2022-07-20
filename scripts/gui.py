@@ -35,6 +35,8 @@ BENCHMARK = False
 pygame.init()
 logging.basicConfig(level=1, format='')
 
+spritesheet_dims: dict
+
 
 def process_event(event: pygame.event.Event, game: Game) -> bool:
     """Accepts user input
@@ -79,21 +81,17 @@ def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
 
     TODO: Clean this up for any window size.
     """
-
-    # Why?
-    x, y = y, x
+    # I think X and Y are backwards. Pygame implementation??
 
     # Since this function is for working on the padded basemap,
     # We should account for that. Need a better solution!
-    x = x + WINDOW_COLUMNS/2
-    y = y + WINDOW_ROWS/2
 
     # Not sure why the left edge has to be pushed 0.5
     return (
-        (x - WINDOW_COLUMNS/2 + 0.5) * TSIZE,
-        (y - WINDOW_ROWS/2) * TSIZE,
-        (x + WINDOW_COLUMNS/2) * TSIZE,
-        (y + WINDOW_ROWS/2) * TSIZE
+        y * TSIZE + TSIZE//2,
+        x * TSIZE,
+        y * TSIZE,
+        x * TSIZE,
     )
 
 
@@ -135,12 +133,14 @@ def make_basemap(c_map: Map) -> pygame.Surface:
                          (row * TSIZE, col * TSIZE),
                          get_sprite_box(col=rand_tile))
             # 25% chance of adding a random particle to a tile.
-            if random.random() < 0.25:
+            thresh = 0.25
+            while random.random() < thresh:
                 PARTICLE_INDEX = 11
                 rand_tile = random.randrange(spritesheet_dims["Tileset"][PARTICLE_INDEX])
                 basemap.blit(assets["Tileset"],
                              (row * TSIZE, col * TSIZE),
                              get_sprite_box(11, rand_tile))
+                thresh = thresh / 2
 
     return basemap
 
@@ -183,6 +183,7 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, player_alive: bool, 
                     # TODO: Stone should be a part of basemap to improve fps.
                     random.seed(f"{pos}")
                     PLAIN_TILE_INDEX = 0
+                    global spritesheet_dims
                     spritenum = random.randrange(
                         spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
                     sprite_index = (PLAIN_TILE_INDEX, spritenum)
@@ -220,7 +221,7 @@ def pan_screen(
         pygame.time.wait(20)
 
 
-def guiloop(screen) -> None:
+def guiloop(screen: pygame.surface.Surface) -> None:
     last_frame_time = pygame.time.get_ticks()
     old_time = pygame.time.get_ticks()
     now = old_time
@@ -233,7 +234,7 @@ def guiloop(screen) -> None:
     map_changed = True
     frame = 0
     while True:
-        if not BENCHMARK:
+        if BENCHMARK:
             difference = -old_time + (old_time := pygame.time.get_ticks())
             logging.debug(msg=difference)
         # Update game
@@ -280,7 +281,7 @@ def guiloop(screen) -> None:
     while True:
         pygame.time.delay(50)
         font_title = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 36 * 3)
-        you_died = font_title.render("You  Died", 1, (130, 20, 60))
+        you_died = font_title.render("You  Died", True, (130, 20, 60))
         you_died = pygame.transform.rotate(you_died, math.sin(time.time() / 1.5) * 10)
         you_died = pygame.transform.scale(
             you_died,
@@ -294,7 +295,7 @@ def guiloop(screen) -> None:
             centery=screen.get_height() / 3,
         )
         any_key_font = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 25)
-        any_key = any_key_font.render("(Press any key to continue)", 255, (130, 20, 60))
+        any_key = any_key_font.render("(Press any key to continue)", True, (130, 20, 60))
         any_key_pos = any_key.get_rect(
             centerx=screen.get_width() / 2,
             centery=screen.get_height() * 5 / 6,
@@ -318,7 +319,7 @@ def guiloop(screen) -> None:
         magic_number += 1
 
 
-def main():
+def main() -> None:
     # Initialising stuff
     screen = pygame.display.set_mode(
         (WINDOW_COLUMNS*TSIZE, WINDOW_ROWS*TSIZE),

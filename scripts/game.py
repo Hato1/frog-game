@@ -1,17 +1,18 @@
 """Module for game logic"""
 from .map import Map
 from pathlib import Path
+from .helper import Vector
 
 
 class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map3"))
+        self.map = Map(Path("maps/map5"))
         # ToDo: Check if player is dead and update self.player.
         self.player = True
         # ToDo: Load a player save file for any persistent items/preferences
 
-    def move(self, direction: tuple) -> bool:
+    def move(self, direction: Vector) -> bool:
         """Read a move and if valid, perform it and update the game.
 
         Args:
@@ -20,7 +21,7 @@ class Game():
         Returns True if the move was valid, False otherwise.
         """
         pos, player = self.map.find_object('Player')
-        new_pos = direction + pos
+        new_pos = pos + direction
 
         # Check valid movement
         if 0 > new_pos[0] or 0 > new_pos[1]:
@@ -32,7 +33,7 @@ class Game():
                 return False
 
         # Set the player's next move
-        player.next_move = new_pos
+        player.next_move = direction
 
         # Update all creatures (including player!)
         player_killed = self.map.update_creatures()

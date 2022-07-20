@@ -1,32 +1,32 @@
-from .helper import UP, LEFT, DOWN, RIGHT, IDLE, facing
+from .helper import UP, LEFT, DOWN, RIGHT, IDLE, facing, Vector, Point
 
 
 class Ai():
     def __init__(self, state: int = 0):
         self.state: int = state
 
-    def _get_move(self, position: tuple, _map: list) -> tuple[tuple, int]:
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         """Get the next position object wants to move in, and the resulting state"""
         raise NotImplementedError
 
-    def make_move(self, position: tuple, direction: int, _map: list) -> tuple:
+    def make_move(self, position: Point, direction: int, _map: list) -> tuple[Point, int]:
         """Get next position and update state"""
         move, newstate = self._get_move(position, _map)
         direction = facing(move, direction)
 
         self.state = newstate
-        return position + move, direction
+        return Point._make(position + move), direction
 
 
 class DeadDoug(Ai):
     """Dead dougs don't die"""
-    def _get_move(self, position: tuple, *args) -> tuple[tuple, int]:
-        return position, 0
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
+        return IDLE, 0
 
 
 class NormalNorman(Ai):
     """Move right and left (0 or 1) or up and down (2 or 3)"""
-    def _get_move(self, *args) -> tuple[tuple, int]:
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
                 return RIGHT, 1
@@ -41,7 +41,7 @@ class NormalNorman(Ai):
 
 class SpiralingStacy(Ai):
     """Moves anticlockwise (0 is bottom left) or clockwise (4 is bottom left)"""
-    def _get_move(self, *args) -> tuple[tuple, int]:
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
                 return RIGHT, 1
@@ -64,7 +64,7 @@ class SpiralingStacy(Ai):
 
 class TrickyTrent(Ai):
     """Moves clockwise in a diamond"""
-    def _get_move(self, *args) -> tuple[tuple, int]:
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
                 return UP + RIGHT, 1
@@ -79,7 +79,7 @@ class TrickyTrent(Ai):
 
 class BarrelingBarrel(Ai):
     """Moves not at all, up/down/left/right in state (0/1/2/3/4+) untill stat"""
-    def _get_move(self, position: tuple, map: list) -> tuple[tuple, int]:
+    def _get_move(self, position: Point, map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
                 return IDLE, 0
