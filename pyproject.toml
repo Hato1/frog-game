@@ -10,6 +10,7 @@ pygame = "^2.1.2"
 pydantic = "^1.9.0"
 mypy = "^0.942"
 multimethod = "^1.8"
+typing-extensions = "^4.3.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
@@ -29,7 +30,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.mypy]
 # Specify default files
-files = "code"
+files = "scripts"
 # Use pydantic plugin
 plugins = "pydantic.mypy"
 

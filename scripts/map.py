@@ -4,7 +4,7 @@ from .entity import Creature, Entity
 from pathlib import Path
 from multimethod import multimethod
 from typing import Iterator, Optional
-from .helper import Vector
+from .helper import Point
 
 
 class Map():
@@ -15,7 +15,7 @@ class Map():
         else:
             self.map = []
 
-    def update_creatures(self) -> None:
+    def update_creatures(self) -> bool:
         """
         Update all Creatures using move_object
         Run conflict resolver
@@ -25,7 +25,7 @@ class Map():
         for pos, entities in self._iterate():
             for entity in entities:
                 if type(entity) == Creature:
-                    new_pos = entity.get_next_move(Vector(pos), self.map)
+                    new_pos = entity.get_next_move(pos, self.map)
                     assert self.in_map(new_pos), f"{entity.name} Cheated!"
                     moves_made.append([entity, pos, new_pos])
                     for i in range(len(new_map[pos]))[::-1]:
@@ -44,12 +44,18 @@ class Map():
 
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
-        for row in range(self.get_nrows()):
-            for col in range(self.get_ncols()):
-                for obj in self[row, col]:
-                    if obj.name == obj_name:
-                        return (row, col), obj
-        return (-1, -1)
+        for pos, entities in self._iterate():
+            for entity in entities:
+                if entity.name == obj_name:
+                    return pos, entity
+        # for row in range(self.get_nrows()):
+        #     for col in range(self.get_ncols()):
+        #         for obj in self[row, col]:
+        #             if obj.name == obj_name:
+        #                 print(row, col)
+        #                 return Point(row, col), obj
+        assert False
+        # return Point(-1, -1)
 
     def copy(self) -> Map:
         new_map = Map(None)
@@ -78,11 +84,11 @@ class Map():
 
     def get_height(self) -> int:
         """Get the number of rows"""
-        return len(self.map)
+        return self.get_nrows()
 
     def get_width(self) -> int:
         """Get the number of cols"""
-        return len(self.map[0])
+        return self.get_ncols()
 
     @multimethod
     def __getitem__(self, index: int) -> list[list]:
@@ -97,10 +103,10 @@ class Map():
     def __iter__(self) -> Iterator:
         return iter(self.map)
 
-    def _iterate(self):
+    def _iterate(self) -> Iterator[tuple[Point, list]]:
         for row in range(self.get_nrows()):
             for col in range(self.get_ncols()):
-                yield (row, col), self[row][col]
+                yield Point(row, col), self[row][col]
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
@@ -153,7 +159,7 @@ class Map():
                         pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
         return pre_map
 
-    def _collision_detector(self):
+    def _collision_detector(self) -> bool:
         was_player_killed = False
         proposed_map = self.copy()
         settling_collisions = True
@@ -162,16 +168,19 @@ class Map():
             for pos, entities in self._iterate():
                 creatures = [e for e in entities if type(e) == Creature]
                 if len(creatures) > 1:
-                    was_player_killed = was_player_killed | self._conflict_resolver(pos, creatures, proposed_map)
+                    was_player_killed = was_player_killed | self._conflict_resolver(
+                                                                pos,
+                                                                creatures,
+                                                                proposed_map)
                     # This should be uncommented, but my hacky player fixes stop me.
                     # As a result, each tile only gets one iteration of resolving.
                     # This would be a problem if the resolving of a tile affected the
                     # contents of a tile that had previously been resolved.
                     # settling_collisions = True
-            self.map = proposed_map
+            self.map = proposed_map.map
         return was_player_killed
 
-    def _conflict_resolver(self, pos: tuple, creatures: list, new_map) -> None:
+    def _conflict_resolver(self, pos: tuple, creatures: list, new_map: Map) -> bool:
         # Update the conflicting square
         # ToDo: Creatures with duplicate names break this
         was_player_killed = False

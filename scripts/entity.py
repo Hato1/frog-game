@@ -1,6 +1,6 @@
 """Module for animate objects"""
 from typing import Optional
-from .helper import Vector, facing
+from .helper import Vector, facing, Point
 from .ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel, TrickyTrent
 AI_DICT = {
     "NormalNorman": NormalNorman,
@@ -33,7 +33,7 @@ class Entity():
         self.solid = solid
         self.direction = direction
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -42,7 +42,7 @@ class Creature(Entity):
     def __init__(
         self,
         name: str,
-        strategy: Optional[str] = "DeadDoug",
+        strategy: str = "DeadDoug",
         direction: int = UP
     ) -> None:
         """
@@ -52,17 +52,17 @@ class Creature(Entity):
         self.state = 0
         self.strategy = AI_DICT[strategy]()
         # Can be used to force creatures next move, ignoring their strategy.
-        self.next_move: Optional[tuple] = None
-        super(Creature, self).__init__(name, direction)
+        self.next_move: Optional[Vector] = None
+        super(Creature, self).__init__(name, False, direction)
 
-    def get_next_move(self, position: tuple, _map: list) -> tuple:
+    def get_next_move(self, position: Point, _map: list) -> Point:
         if self.next_move:
-            self.direction = facing(self.next_move-position, self.direction)
+            self.direction = facing(self.next_move, self.direction)
             try:
-                return self.next_move
+                return position + self.next_move
             finally:
                 self.next_move = None
         move, self.direction = self.strategy.make_move(position, self.direction, _map)
-        assert type(move) == Vector, f"{self.name} returned invalid move: {type(move)}."
+        assert type(move) == Point, f"{self.name} returned invalid move: {type(move)}."
         assert len(move) == 2, f"{self.name} requests invalid move: {move}"
         return move
