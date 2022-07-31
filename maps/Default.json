@@ -1,0 +1,70 @@
+{
+  "MapSize": "[32,32]",
+  "Tiles": [
+    {
+      "level": "Dirt",
+      "FileName": "dirt.png",
+      "HueAdjust": "-100",
+      "Character": "D"
+    },
+    {
+      "level": "Grass",
+      "FileName": "Grass.png",
+      "HueAdjust": "0",
+      "Character": "G"
+    },
+    {
+      "level": "Stone",
+      "FileName": "Stone.png",
+      "HueAdjust": "50",
+      "Character": "S"
+    }
+  ],
+  "Entities": [
+    {
+      "Name" : "Player",
+      "AI": "None",
+      "FileName": "Frog.png",
+      "HueAdjust": "0",
+      "Character": "P"
+    },
+    {
+      "Name" : "FrogR",
+      "AI": "NormalNorman",
+      "FileName": "FrogR.png",
+      "HueAdjust": "0",
+      "Character": "N"
+    },
+    {
+      "Name" : "FrogY",
+      "AI": "SpiralingStacy",
+      "FileName": "FrogY.png",
+      "HueAdjust": "0",
+      "Character": "S"
+    },
+    {
+      "Name" : "FrogP",
+      "AI": "TrickyTrent",
+      "FileName": "FrogP.png",
+      "HueAdjust": "0",
+      "Character": "T"
+    },
+    {
+      "Name" : "Barrel",
+      "AI": "None",
+      "FileName": "Barrel.png",
+      "HueAdjust": "0",
+      "Character": "B"
+    },
+    {
+      "Name" : "Wall",
+      "AI": "None",
+      "FileName": "None",
+      "HueAdjust": "0",
+      "Character": "W"
+    },
+    {
+
+    }
+  ]
+}
