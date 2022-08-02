@@ -59,12 +59,9 @@
     {
       "Name" : "Wall",
       "AI": "None",
-      "FileName": "None",
+      "FileName": "Transparent.png",
       "HueAdjust": "0",
       "Character": "W"
-    },
-    {
-
     }
   ]
 }
