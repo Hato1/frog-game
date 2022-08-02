@@ -63,7 +63,7 @@ class SpiralingStacy(Ai):
 
 
 class TrickyTrent(Ai):
-    """Moves clockwise in a diamond"""
+    """Moves clockwise or anticlockwise in a diamond"""
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
@@ -74,6 +74,14 @@ class TrickyTrent(Ai):
                 return DOWN + LEFT, 3
             case 3:
                 return LEFT + UP, 0
+            case 4:
+                return RIGHT + DOWN, 5
+            case 5:
+                return UP + RIGHT, 6
+            case 6:
+                return LEFT + UP, 7
+            case 7:
+                return DOWN + LEFT, 4
         assert False
 
 
