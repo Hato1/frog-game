@@ -184,4 +184,4 @@ class Map():
         remaining_pairs = [(x, y) for x in range(num_creatures) for y in range(x+1, num_creatures)]
         while remaining_pairs != []:
             current_collision = remaining_pairs.pop()
-            collision_resolver(current_collision, remaining_pairs, new_map, collision_locs)
+            collision_resolver(current_collision, remaining_pairs, collision_pos, new_map, collision_locs)
