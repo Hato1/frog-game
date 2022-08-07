@@ -16,6 +16,7 @@ import time
 import logging
 
 from pathlib import Path
+
 from .game import Game
 from .map import Map
 from .entity import Creature
@@ -272,9 +273,15 @@ def guiloop(screen: pygame.surface.Surface) -> None:
             break
 
         # Resolve pending user inputs
-        while (event := pygame.event.poll()).type != pygame.NOEVENT:
+        # while (event := pygame.event.poll()).type != pygame.NOEVENT:
+        #     if process_event(event, game):
+        #         map_changed = True
+        #         break
+
+        for event in pygame.event.get():
             if process_event(event, game):
                 map_changed = True
+                # Prevent skipping of movement animations
                 break
 
     # Player dead
