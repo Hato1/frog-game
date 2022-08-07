@@ -275,6 +275,7 @@ def guiloop(screen: pygame.surface.Surface) -> None:
         for event in pygame.event.get():
             if process_event(event, game):
                 map_changed = True
+                break
 
     # Player dead
     magic_number = 0

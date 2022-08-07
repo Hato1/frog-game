@@ -5,7 +5,7 @@ from pathlib import Path
 from multimethod import multimethod
 from typing import Iterator, Optional
 from .helper import Point
-
+from .collision_resolver import collision_resolver
 
 class Map():
     def __init__(self, map_file: Optional[Path]) -> None:
@@ -14,8 +14,13 @@ class Map():
             self.map = self._read_map(map_file)
         else:
             self.map = []
+        self.player_alive: bool = True
 
-    def update_creatures(self) -> bool:
+    def is_player_dead(self) -> bool:
+        """ See name. This is redundant probably"""
+        return not self.player_alive
+
+    def update_creatures(self) -> None:
         """
         Update all Creatures using move_object
         Run conflict resolver
@@ -28,15 +33,16 @@ class Map():
                     new_pos = entity.get_next_move(pos, self.map)
                     assert self.in_map(new_pos), f"{entity.name} Cheated!"
                     moves_made.append([entity, pos, new_pos])
+
+                    # This moves the man
                     for i in range(len(new_map[pos]))[::-1]:
-                        y = new_map[pos]
-                        x = y[i]
-                        if x.id == entity.id:
+                        newentitylist = new_map[pos]
+                        entitytomove = newentitylist[i]
+                        if entitytomove.id == entity.id:
                             new_map[pos].pop(i)
                     new_map[new_pos].append(entity)
-        self.map = new_map.map
-        was_player_killed = self._collision_detector()
-        return was_player_killed
+        self._collision_detector(new_map, moves_made)
+        return
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -159,39 +165,23 @@ class Map():
                         pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
         return pre_map
 
-    def _collision_detector(self) -> bool:
-        was_player_killed = False
-        proposed_map = self.copy()
-        settling_collisions = True
-        while settling_collisions:
-            settling_collisions = False
-            for pos, entities in self._iterate():
-                creatures = [e for e in entities if type(e) == Creature]
-                if len(creatures) > 1:
-                    was_player_killed = was_player_killed | self._conflict_resolver(
-                                                                pos,
-                                                                creatures,
-                                                                proposed_map)
-                    # This should be uncommented, but my hacky player fixes stop me.
-                    # As a result, each tile only gets one iteration of resolving.
-                    # This would be a problem if the resolving of a tile affected the
-                    # contents of a tile that had previously been resolved.
-                    # settling_collisions = True
-            self.map = proposed_map.map
-        return was_player_killed
+    def _collision_detector(self, new_map: Map, moves_made: list) -> None:
+        """calls collision_sorter on all tiles untill no conflicts are reported"""
+        #proposed_map = self.copy()
+        collision_locs = [(x, y) for x in range(self.get_nrows()) for y in range(self.get_ncols())]
+        while collision_locs != []:
+            # This is bad, and only runs one pass of conflict resolution
+            collision_pos = collision_locs.pop(0)
+            self._collision_sorter(collision_pos, new_map, collision_locs)
+        self.map = new_map.map
 
-    def _conflict_resolver(self, pos: tuple, creatures: list, new_map: Map) -> bool:
-        # Update the conflicting square
-        # ToDo: Creatures with duplicate names break this
-        was_player_killed = False
+    def _collision_sorter(self, collision_pos: tuple, new_map: Map, collision_locs: list) -> None:
+        """sorts conflicts on the given tile, calls collision_resolver for each* """
+        creatures = new_map[collision_pos]
         num_creatures = len(creatures)
-        names = {str(creature): creature for creature in creatures}
-        if "Player" in names:
-            # Always keep player alive so we know where to center screen. :S
-            # Just don't let gui draw missing player
-            # new_map[pos[0]][pos[1]].remove(names["Player"])
-            num_creatures -= 1
-            was_player_killed = True
-
-        # assert num_creatures <= 1
-        return was_player_killed
+        if num_creatures < 2:
+            return
+        remaining_pairs = [(x, y) for x in range(num_creatures) for y in range(x+1, num_creatures)]
+        while remaining_pairs != []:
+            current_collision = remaining_pairs.pop()
+            collision_resolver(current_collision, remaining_pairs, new_map, collision_locs)
