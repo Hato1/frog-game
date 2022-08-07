@@ -21,7 +21,7 @@ from .game import Game
 from .map import Map
 from .entity import Creature
 from copy import copy
-from .helper import UP, LEFT, RIGHT, DOWN
+from .helper import UP, LEFT, RIGHT, DOWN, Benchmark
 from .gui_helper import get_sprite_box, assets, parse_assets
 
 # Asset tile size
@@ -31,7 +31,10 @@ WINDOW_COLUMNS = 16
 ANIMATIONS = True
 
 # Enable to print frametimes to console.
+# TODO: Make this a commandline argument
 BENCHMARK = False
+if BENCHMARK:
+    benchmark = Benchmark()
 
 pygame.init()
 logging.basicConfig(level=1, format='')
@@ -146,7 +149,7 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     return basemap
 
 
-def make_current_frame(c_map: Map, basemap: pygame.Surface, frame: int) -> pygame.Surface:
+def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
     # for row in range(c_map.get_nrows()):
@@ -156,7 +159,7 @@ def make_current_frame(c_map: Map, basemap: pygame.Surface, frame: int) -> pygam
     # animation_stage = random.choice([0, 2, 3])
     for pos, entities in c_map._iterate():
         for entity in entities:
-            if entity.name == "Player" and not c_map.is_player_alive():
+            if entity.name == "Player" and not draw_player:
                 continue
             sprite = assets[entity.name]
             sprite_index = (0, 0)
@@ -222,69 +225,15 @@ def pan_screen(
         pygame.time.wait(20)
 
 
-def guiloop(screen: pygame.surface.Surface) -> None:
-    last_frame_time = pygame.time.get_ticks()
-    old_time = pygame.time.get_ticks()
-    now = old_time
-    game = Game()
-    # Load the map. This will be a function when we have multiple maps to go between.
-    c_map = game.get_map()
-    froglocation = game.get_player_pos()
-    basemap = make_basemap(c_map)
-    current_map = None
-    map_changed = True
-    frame = 0
-    while True:
-        if BENCHMARK:
-            difference = -old_time + (old_time := pygame.time.get_ticks())
-            logging.debug(msg=difference)
-        # Update game
-        # Set max fps to 30 (33ms).
-        if map_changed or (now := pygame.time.get_ticks()) - last_frame_time > 750:
-            last_frame_time = now
-            frame += 1
-            new_map = game.get_map()
-            current_frame = make_current_frame(new_map, copy(basemap), frame)
-            new_froglocation = game.get_player_pos()
-
-            # Could boost fps by multiprocessing collision alongside the animation?
-            if ANIMATIONS and froglocation != new_froglocation:
-                pan_screen(
-                    current_frame, screen, c_map, new_map, froglocation, new_froglocation
-                )
-
-        # find player (frog) and blit map around player
-        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
-        current_map = current_frame
-
-        pygame.display.flip()
-        map_changed = False
-
-        c_map = new_map
-        froglocation = new_froglocation
-
-        # This is incredibly ugly, needs rewrite.
-        # Have text fade in, possibly have buttons unresponsive
-        # for about 0.2 seconds so player doesn't skip death screen.
-        # darken background (current_map) so it's clear you can't interact.
-        # B&W filter instead of darken background?
-        # Sound effect here would be great!
-        if not game.is_player_alive():
-            break
-
-        # Resolve pending user inputs
-        # while (event := pygame.event.poll()).type != pygame.NOEVENT:
-        #     if process_event(event, game):
-        #         map_changed = True
-        #         break
-
-        for event in pygame.event.get():
-            if process_event(event, game):
-                map_changed = True
-                # Prevent skipping of movement animations
-                break
-
+def play_death_animation(screen: pygame.surface.Surface, current_frame: pygame.surface.Surface, new_froglocation: tuple) -> None:
     # Player dead
+
+    # This is incredibly ugly, needs rewrite.
+    # Have text fade in, possibly have buttons unresponsive
+    # for about 0.2 seconds so player doesn't skip death screen.
+    # darken background (current_map) so it's clear you can't interact.
+    # B&W filter instead of darken background?
+    # Sound effect here would be great!
     magic_number = 0
     while True:
         pygame.time.delay(50)
@@ -311,7 +260,7 @@ def guiloop(screen: pygame.surface.Surface) -> None:
 
         white = pygame.Surface(screen.get_size())
 
-        screen.blit(current_map, (0, 0), get_disp(*new_froglocation))
+        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
 
         white.set_alpha(min((magic_number*3 - 100), 200))
         screen.blit(white, (0, 0))
@@ -325,6 +274,50 @@ def guiloop(screen: pygame.surface.Surface) -> None:
             if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
                 return
         magic_number += 1
+
+
+def guiloop(screen: pygame.surface.Surface) -> None:
+    last_frame_time = pygame.time.get_ticks()
+    now = pygame.time.get_ticks()
+    game = Game()
+    # Load the map. This will be a function when we have multiple maps to go between.
+    c_map = game.get_map()
+    froglocation = game.get_player_pos()
+    basemap = make_basemap(c_map)
+    map_changed = True
+    frame_count = 0
+
+    # Game loop
+    while True:
+        if BENCHMARK:
+            benchmark.log_time_delta()
+
+        # Update game
+        # Set max fps to 30 (33ms).
+        if map_changed or (now := pygame.time.get_ticks()) - last_frame_time > 750:
+            last_frame_time = now
+            frame_count += 1
+            new_map = game.get_map()
+            frame = draw_map(new_map, copy(basemap), game.is_player_alive(), frame_count)
+            new_froglocation = game.get_player_pos()
+            if ANIMATIONS and froglocation != new_froglocation:
+                pan_screen(frame, screen, c_map, new_map, froglocation, new_froglocation)
+            screen.blit(frame, (0, 0), get_disp(*new_froglocation))
+            pygame.display.flip()
+
+            map_changed = False
+            c_map = new_map
+            froglocation = new_froglocation
+            if not game.is_player_alive():
+                break
+
+        # Process Input
+        for event in pygame.event.get():
+            if process_event(event, game):
+                map_changed = True
+                # Prevent skipping of movement animations
+                break
+    play_death_animation(screen, frame, new_froglocation)
 
 
 def main() -> None:

@@ -3,8 +3,21 @@ from __future__ import annotations
 # import pygame
 # from gui_helper import get_dims
 from typing import NamedTuple
+import logging
+import pygame as pg
 
 TSIZE = 25
+
+
+class Benchmark():
+    def __init__(self) -> None:
+        self.time = pg.time.get_ticks()
+
+    def log_time_delta(self) -> None:
+        new_time = pg.time.get_ticks()
+        difference = new_time - self.time
+        self.time = new_time
+        logging.debug(msg=difference)
 
 
 def add_tuple(x: tuple, y: tuple) -> tuple:
