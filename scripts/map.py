@@ -9,16 +9,12 @@ from .collision_resolver import collision_resolver
 
 class Map():
     def __init__(self, map_file: Optional[Path]) -> None:
+        self.player = Creature("Player")
         # Map is structured as map[row][col][object]
         if map_file:
             self.map = self._read_map(map_file)
         else:
             self.map = []
-        self.player_alive: bool = True
-
-    def is_player_dead(self) -> bool:
-        """ See name. This is redundant probably"""
-        return not self.player_alive
 
     def update_creatures(self) -> None:
         """
@@ -41,8 +37,9 @@ class Map():
                         if entitytomove.id == entity.id:
                             new_map[pos].pop(i)
                     new_map[new_pos].append(entity)
+                    entity.position = new_pos
         self._collision_detector(new_map, moves_made)
-        return
+        self.map = new_map.map
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -96,6 +93,9 @@ class Map():
         """Get the number of cols"""
         return self.get_ncols()
 
+    def is_player_alive(self) -> bool:
+        return self.player.alive
+
     @multimethod
     def __getitem__(self, index: int) -> list[list]:
         """Index into map with an int"""
@@ -147,7 +147,8 @@ class Map():
                         continue
                     pre_map[-1].append([])
                     if col == "P":
-                        pre_map[-1][-1].append(Creature("Player"))
+                        pre_map[-1][-1].append(self.player)
+                        self.player.position = Point(len(pre_map)-1, len(pre_map[-1])-1)
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
                     elif col == "G":
@@ -173,7 +174,6 @@ class Map():
             # This is bad, and only runs one pass of conflict resolution
             collision_pos = collision_locs.pop(0)
             self._collision_sorter(collision_pos, new_map, collision_locs)
-        self.map = new_map.map
 
     def _collision_sorter(self, collision_pos: tuple, new_map: Map, collision_locs: list) -> None:
         """sorts conflicts on the given tile, calls collision_resolver for each* """
