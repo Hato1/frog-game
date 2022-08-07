@@ -20,7 +20,8 @@ class Entity():
         self,
         name: str,
         solid: bool = False,
-        direction: int = UP
+        direction: int = UP,
+        position: Point = Point(-1, -1)
     ) -> None:
         """
         Args:
@@ -32,6 +33,7 @@ class Entity():
         self.name = name
         self.solid = solid
         self.direction = direction
+        self.position = position
 
     def __str__(self) -> str:
         return self.name
@@ -43,17 +45,19 @@ class Creature(Entity):
         self,
         name: str,
         strategy: str = "DeadDoug",
-        direction: int = UP
+        direction: int = UP,
+        position: Point = Point(-1, -1)
     ) -> None:
         """
         Args:
             strategy: name of creature AI, decides the creatures movement pattern
             direction: which way the creature is initially facing"""
+        self.alive = True
         self.state = 0
         self.strategy = AI_DICT[strategy]()
         # Can be used to force creatures next move, ignoring their strategy.
         self.next_move: Optional[Vector] = None
-        super(Creature, self).__init__(name, False, direction)
+        super(Creature, self).__init__(name, False, direction, position)
 
     def get_next_move(self, position: Point, _map: list) -> Point:
         if self.next_move:
