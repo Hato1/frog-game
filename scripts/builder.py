@@ -66,6 +66,11 @@ Window = pygame.display.set_mode((Width*NewRes, Height*NewRes + NewRes))
 
 def drawscreen(maplist: list, top: int, left: int, zoom: int):
     """Loop through Screen and blit tiles"""
+    pygame.draw.rect(
+        Window,
+        (20, 20, 20),
+        pygame.Rect(0,0,Width*SpriteRes*WindowScale,(Height+1)*SpriteRes*WindowScale)
+    )
 
     for i in range(math.ceil(Width*(WindowScale/zoom))):
         for j in range((1+WindowScale-Zoom)+math.ceil(Height*(WindowScale/zoom))):
@@ -150,9 +155,8 @@ while True:
             if event.button == pygame.BUTTON_LEFT:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height*NewRes:
-                    # append the selected character to the end of Data at the correct row and column index
                     ind = clickedindex(Click, CamPos)
-
+                    Data[ind[1]][ind[0]] += AllChar[SelectedTile]
                     print(ind)
                     writemap(Data)
 
@@ -162,7 +166,8 @@ while True:
             if event.button == pygame.BUTTON_RIGHT:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height * NewRes:
-                    # append the selected character to the end of Data at the correct row and column index
+                    ind = clickedindex(Click, CamPos)
+                    Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
                     writemap(Data)
 
         if event.type == pygame.MOUSEWHEEL and int(round(time.time() * 1000)) > debounce:
