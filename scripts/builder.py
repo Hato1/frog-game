@@ -9,8 +9,7 @@ import time
 Width = 16
 Height = 9
 Zoom = 2
-Left = 0
-Top = 0
+CamPos = [0, 0]
 SpriteRes = 25
 WindowScale = 3
 NewRes = SpriteRes*WindowScale
@@ -24,7 +23,9 @@ MapFile = open("../maps/Map1.csv")
 # read map files
 MetaData = json.load(MFile)
 Map = csv.reader(MapFile)
-data = list(Map)
+Data = list(Map)
+MapFile.close()
+MapDims = [Data[1].__len__(), Data.__len__()]
 
 # Extract metadata info we want
 Tiles = []
@@ -58,7 +59,7 @@ def cellinterp(cell: str) -> list:
     return sprites2blit
 
 
-BaseMaplist = [[cellinterp(cell) for cell in row] for row in data]
+BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
 
 Window = pygame.display.set_mode((Width*NewRes, Height*NewRes + NewRes))
 
@@ -105,8 +106,29 @@ def selecttile(click: tuple) -> int:
     return tileindex
 
 
-drawscreen(BaseMaplist, Top, Left, Zoom)
+def clickedindex(click: tuple, campos: list) -> tuple:
+    """return the row and column of the clicked tile"""
+    index = list()
+    for i in range(click.__len__()):
+        index.append(
+            (math.floor(click[i]/(SpriteRes*Zoom))+campos[i]) % MapDims[i]
+        )
+    return tuple(index)
+
+
+drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
 pygame.display.flip()
+
+
+def writemap(dat: list):
+    file = open("../maps/map1.csv", "w", newline='')
+    mapwriter = csv.writer(file)
+    for row in dat:
+        mapwriter.writerow(row)
+    file.close()
+
+
+writemap(Data)
 
 while True:
     for event in pygame.event.get():
@@ -116,29 +138,32 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
-                Top = Top - 1
+                CamPos[1] = CamPos[1] - 1
             if event.key == pygame.K_DOWN:
-                Top = Top + 1
+                CamPos[1] = CamPos[1] + 1
             if event.key == pygame.K_LEFT:
-                Left = Left - 1
+                CamPos[0] = CamPos[0] - 1
             if event.key == pygame.K_RIGHT:
-                Left = Left + 1
+                CamPos[0] = CamPos[0] + 1
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == pygame.BUTTON_LEFT:
                 Click = pygame.mouse.get_pos()
-                print(Click)
                 if Click[1] < Height*NewRes:
-                    print("Place")
+                    # append the selected character to the end of Data at the correct row and column index
+                    ind = clickedindex(Click, CamPos)
+
+                    print(ind)
+                    writemap(Data)
 
                 if Height*NewRes+SpriteRes < Click[1] < Height*NewRes+(2 * SpriteRes):
-                    print("select")
                     SelectedTile = selecttile(Click)
 
             if event.button == pygame.BUTTON_RIGHT:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height * NewRes:
-                    print("Remove")
+                    # append the selected character to the end of Data at the correct row and column index
+                    writemap(Data)
 
         if event.type == pygame.MOUSEWHEEL and int(round(time.time() * 1000)) > debounce:
             debounce = int(round(time.time() * 1000)) + 150
@@ -146,7 +171,6 @@ while True:
             Zoom = 1 if Zoom < 1 else Zoom
             Zoom = WindowScale if Zoom > WindowScale else Zoom
 
-        BaseMaplist = [[cellinterp(cell) for cell in row] for row in data]
-        drawscreen(BaseMaplist, Top, Left, Zoom)
+        BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
+        drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
         pygame.display.flip()
-
