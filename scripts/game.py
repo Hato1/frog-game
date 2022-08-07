@@ -36,10 +36,11 @@ class Game():
         player.next_move = direction
 
         # Update all creatures (including player!)
-        player_killed = self.map.update_creatures()
-        if player_killed:
-            self.player = False
+        self.map.update_creatures()
 
+        #if self.map.is_player_dead():
+        #    self.player = False
+        self.player = self.map.player_alive
         return True
 
     def _update_game(self) -> None:

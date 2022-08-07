@@ -19,7 +19,7 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
     """Get the box of a sprite from spritesheet"""
     return (row * 25, col * 25, 25, 25)
 
-
+# Pull this from .json
 assets = {
     "Player": pg.image.load("assets/Frog.png"),
     "Barrel": pg.image.load("assets/Barrel.png"),
