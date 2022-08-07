@@ -54,9 +54,9 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
         if event.key == pygame.K_q:
             sys.exit()
         if event.key == pygame.K_r:
-            game.player = False
+            game.kill_player()
 
-        if game.player:
+        if game.is_player_alive():
             if event.key in [pygame.K_w, pygame.K_UP]:
                 return game.move(UP)
             elif event.key in [pygame.K_a, pygame.K_LEFT]:
@@ -145,17 +145,17 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     return basemap
 
 
-def make_current_frame(c_map: Map, basemap: pygame.Surface, player_alive: bool, frame: int) -> pygame.Surface:
+def make_current_frame(c_map: Map, basemap: pygame.Surface, frame: int) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
     # for row in range(c_map.get_nrows()):
     #     for col in range(c_map.get_ncols()):
     #         for entity in c_map[row][col]:
     animation_stage = [0, 2, 3][(frame) % 3]
-    #animation_stage = random.choice([0, 2, 3])
+    # animation_stage = random.choice([0, 2, 3])
     for pos, entities in c_map._iterate():
         for entity in entities:
-            if not player_alive and entity.name == "Player":
+            if entity.name == "Player" and not c_map.is_player_alive():
                 continue
             sprite = assets[entity.name]
             sprite_index = (0, 0)
@@ -228,7 +228,7 @@ def guiloop(screen: pygame.surface.Surface) -> None:
     game = Game()
     # Load the map. This will be a function when we have multiple maps to go between.
     c_map = game.get_map()
-    froglocation, null = c_map.find_object("Player")
+    froglocation = game.get_player_pos()
     basemap = make_basemap(c_map)
     current_map = None
     map_changed = True
@@ -243,8 +243,8 @@ def guiloop(screen: pygame.surface.Surface) -> None:
             last_frame_time = now
             frame += 1
             new_map = game.get_map()
-            current_frame = make_current_frame(new_map, copy(basemap), game.player, frame)
-            new_froglocation, null = new_map.find_object("Player")
+            current_frame = make_current_frame(new_map, copy(basemap), frame)
+            new_froglocation = game.get_player_pos()
 
             # Could boost fps by multiprocessing collision alongside the animation?
             if ANIMATIONS and froglocation != new_froglocation:
@@ -268,13 +268,14 @@ def guiloop(screen: pygame.surface.Surface) -> None:
         # darken background (current_map) so it's clear you can't interact.
         # B&W filter instead of darken background?
         # Sound effect here would be great!
-        if not game.player:
+        if not game.is_player_alive():
             break
 
         # Resolve pending user inputs
-        for event in pygame.event.get():
+        while (event := pygame.event.poll()).type != pygame.NOEVENT:
             if process_event(event, game):
                 map_changed = True
+                break
 
     # Player dead
     magic_number = 0
