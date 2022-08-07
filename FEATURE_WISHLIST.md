@@ -4,6 +4,8 @@ Collision resolver
 
 Step limit before death.
 
+Sound
+
 Boost fps. Hitting 14 while idle, and as low as 3 when spamming. Multiprocessing?
 
 Animations that animate instead of teleport. (sliding frogs)
