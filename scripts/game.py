@@ -7,7 +7,7 @@ from .helper import Vector, Point
 class Game():
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map5"))
+        self.map = Map(Path("maps/map3"))
         # ToDo: Load a player save file for any persistent items/preferences
 
     def move(self, direction: Vector) -> bool:
