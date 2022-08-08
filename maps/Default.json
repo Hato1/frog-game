@@ -1,5 +1,5 @@
 {
-  "MapSize": "[32,32]",
+  "MapSize": [30,29],
   "Tiles": [
     {
       "level": "Dirt",
@@ -57,11 +57,12 @@
       "Character": "B"
     },
     {
-      "Name" : "Wall",
+      "Name" : "InvisWall",
       "AI": "None",
       "FileName": "Transparent.png",
       "HueAdjust": "0",
       "Character": "W"
     }
+
   ]
 }

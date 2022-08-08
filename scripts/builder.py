@@ -6,6 +6,7 @@ import csv
 import math
 import time
 
+# Declare default values
 Width = 16
 Height = 9
 Zoom = 2
@@ -17,15 +18,34 @@ debounce = int(round(time.time() * 1000))
 SelectedTile = 0
 
 # import map files
-MFile = open("../maps/Default.json")
-MapFile = open("../maps/Map1.csv")
+MFile = open("../maps/Default.json")  # Metadata Jason File
+MapFile = open("../maps/Map1.csv")  # Map CSV File
 
 # read map files
 MetaData = json.load(MFile)
 Map = csv.reader(MapFile)
 Data = list(Map)
 MapFile.close()
-MapDims = [Data[1].__len__(), Data.__len__()]
+MapDims = MetaData['MapSize']
+
+
+# Incert or remove row until matches row number specified in CSV
+diff = MapDims[1] - len(Data)
+if diff < 0:
+    Data = Data[:diff]
+if diff > 0:
+    for i in range(diff):
+        Data.append(list())
+
+# ensure each list matchs the length
+for row in Data:
+    diff = MapDims[0] - len(row)
+    if diff < 0:
+        for dummy_i in range(-diff):
+            row.pop()
+    if diff > 0:
+        dummy = [""] * diff
+        row.extend(dummy)
 
 # Extract metadata info we want
 Tiles = []
@@ -36,6 +56,7 @@ for TileDict in MetaData['Tiles']:
     Tiles.append(pygame.image.load(AssetPath))
     TileChar.append(TileDict["Character"])
 
+TileType = [0] * len(TileChar)
 Ents = []
 EntChar = []
 
@@ -44,8 +65,18 @@ for EntDict in MetaData['Entities']:
     Ents.append(pygame.image.load(AssetPath))
     EntChar.append(EntDict["Character"])
 
+EntType = [1] * len(EntChar)
+
 All = Tiles + Ents
 AllChar = TileChar + EntChar
+AllType = TileType + EntType
+
+
+def amendtransparent(surf: pygame.Surface) -> pygame.Surface:
+    alpha = pygame.transform.average_color(surf.convert_alpha())
+    if alpha[-1] == 0:
+        surf = pygame.image.load("../assets/TransparentME.png")
+    return surf
 
 
 def cellinterp(cell: str) -> list:
@@ -53,35 +84,34 @@ def cellinterp(cell: str) -> list:
     sprites2blit = []
     for ch in cell:
         index = AllChar.index(ch)
-        # make sure state characters done make problems
 
         sprites2blit.append(All[index])
     return sprites2blit
 
 
-BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
-
-Window = pygame.display.set_mode((Width*NewRes, Height*NewRes + NewRes))
-
-
 def drawscreen(maplist: list, top: int, left: int, zoom: int):
     """Loop through Screen and blit tiles"""
+    # Draw a grey rectangle over all screen to blank
     pygame.draw.rect(
         Window,
         (20, 20, 20),
-        pygame.Rect(0,0,Width*SpriteRes*WindowScale,(Height+1)*SpriteRes*WindowScale)
+        pygame.Rect(0, 0, Width*SpriteRes*WindowScale, (Height+1)*SpriteRes*WindowScale)
     )
 
-    for i in range(math.ceil(Width*(WindowScale/zoom))):
-        for j in range((1+WindowScale-Zoom)+math.ceil(Height*(WindowScale/zoom))):
-            tile = maplist[(j + top) % maplist.__len__()][(i + left) % maplist[1].__len__()]
-            for surf in tile:
-                w, h = surf.get_size()
-                Window.blit(
-                    pygame.transform.scale(surf, (zoom*w, zoom*h)),
-                    (i*SpriteRes*zoom, j*SpriteRes*zoom),
-                    (0, 0, SpriteRes*zoom, SpriteRes*zoom)
-                )
+    # loop over every tile on display in  the map and blit sprite
+    for i2 in range(math.ceil(Width*(WindowScale/zoom))):
+        if -1 < i2 + left < len(maplist[1]):  # only run if in range
+            for j in range((1+WindowScale-Zoom)+math.ceil(Height*(WindowScale/zoom))):
+                if -1 < j + top < len(maplist):  # only run if in range
+                    tile = maplist[(j + top) % len(maplist)][(i2 + left) % len(maplist[1])]
+                    for surf in tile:
+                        w, h = surf.get_size()
+                        Window.blit(
+                            pygame.transform.scale(surf, (zoom*w, zoom*h)),
+                            (i2*SpriteRes*zoom, j*SpriteRes*zoom),
+                            (0, 0, SpriteRes*zoom, SpriteRes*zoom)
+                        )
+
     # Draw a black rectange for sprite options to sit on
     pygame.draw.rect(
         Window,
@@ -114,28 +144,36 @@ def selecttile(click: tuple) -> int:
 def clickedindex(click: tuple, campos: list) -> tuple:
     """return the row and column of the clicked tile"""
     index = list()
-    for i in range(click.__len__()):
+    for i1 in range(len(click)):
         index.append(
-            (math.floor(click[i]/(SpriteRes*Zoom))+campos[i]) % MapDims[i]
+            (math.floor(click[i1]/(SpriteRes*Zoom))+campos[i1]) % MapDims[i1]
         )
     return tuple(index)
-
-
-drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
-pygame.display.flip()
 
 
 def writemap(dat: list):
     file = open("../maps/map1.csv", "w", newline='')
     mapwriter = csv.writer(file)
-    for row in dat:
-        mapwriter.writerow(row)
+    for rows in dat:
+        mapwriter.writerow(rows)
     file.close()
 
+
+BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
+
+Window = pygame.display.set_mode((Width*NewRes, Height*NewRes + NewRes))
+
+for i3 in range(len(All)):
+    All[i3] = amendtransparent(All[i3])
+
+drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+
+pygame.display.flip()
 
 writemap(Data)
 
 while True:
+    frametime = time.time()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -167,7 +205,8 @@ while True:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height * NewRes:
                     ind = clickedindex(Click, CamPos)
-                    Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
+                    if len(Data[ind[1]][ind[0]]) > 0:
+                        Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
                     writemap(Data)
 
         if event.type == pygame.MOUSEWHEEL and int(round(time.time() * 1000)) > debounce:
@@ -179,3 +218,6 @@ while True:
         BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
         drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
         pygame.display.flip()
+
+    if frametime + 0.01 > time.time():
+        time.sleep((frametime - time.time()) + 0.05)
