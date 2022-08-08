@@ -44,7 +44,7 @@ for row in Data:
         for dummy_i in range(-diff):
             row.pop()
     if diff > 0:
-        dummy = [""] * diff
+        dummy = ["S"] * diff
         row.extend(dummy)
 
 # Extract metadata info we want
@@ -194,8 +194,13 @@ while True:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height*NewRes:
                     ind = clickedindex(Click, CamPos)
-                    Data[ind[1]][ind[0]] += AllChar[SelectedTile]
-                    print(ind)
+                    # check what is selected if background write over current tile
+                    if AllType[SelectedTile] == 1:
+                        Data[ind[1]][ind[0]] += AllChar[SelectedTile]
+                    if AllType[SelectedTile] == 0:
+                        liststr = list(Data[ind[1]][ind[0]])
+                        liststr[0] = AllChar[SelectedTile]
+                        Data[ind[1]][ind[0]] = ''.join(liststr)
                     writemap(Data)
 
                 if Height*NewRes+SpriteRes < Click[1] < Height*NewRes+(2 * SpriteRes):
@@ -205,7 +210,7 @@ while True:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height * NewRes:
                     ind = clickedindex(Click, CamPos)
-                    if len(Data[ind[1]][ind[0]]) > 0:
+                    if len(Data[ind[1]][ind[0]]) > 1:
                         Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
                     writemap(Data)
 
