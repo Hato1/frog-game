@@ -5,6 +5,7 @@ import pygame
 import csv
 import math
 import time
+import pickle
 
 # Declare default values
 Width = 16
@@ -16,6 +17,8 @@ WindowScale = 3
 NewRes = SpriteRes*WindowScale
 debounce = int(round(time.time() * 1000))
 SelectedTile = 0
+Saved1 = True
+counter1 = 0
 
 # import map files
 MFile = open("../maps/Default.json")  # Metadata Jason File
@@ -151,12 +154,17 @@ def clickedindex(click: tuple, campos: list) -> tuple:
     return tuple(index)
 
 
-def writemap(dat: list):
+def writemapcsv(dat: list):
     file = open("../maps/map1.csv", "w", newline='')
     mapwriter = csv.writer(file)
     for rows in dat:
         mapwriter.writerow(rows)
     file.close()
+
+
+def writemappickle(dat: list):
+    file = open("../maps/map1.map", "wb")
+    pickle.dump(dat, file)
 
 
 BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
@@ -170,10 +178,9 @@ drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
 
 pygame.display.flip()
 
-writemap(Data)
+writemapcsv(Data)
 
 while True:
-    frametime = time.time()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -190,6 +197,7 @@ while True:
                 CamPos[0] = CamPos[0] + 1
 
         if event.type == pygame.MOUSEBUTTONDOWN:
+            Saved1 = False
             if event.button == pygame.BUTTON_LEFT:
                 Click = pygame.mouse.get_pos()
                 if Click[1] < Height*NewRes:
@@ -201,7 +209,6 @@ while True:
                         liststr = list(Data[ind[1]][ind[0]])
                         liststr[0] = AllChar[SelectedTile]
                         Data[ind[1]][ind[0]] = ''.join(liststr)
-                    writemap(Data)
 
                 if Height*NewRes+SpriteRes < Click[1] < Height*NewRes+(2 * SpriteRes):
                     SelectedTile = selecttile(Click)
@@ -212,7 +219,6 @@ while True:
                     ind = clickedindex(Click, CamPos)
                     if len(Data[ind[1]][ind[0]]) > 1:
                         Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
-                    writemap(Data)
 
         if event.type == pygame.MOUSEWHEEL and int(round(time.time() * 1000)) > debounce:
             debounce = int(round(time.time() * 1000)) + 150
@@ -224,5 +230,15 @@ while True:
         drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
         pygame.display.flip()
 
-    if frametime + 0.01 > time.time():
-        time.sleep((frametime - time.time()) + 0.05)
+    if Saved1 is False:
+        counter1 = 0
+        Saved1 = True
+
+    counter1 = counter1 + 1
+
+    if counter1 is 40:
+        writemapcsv(Data)
+        writemappickle(Data)
+        print("Saved")
+
+    time.sleep(0.05)
