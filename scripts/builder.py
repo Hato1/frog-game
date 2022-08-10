@@ -53,7 +53,7 @@ for row in Data:
         row = row[:diff]
     if diff > 0:
         for i in range(diff):
-            row.extend([[["Stone", 0]]])
+            row.extend([[["Stone"]]])
 
 # Extract metadata info we want
 Tiles = []
@@ -233,6 +233,9 @@ while True:
 
     if counter1 == 10:
         writemappickle(Data)
+        f = open("test.txt", "w")
+        json.dump(Data, f)
+        f.close()
         print("Saved")
 
     time.sleep(0.05)
