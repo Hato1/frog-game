@@ -2,7 +2,6 @@
 
 import json
 import pygame
-import csv
 import math
 import time
 import pickle
@@ -22,12 +21,12 @@ counter1 = 0
 
 # import map files
 MFile = open("../maps/Default.json")  # Metadata Jason File
-MapFile = open("../maps/Map1.csv")  # Map CSV File
+MapFile = open("../maps/Map1.map", "rb")  # Map CSV File
 
-# read map files
+# read map files from pickle
 MetaData = json.load(MFile)
-Map = csv.reader(MapFile)
-Data = list(Map)
+Data = pickle.load(MapFile)
+
 MapFile.close()
 MapDims = MetaData['MapSize']
 
@@ -154,14 +153,6 @@ def clickedindex(click: tuple, campos: list) -> tuple:
     return tuple(index)
 
 
-def writemapcsv(dat: list):
-    file = open("../maps/map1.csv", "w", newline='')
-    mapwriter = csv.writer(file)
-    for rows in dat:
-        mapwriter.writerow(rows)
-    file.close()
-
-
 def writemappickle(dat: list):
     file = open("../maps/map1.map", "wb")
     pickle.dump(dat, file)
@@ -177,8 +168,6 @@ for i3 in range(len(All)):
 drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
 
 pygame.display.flip()
-
-writemapcsv(Data)
 
 while True:
     for event in pygame.event.get():
@@ -237,7 +226,6 @@ while True:
     counter1 = counter1 + 1
 
     if counter1 is 40:
-        writemapcsv(Data)
         writemappickle(Data)
         print("Saved")
 
