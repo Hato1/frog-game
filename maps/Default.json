@@ -4,20 +4,17 @@
     {
       "level": "Dirt",
       "FileName": "dirt.png",
-      "HueAdjust": "-100",
-      "Character": "D"
+      "HueAdjust": "0"
     },
     {
       "level": "Grass",
       "FileName": "Grass.png",
-      "HueAdjust": "0",
-      "Character": "G"
+      "HueAdjust": "0"
     },
     {
       "level": "Stone",
       "FileName": "Stone.png",
-      "HueAdjust": "50",
-      "Character": "S"
+      "HueAdjust": "0"
     }
   ],
   "Entities": [
@@ -25,43 +22,37 @@
       "Name" : "Player",
       "AI": "None",
       "FileName": "Frog.png",
-      "HueAdjust": "0",
-      "Character": "P"
+      "HueAdjust": "0"
     },
     {
       "Name" : "FrogR",
       "AI": "NormalNorman",
       "FileName": "FrogR.png",
-      "HueAdjust": "0",
-      "Character": "N"
+      "HueAdjust": "0"
     },
     {
       "Name" : "FrogY",
       "AI": "SpiralingStacy",
       "FileName": "FrogY.png",
-      "HueAdjust": "0",
-      "Character": "Y"
+      "HueAdjust": "0"
     },
     {
       "Name" : "FrogP",
       "AI": "TrickyTrent",
       "FileName": "FrogP.png",
-      "HueAdjust": "0",
-      "Character": "T"
+      "HueAdjust": "0"
     },
     {
       "Name" : "Barrel",
       "AI": "None",
       "FileName": "Barrel.png",
-      "HueAdjust": "0",
-      "Character": "B"
+      "HueAdjust": "0"
     },
     {
       "Name" : "InvisWall",
       "AI": "None",
       "FileName": "Transparent.png",
-      "HueAdjust": "0",
-      "Character": "W"
+      "HueAdjust": "0"
     }
 
   ]

@@ -19,17 +19,24 @@ SelectedTile = 0
 Saved1 = True
 counter1 = 0
 
+# select which map to edit
+FileName = "Map1"
+
 # import map files
 MFile = open("../maps/Default.json")  # Metadata Jason File
-MapFile = open("../maps/Map1.map", "rb")  # Map CSV File
+try:
+    MapFile = open("../maps/Map1.map", "rb")  # Map CSV File
+except FileNotFoundError:
+    Data = []
 
 # read map files from pickle
 MetaData = json.load(MFile)
-Data = pickle.load(MapFile)
-
-MapFile.close()
+try:
+    Data = pickle.load(MapFile)
+    MapFile.close()
+except NameError:
+    Data = []
 MapDims = MetaData['MapSize']
-
 
 # Incert or remove row until matches row number specified in CSV
 diff = MapDims[1] - len(Data)
@@ -43,34 +50,33 @@ if diff > 0:
 for row in Data:
     diff = MapDims[0] - len(row)
     if diff < 0:
-        for dummy_i in range(-diff):
-            row.pop()
+        row = row[:diff]
     if diff > 0:
-        dummy = ["S"] * diff
-        row.extend(dummy)
+        for i in range(diff):
+            row.extend([[["Stone", 0]]])
 
 # Extract metadata info we want
 Tiles = []
-TileChar = []
+TileName = []
 
 for TileDict in MetaData['Tiles']:
     AssetPath = "../assets/" + TileDict['FileName']
     Tiles.append(pygame.image.load(AssetPath))
-    TileChar.append(TileDict["Character"])
+    TileName.extend([TileDict['level']])
 
-TileType = [0] * len(TileChar)
+TileType = [0] * len(TileName)
 Ents = []
-EntChar = []
+EntName = []
 
 for EntDict in MetaData['Entities']:
     AssetPath = "../assets/" + EntDict['FileName']
     Ents.append(pygame.image.load(AssetPath))
-    EntChar.append(EntDict["Character"])
+    EntName.extend([EntDict['Name']])
 
-EntType = [1] * len(EntChar)
+EntType = [1] * len(EntName)
 
 All = Tiles + Ents
-AllChar = TileChar + EntChar
+AllName = TileName + EntName
 AllType = TileType + EntType
 
 
@@ -81,12 +87,11 @@ def amendtransparent(surf: pygame.Surface) -> pygame.Surface:
     return surf
 
 
-def cellinterp(cell: str) -> list:
+def cellinterp(cell: list) -> list:
     """Takes the string from each cell, returns list of sprites to blit"""
     sprites2blit = []
-    for ch in cell:
-        index = AllChar.index(ch)
-
+    for names in cell:
+        index = AllName.index(names[0])
         sprites2blit.append(All[index])
     return sprites2blit
 
@@ -100,13 +105,13 @@ def drawscreen(maplist: list, top: int, left: int, zoom: int):
         pygame.Rect(0, 0, Width*SpriteRes*WindowScale, (Height+1)*SpriteRes*WindowScale)
     )
 
-    # loop over every tile on display in  the map and blit sprite
+    # loop over every tile on display in the map and blit sprite
     for i2 in range(math.ceil(Width*(WindowScale/zoom))):
         if -1 < i2 + left < len(maplist[1]):  # only run if in range
             for j in range((1+WindowScale-Zoom)+math.ceil(Height*(WindowScale/zoom))):
                 if -1 < j + top < len(maplist):  # only run if in range
-                    tile = maplist[(j + top) % len(maplist)][(i2 + left) % len(maplist[1])]
-                    for surf in tile:
+                    tile1 = maplist[(j + top) % len(maplist)][(i2 + left) % len(maplist[1])]
+                    for surf in tile1:
                         w, h = surf.get_size()
                         Window.blit(
                             pygame.transform.scale(surf, (zoom*w, zoom*h)),
@@ -193,11 +198,12 @@ while True:
                     ind = clickedindex(Click, CamPos)
                     # check what is selected if background write over current tile
                     if AllType[SelectedTile] == 1:
-                        Data[ind[1]][ind[0]] += AllChar[SelectedTile]
+                        tile = list([AllName[SelectedTile]])
+                        Data[ind[1]][ind[0]].append(tile)
                     if AllType[SelectedTile] == 0:
                         liststr = list(Data[ind[1]][ind[0]])
-                        liststr[0] = AllChar[SelectedTile]
-                        Data[ind[1]][ind[0]] = ''.join(liststr)
+                        liststr[0] = list([AllName[SelectedTile]])
+                        Data[ind[1]][ind[0]] = liststr
 
                 if Height*NewRes+SpriteRes < Click[1] < Height*NewRes+(2 * SpriteRes):
                     SelectedTile = selecttile(Click)
@@ -207,7 +213,7 @@ while True:
                 if Click[1] < Height * NewRes:
                     ind = clickedindex(Click, CamPos)
                     if len(Data[ind[1]][ind[0]]) > 1:
-                        Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]].rstrip(Data[ind[1]][ind[0]][-1])
+                        Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]][:-1]
 
         if event.type == pygame.MOUSEWHEEL and int(round(time.time() * 1000)) > debounce:
             debounce = int(round(time.time() * 1000)) + 150
@@ -225,7 +231,7 @@ while True:
 
     counter1 = counter1 + 1
 
-    if counter1 is 40:
+    if counter1 == 10:
         writemappickle(Data)
         print("Saved")
 
