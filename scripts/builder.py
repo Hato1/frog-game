@@ -191,9 +191,12 @@ while True:
                 CamPos[0] = CamPos[0] + 1
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            Saved1 = False
+            Saved1 = False  # reset the save timer
+
             if event.button == pygame.BUTTON_LEFT:
                 Click = pygame.mouse.get_pos()
+
+                # change background (0) tile or add entitiy (1)
                 if Click[1] < Height*NewRes:
                     ind = clickedindex(Click, CamPos)
                     # check what is selected if background write over current tile
