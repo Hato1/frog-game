@@ -81,22 +81,21 @@ def coords_to_pixels(row: int, col: int) -> tuple:
 
 
 def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
-    """Get the window-sized box centering the coordinate
-
-    TODO: Clean this up for any window size.
-    """
+    """Get the window-sized box centering the coordinate"""
     # I think X and Y are backwards. Pygame implementation??
 
-    # Since this function is for working on the padded basemap,
-    # We should account for that. Need a better solution!
+    # To Center the box, we actually don't need to do anything.
+    # This is because the basemap is padded WINDOW_COLUMNS on the left
+    # and WINDOW_ROWS on the right. This is probably bad practise.
 
     # Not sure why the left edge has to be pushed 0.5
-    return (
+    out = (
         y * TSIZE + TSIZE//2,
         x * TSIZE,
-        y * TSIZE,
-        x * TSIZE,
+        WINDOW_COLUMNS * TSIZE,
+        WINDOW_ROWS * TSIZE,
     )
+    return out
 
 
 def make_basemap(c_map: Map) -> pygame.Surface:
@@ -260,7 +259,7 @@ def play_death_animation(screen: pygame.surface.Surface, current_frame: pygame.s
 
         white = pygame.Surface(screen.get_size())
 
-        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
+        screen.blit(current_frame, get_disp(*new_froglocation))
 
         white.set_alpha(min((magic_number*3 - 100), 200))
         screen.blit(white, (0, 0))
