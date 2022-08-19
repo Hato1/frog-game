@@ -88,7 +88,8 @@
       "Name" : "InvisWall",
       "AI": "None",
       "FileName": "Transparent.png",
-      "HueAdjust": "0"
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
     }
 
   ]
