@@ -9,7 +9,7 @@ import pygame as pg
 TSIZE = 25
 
 
-class Benchmark():
+class Benchmark:
     def __init__(self) -> None:
         self.time = pg.time.get_ticks()
 
@@ -38,9 +38,6 @@ class Vector(NamedTuple):
             return Vector(self.x-other[0], self.y-other[1])
         return NotImplemented
 
-    def __type__(self) -> type[tuple]:
-        return tuple
-
 
 class Point(NamedTuple):
     x: int
@@ -55,9 +52,6 @@ class Point(NamedTuple):
         if isinstance(other, Vector) or isinstance(other, Point):
             return Point(self.x-other[0], self.y-other[1])
         return NotImplemented
-
-    def __type__(self) -> type[tuple]:
-        return tuple
 
 
 UP, LEFT, DOWN, RIGHT, IDLE = Vector(-1, 0), Vector(0, -1), Vector(1, 0), Vector(0, 1), Vector(0, 0)

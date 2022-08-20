@@ -1,7 +1,7 @@
 from .helper import UP, LEFT, DOWN, RIGHT, IDLE, facing, Vector, Point
 
 
-class Ai():
+class Ai:
     def __init__(self, state: int = 0):
         self.state: int = state
 
@@ -11,10 +11,10 @@ class Ai():
 
     def make_move(self, position: Point, direction: int, _map: list) -> tuple[Point, int]:
         """Get next position and update state"""
-        move, newstate = self._get_move(position, _map)
+        move, new_state = self._get_move(position, _map)
         direction = facing(move, direction)
 
-        self.state = newstate
+        self.state = new_state
         return Point._make(position + move), direction
 
 
@@ -86,8 +86,8 @@ class TrickyTrent(Ai):
 
 
 class BarrelingBarrel(Ai):
-    """Moves not at all, up/down/left/right in state (0/1/2/3/4+) untill stat"""
-    def _get_move(self, position: Point, map: list) -> tuple[Vector, int]:
+    """Moves not at all, up/down/left/right in state (0/1/2/3/4+) until stat"""
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
                 return IDLE, 0

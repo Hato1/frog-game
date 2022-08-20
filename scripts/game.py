@@ -4,7 +4,7 @@ from pathlib import Path
 from .helper import Vector, Point
 
 
-class Game():
+class Game:
     def __init__(self) -> None:
         """Initialises the game with the first map"""
         self.map = Map(Path("maps/map3"))
@@ -43,7 +43,7 @@ class Game():
         pass
 
     def get_position(self) -> tuple:
-        # returns postition
+        # returns position
         pass
 
     def get_map(self) -> Map:

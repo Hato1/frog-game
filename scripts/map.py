@@ -1,4 +1,4 @@
-"""Module for reading and maniuplating the game board"""
+"""Module for reading and manipulating the game board"""
 from __future__ import annotations
 from .entity import Creature, Entity
 from pathlib import Path
@@ -7,7 +7,8 @@ from typing import Iterator, Optional
 from .helper import Point
 from .collision_resolver import collision_resolver
 
-class Map():
+
+class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
         self.player = Creature("Player")
         # Map is structured as map[row][col][object]
@@ -23,7 +24,7 @@ class Map():
         """
         new_map = self.copy()
         moves_made: list = []
-        for pos, entities in self._iterate():
+        for pos, entities in self.iterate():
             for entity in entities:
                 if type(entity) == Creature:
                     new_pos = entity.get_next_move(pos, self.map)
@@ -47,7 +48,7 @@ class Map():
 
     def find_object(self, obj_name: str) -> tuple:
         """Get the coordinates of an object, if it exists"""
-        for pos, entities in self._iterate():
+        for pos, entities in self.iterate():
             for entity in entities:
                 if entity.name == obj_name:
                     return pos, entity
@@ -109,7 +110,7 @@ class Map():
     def __iter__(self) -> Iterator:
         return iter(self.map)
 
-    def _iterate(self) -> Iterator[tuple[Point, list]]:
+    def iterate(self) -> Iterator[tuple[Point, list]]:
         for row in range(self.get_nrows()):
             for col in range(self.get_ncols()):
                 yield Point(row, col), self[row][col]
@@ -120,14 +121,13 @@ class Map():
         human_friendly = "-" * map_ncols + "\n|"
         for x in self.map:
             for y in x:
-                # Add blank if this is a empty space
+                # Add blank if this is an empty space
                 # Add first character of entity name otherwise
                 if not y:
                     human_friendly += " "
                 else:
                     human_friendly += y[0].name[0]
             human_friendly += "|\n|"
-        human_friendly
         return human_friendly[:-1] + "-" * map_ncols
 
     def __len__(self) -> int:
@@ -167,10 +167,10 @@ class Map():
         return pre_map
 
     def _collision_detector(self, new_map: Map, moves_made: list) -> None:
-        """calls collision_sorter on all tiles untill no conflicts are reported"""
-        #proposed_map = self.copy()
+        """calls collision_sorter on all tiles until no conflicts are reported"""
+        # proposed_map = self.copy()
         collision_locs = [(x, y) for x in range(self.get_nrows()) for y in range(self.get_ncols())]
-        while collision_locs != []:
+        while collision_locs:
             # This is bad, and only runs one pass of conflict resolution
             collision_pos = collision_locs.pop(0)
             self._collision_sorter(collision_pos, new_map, collision_locs)
@@ -182,6 +182,6 @@ class Map():
         if num_creatures < 2:
             return
         remaining_pairs = [(x, y) for x in range(num_creatures) for y in range(x+1, num_creatures)]
-        while remaining_pairs != []:
+        while remaining_pairs:
             current_collision = remaining_pairs.pop()
             collision_resolver(current_collision, remaining_pairs, collision_pos, new_map, collision_locs)
