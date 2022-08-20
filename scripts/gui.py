@@ -25,7 +25,7 @@ from .helper import UP, LEFT, RIGHT, DOWN, Benchmark
 from .gui_helper import get_sprite_box, assets, parse_assets
 
 # Asset tile size
-TSIZE = 25
+TSIZE: int = 25
 WINDOW_ROWS = 9
 WINDOW_COLUMNS = 16
 ANIMATIONS = True
@@ -98,15 +98,17 @@ def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
     return out
 
 
+def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
+    """Check whether a coordinate on a padded map lies in the map"""
+    return row in range(8, 8 + ncols) and col in range(4, 4 + nrows)
+
+
 def make_basemap(c_map: Map) -> pygame.Surface:
     """creates the background, should run once
 
     TODO: Extract variables ending in INDEX elsewhere...
     TODO: Is it good or bad style to nest functions where possible?
     """
-    def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
-        """Check whether a coordinate on a padded map lies in the map"""
-        return row in range(8, 8 + ncols) and col in range(4, 4 + nrows)
 
     map_ncols = c_map.get_ncols()
     map_nrows = c_map.get_nrows()
@@ -118,7 +120,7 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     basemap = pygame.Surface((padded_map_ncols * TSIZE, padded_map_nrows * TSIZE))
 
     # TODO: Map objects should map backgrounds. Let's pull this from c_map eventually.
-    tileset_playarea = "Grass"
+    tileset_play_area = "Grass"
     tileset_oob = "Stone"
     global spritesheet_dims
     spritesheet_dims = parse_assets(assets)
@@ -126,20 +128,20 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     for row in range(padded_map_ncols):
         for col in range(padded_map_nrows):
             if is_in_play(row, col, map_nrows, map_ncols):
-                ts = tileset_playarea
+                ts = tileset_play_area
             else:
                 ts = tileset_oob
             # Randomise which column the tile is taken from.
-            PLAIN_TILE_INDEX = 0
-            rand_tile = random.randrange(spritesheet_dims[ts][PLAIN_TILE_INDEX])
+            plain_tile_index = 0
+            rand_tile = random.randrange(spritesheet_dims[ts][plain_tile_index])
             basemap.blit(assets[ts],
                          (row * TSIZE, col * TSIZE),
                          get_sprite_box(col=rand_tile))
             # 25% chance of adding a random particle to a tile.
             thresh = 0.25
             while random.random() < thresh:
-                PARTICLE_INDEX = 11
-                rand_tile = random.randrange(spritesheet_dims["Tileset"][PARTICLE_INDEX])
+                particle_index = 11
+                rand_tile = random.randrange(spritesheet_dims["Tileset"][particle_index])
                 basemap.blit(assets["Tileset"],
                              (row * TSIZE, col * TSIZE),
                              get_sprite_box(11, rand_tile))
@@ -154,9 +156,9 @@ def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int)
     # for row in range(c_map.get_nrows()):
     #     for col in range(c_map.get_ncols()):
     #         for entity in c_map[row][col]:
-    animation_stage = [0, 2, 3][(frame) % 3]
+    animation_stage = [0, 2, 3][frame % 3]
     # animation_stage = random.choice([0, 2, 3])
-    for pos, entities in c_map._iterate():
+    for pos, entities in c_map.iterate():
         for entity in entities:
             if entity.name == "Player" and not draw_player:
                 continue
@@ -185,11 +187,11 @@ def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int)
                     # TODO: Delete this hacky fix to prevent rock textures randomising.
                     # TODO: Stone should be a part of basemap to improve fps.
                     random.seed(f"{pos}")
-                    PLAIN_TILE_INDEX = 0
+                    plain_tile_index = 0
                     global spritesheet_dims
-                    spritenum = random.randrange(
-                        spritesheet_dims["Stone"][PLAIN_TILE_INDEX])
-                    sprite_index = (PLAIN_TILE_INDEX, spritenum)
+                    sprite_num = random.randrange(
+                        spritesheet_dims["Stone"][plain_tile_index])
+                    sprite_index = (plain_tile_index, sprite_num)
                     random.seed()
                 basemap.blit(
                     sprite,
@@ -202,20 +204,20 @@ def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int)
 def pan_screen(
     current_frame: pygame.Surface,
     screen: pygame.surface.Surface,
-    oldmap: Map,
-    newmap: Map,
-    oldcenter: tuple[int, int],
-    newcenter: tuple[int, int]
+    old_map: Map,
+    new_map: Map,
+    old_center: tuple[int, int],
+    new_center: tuple[int, int]
 ) -> None:
     """Smoothly pan the screen from old to new center
 
-    TODO: Slide creatures from oldmap position to newmap position (Warning: Hard)
-    Best to keep move history in entities and read the newmap and most recent move.
+    TODO: Slide creatures from old_map position to new_map position (Warning: Hard)
+    Best to keep move history in entities and read the new_map and most recent move.
     """
     speed = 5
-    ydiff = int(newcenter[0] - oldcenter[0])
-    xdiff = int(newcenter[1] - oldcenter[1])
-    disp = get_disp(*oldcenter)
+    ydiff = int(new_center[0] - old_center[0])
+    xdiff = int(new_center[1] - old_center[1])
+    disp = get_disp(*old_center)
     for i in range(speed):
         xpos = int(disp[0] + xdiff * TSIZE * (i/speed))
         ypos = int(disp[1] + ydiff * TSIZE * (i/speed))
@@ -224,7 +226,11 @@ def pan_screen(
         pygame.time.wait(20)
 
 
-def play_death_animation(screen: pygame.surface.Surface, current_frame: pygame.surface.Surface, new_froglocation: tuple) -> None:
+def play_death_animation(
+        screen: pygame.surface.Surface,
+        current_frame: pygame.surface.Surface,
+        new_froglocation: tuple
+) -> None:
     # Player dead
 
     # This is incredibly ugly, needs rewrite.
@@ -275,7 +281,7 @@ def play_death_animation(screen: pygame.surface.Surface, current_frame: pygame.s
         magic_number += 1
 
 
-def guiloop(screen: pygame.surface.Surface) -> None:
+def gui_loop(screen: pygame.surface.Surface) -> None:
     last_frame_time = pygame.time.get_ticks()
     now = pygame.time.get_ticks()
     game = Game()
@@ -326,7 +332,7 @@ def main() -> None:
         pygame.SCALED | pygame.RESIZABLE
     )
     while True:
-        guiloop(screen)
+        gui_loop(screen)
 
 
 main()

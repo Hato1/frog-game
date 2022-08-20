@@ -12,7 +12,7 @@ AI_DICT = {
 UP, RIGHT, DOWN, LEFT = range(4)
 
 
-class Entity():
+class Entity:
     """Entities do not move"""
     next_id = 0
 

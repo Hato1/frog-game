@@ -2,4 +2,4 @@
 
 from scripts import gui
 
-gui.guiloop()
+gui.gui_loop()
