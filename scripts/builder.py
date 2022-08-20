@@ -1,5 +1,5 @@
 # Map Builder
-
+import math
 from json import dump, load
 import pygame
 from math import floor, ceil
@@ -20,9 +20,13 @@ SpriteRes = 25  # resolution single tile sprites (1x1)
 NewRes = SpriteRes*WindowScale
 debounce = int(round(time() * 1000))  # set how much input debounce we want
 Fps = 15  # set refresh rate
+Save_Delay = 1  # Save wait time in secodns
+Save_cycles = math.floor(Fps*Save_Delay)
+Action_flag = True
+Save_counter = Save_cycles + 1
+MouseDown = False
 SelectedTile = 0
-Saved1 = True
-counter1 = 0
+Saved = "Saved"
 
 # select which map to edit
 FileName = "Map1"
@@ -142,10 +146,9 @@ def drawscreen(maplist: list, top: int, left: int, zoom: int):
 
 def drawselectables(surfaces: list):
     """Place selectable options"""
-    c = 0
-    for surf in surfaces:
-        Window.blit(surf, ((c*1.09)*SpriteRes+SpriteRes, NewRes*Height+SpriteRes), (0, 0, SpriteRes, SpriteRes))
-        c = c + 1
+    indexes = 0
+    for surfnum, surf in enumerate(surfaces):
+        Window.blit(surf, ((surfnum*1.09)*SpriteRes+SpriteRes, NewRes*Height+SpriteRes), (0, 0, SpriteRes, SpriteRes))
 
 
 def selecttile(click: tuple) -> int:
@@ -170,10 +173,23 @@ def writemappickle(dat: list):
     pickle.dump(dat, file)
 
 
+def applytile(maplist: list, tile: list, tiletype: int) -> list:
+    """Take the current selected tile object and apply to map"""
+    if tiletype == 1:
+        tile = list([tile])
+        maplist.append(tile)
+    if tiletype == 0:
+        liststr = list(maplist)
+        liststr[0] = list([tile])
+        maplist = liststr
+    return maplist
+
+
 # initalise map
 BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
 
 Window = pygame.display.set_mode((Width*NewRes, Height*NewRes + NewRes))
+pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
 
 for i3 in range(len(All)):
     All[i3] = amendtransparent(All[i3])
@@ -183,12 +199,15 @@ drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
 pygame.display.flip()
 
 while True:
-    t1_start = perf_counter()
+    t1_start = perf_counter()  # start the cycle time counter
+
+    # handle pygame events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit(0)
 
+        # use arrow keys to navigate the map
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 CamPos[1] = CamPos[1] - 1
@@ -200,59 +219,119 @@ while True:
                 CamPos[0] = CamPos[0] + 1
 
         if event.type == pygame.MOUSEBUTTONDOWN:
-            Saved1 = False  # reset the save timer
-
+            MouseDown = True
+            # on left click
             if event.button == pygame.BUTTON_LEFT:
-                Click = pygame.mouse.get_pos()
+                ClickDown = pygame.mouse.get_pos()
 
-                # change background (0) tile or add entitiy (1)
-                if Click[1] < Height*NewRes:
-                    ind = clickedindex(Click, CamPos)
-                    # check what is selected if background write over current tile
-                    if AllType[SelectedTile] == 1:
-                        tile = list([AllName[SelectedTile]])
-                        Data[ind[1]][ind[0]].append(tile)
-                    if AllType[SelectedTile] == 0:
-                        liststr = list(Data[ind[1]][ind[0]])
-                        liststr[0] = list([AllName[SelectedTile]])
-                        Data[ind[1]][ind[0]] = liststr
+                # If clicking on editable area apply currently selected tile
+                if ClickDown[1] < Height*NewRes and AllType[SelectedTile] == 1:
+                    Action_flag = False  # reset the save timer
+                    Saved = "Unsaved"
+                    pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
+                    ind = clickedindex(ClickDown, CamPos)
+                    Data[ind[1]][ind[0]] = applytile(Data[ind[1]][ind[0]], AllName[SelectedTile], AllType[SelectedTile])
 
-                if Height*NewRes+SpriteRes < Click[1] < Height*NewRes+(2 * SpriteRes):
-                    SelectedTile = selecttile(Click)
+                # If clicking on tile selection area adjust selected tile
+                if Height*NewRes+SpriteRes < ClickDown[1] < Height*NewRes+(2 * SpriteRes):
+                    SelectedTile = selecttile(ClickDown)
 
+            # on right click delet top entity
             if event.button == pygame.BUTTON_RIGHT:
-                Click = pygame.mouse.get_pos()
-                if Click[1] < Height * NewRes:
-                    ind = clickedindex(Click, CamPos)
+                ClickDown = pygame.mouse.get_pos()
+
+                # Remove top entity if it exists
+                if ClickDown[1] < Height * NewRes:
+                    ind = clickedindex(ClickDown, CamPos)
                     if len(Data[ind[1]][ind[0]]) > 1:
+                        Action_flag = False  # reset the save timer
+                        Saved = "Unsaved"
+                        pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
                         Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]][:-1]
 
+        # if clickup with background tile type selected do a drag
+        if event.type == pygame.MOUSEBUTTONUP:
+            MouseDown = False
+            if AllType[SelectedTile] == 0 and event.button == pygame.BUTTON_LEFT:
+                ClickUp = pygame.mouse.get_pos()
+                if ClickUp[1] < Height*NewRes > ClickDown[1]:
+                    Action_flag = False  # reset the save timer
+                    Saved = "Unsaved"
+                    pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
+
+                    IndexDown = clickedindex(ClickDown, CamPos)
+                    IndexUp = clickedindex(ClickUp, CamPos)
+
+                    rows = IndexUp[1] - IndexDown[1]
+                    cols = IndexUp[0] - IndexDown[0]
+
+                    if rows < 0:
+                        rs = -1
+                    else:
+                        rs = 1
+                    rows = abs(rows)+1
+
+                    if cols < 0:
+                        cs = -1
+                    else:
+                        cs = 1
+                    cols = abs(cols)+1
+
+                    for r in range(rows):
+                        for c in range(cols):
+                            Data[IndexDown[1]+(r*rs)][IndexDown[0]+(c*cs)] = applytile(
+                                Data[IndexDown[1]+(r*rs)][IndexDown[0]+(c*cs)],
+                                AllName[SelectedTile],
+                                AllType[SelectedTile]
+                            )
+
+        # on scroll zoom
         if event.type == pygame.MOUSEWHEEL and int(round(time() * 1000)) > debounce:
             debounce = int(round(time() * 1000)) + 150
             Zoom = Zoom + event.y
             Zoom = 1 if Zoom < 1 else Zoom
             Zoom = WindowScale if Zoom > WindowScale else Zoom
 
+        # redarw map now event is resolved
         BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
         drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
         pygame.display.flip()
 
-    if Saved1 is False:
-        counter1 = 0
-        Saved1 = True
+    # if mouse state is down highligh selected cells
+    if MouseDown is True and AllType[SelectedTile] == 0:
+        MousePos = pygame.mouse.get_pos()
+        BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
+        drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+        pygame.draw.rect(
+            Window,
+            (255, 255, 255),
+            pygame.Rect(
+                min(ClickDown[0], MousePos[0]),
+                min(ClickDown[1], MousePos[1]),
+                abs(MousePos[0]-ClickDown[0]),
+                abs(MousePos[1]-ClickDown[1])),
+            2)
+        pygame.display.flip()
 
-    counter1 = counter1 + 1
+    # Save map to pickle file
+    if Action_flag is False:  # If an action occurs
+        Save_counter = 0  # Reset save delay
+        Action_flag = True  # Reset action flag to true
 
-    if counter1 == 10:
+    Save_counter = Save_counter + 1  # Increment counter eah time the code runs
+
+    # Once save delay is met save the file
+    if Save_counter == Save_cycles:
         writemappickle(Data)
         f = open("test.txt", "w")
         dump(Data, f)
         f.close()
-        print("Saved")
+        Saved = "Saved"
+        pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
 
     # sleep to maintain a constant frame time
-    t1_end = perf_counter()
-    runtime = t1_end-t1_start
+    runtime = perf_counter()-t1_start
+    # print(runtime)
     if runtime > (1/Fps):
         runtime = 0
     sleep((1/Fps)-runtime)
