@@ -54,6 +54,7 @@ class Creature(Entity):
             direction: which way the creature is initially facing"""
         self.alive = True
         self.state = 0
+        self.strategy_name = strategy
         self.strategy = AI_DICT[strategy]()
         # Can be used to force creatures next move, ignoring their strategy.
         self.next_move: Optional[Vector] = None
@@ -70,3 +71,6 @@ class Creature(Entity):
         assert type(move) == Point, f"{self.name} returned invalid move: {type(move)}."
         assert len(move) == 2, f"{self.name} requests invalid move: {move}"
         return move
+
+    def get_strategy_name(self) -> str:
+        return self.strategy_name
