@@ -6,29 +6,24 @@ from math import floor, ceil
 from time import time, sleep, perf_counter
 import pickle
 
-# Declare default values
+# Declare Global variables
 Width = 16  # number of tiles wide the screen is (make adjustable in the future)
 Height = 9  # number of high wide the screen is (make adjustable in the future)
 WindowScale = 3  # zoom to calculate window size at (would be better to make adjustable)
-
-# starting values
 Zoom = 2  # default zoom level of the screen
 CamPos = [0, 0]  # staring (top left) camera position
 SpriteRes = 25  # resolution single tile sprites (1x1)
-
-# calculate
-NewRes = SpriteRes*WindowScale
+NewRes = SpriteRes * WindowScale
 Debounce = int(round(time() * 1000))  # set how much input debounce we want
-Fps = 15  # set refresh rate
-SaveDelay = 1  # Save wait time in secodns
+Fps = 15  # set refresh rate cap
+SaveDelay = 1  # Save wait time (in secodns)
 SaveCycles = floor(Fps * SaveDelay)
 ActionFlag = True
 SaveCounter = SaveCycles + 1
 MouseDown = False
-SelectedTile = 0
-Saved = "Saved"
-ClickDown = tuple
-ScreenSurf = pg.Surface
+SelectedTile = 0  # inital selected tile index
+ClickDown = tuple((0, 0))
+ScreenSurf = pg.Surface((0, 0))
 
 # select which map to edit
 FileName = "map1"
@@ -139,7 +134,8 @@ def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
 def drawselectables(surfaces: list, window: pg.surface.Surface) -> None:
     """Place selectable options"""
     for surfnum, surf in enumerate(surfaces):
-        window.blit(surf, ((surfnum*1.09)*SpriteRes+SpriteRes, NewRes*Height+SpriteRes), (0, 0, SpriteRes, SpriteRes))
+        window.blit(surf, ((surfnum * 1.09) * SpriteRes + SpriteRes, NewRes * Height + SpriteRes),
+                    (0, 0, SpriteRes, SpriteRes))
 
 
 def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pg.Surface:
@@ -162,7 +158,7 @@ def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pg.Surface:
 
 def selecttile(click: tuple) -> int:
     """retuns the index of the clicked tile"""
-    tileindex = floor(click[0]/(SpriteRes+2) - 1)
+    tileindex = floor(click[0] / (SpriteRes + 2) - 1)
     return tileindex
 
 
@@ -171,7 +167,7 @@ def clickedindex(click: tuple, campos: list) -> tuple:
     index = list()
     for i1 in range(len(click)):
         index.append(
-            (floor(click[i1]/(SpriteRes*Zoom))+campos[i1]) % MapDims[i1]
+            (floor(click[i1] / (SpriteRes * Zoom)) + campos[i1]) % MapDims[i1]
         )
     return tuple(index)
 
@@ -194,6 +190,16 @@ def applytile(maplist: list, tile: list, tiletype: int) -> list:
     return maplist
 
 
+def drawbox(window: pg.display) -> None:
+    global ScreenSurf
+    global ClickDown
+
+    mousepos = pg.mouse.get_pos()
+    rect = pg.draw.rect(window, (255, 255, 255), pg.Rect(min(ClickDown[0], mousepos[0]), min(ClickDown[1], mousepos[1]),
+                                                         abs(mousepos[0] - ClickDown[0]), abs(mousepos[1] - ClickDown[1])), 2)
+    pg.display.update(rect)
+
+
 def mainloop(window: pg.display) -> None:
     global Zoom
     global SelectedTile
@@ -203,7 +209,6 @@ def mainloop(window: pg.display) -> None:
     global ScreenSurf
     global ActionFlag
     global SaveCounter
-    t1_start = perf_counter()  # start the cycle time counter
 
     # handle pygame events
     for event in pg.event.get():
@@ -229,14 +234,14 @@ def mainloop(window: pg.display) -> None:
                 ClickDown = pg.mouse.get_pos()
 
                 # If clicking on editable area apply currently selected tile
-                if ClickDown[1] < Height*NewRes and AllType[SelectedTile] == 1:
+                if ClickDown[1] < Height * NewRes and AllType[SelectedTile] == 1:
                     ActionFlag = False  # reset the save timer
                     pg.display.set_caption(f'Frog game editor{FileName} (Unsaved)')
                     ind = clickedindex(ClickDown, CamPos)
                     Data[ind[1]][ind[0]] = applytile(Data[ind[1]][ind[0]], AllName[SelectedTile], AllType[SelectedTile])
 
                 # If clicking on tile selection area adjust selected tile
-                if Height*NewRes+SpriteRes < ClickDown[1] < Height*NewRes+(2 * SpriteRes):
+                if Height * NewRes + SpriteRes < ClickDown[1] < Height * NewRes + (2 * SpriteRes):
                     SelectedTile = selecttile(ClickDown)
 
             # on right click delet top entity
@@ -256,7 +261,7 @@ def mainloop(window: pg.display) -> None:
             MouseDown = False
             if AllType[SelectedTile] == 0 and event.button == pg.BUTTON_LEFT:
                 click_up = pg.mouse.get_pos()
-                if click_up[1] < Height*NewRes > ClickDown[1]:
+                if click_up[1] < Height * NewRes > ClickDown[1]:
                     ActionFlag = False  # reset the save timer
                     pg.display.set_caption(f'Frog game editor{FileName} (Unsaved)')
 
@@ -270,18 +275,18 @@ def mainloop(window: pg.display) -> None:
                         rs = -1
                     else:
                         rs = 1
-                    rows = abs(rows)+1
+                    rows = abs(rows) + 1
 
                     if cols < 0:
                         cs = -1
                     else:
                         cs = 1
-                    cols = abs(cols)+1
+                    cols = abs(cols) + 1
 
                     for r in range(rows):
                         for c in range(cols):
-                            Data[index_down[1]+(r*rs)][index_down[0]+(c*cs)] = applytile(
-                                Data[index_down[1]+(r*rs)][index_down[0]+(c*cs)],
+                            Data[index_down[1] + (r * rs)][index_down[0] + (c * cs)] = applytile(
+                                Data[index_down[1] + (r * rs)][index_down[0] + (c * cs)],
                                 AllName[SelectedTile],
                                 AllType[SelectedTile]
                             )
@@ -293,26 +298,15 @@ def mainloop(window: pg.display) -> None:
             Zoom = 1 if Zoom < 1 else Zoom
             Zoom = WindowScale if Zoom > WindowScale else Zoom
 
-        # redarw map now event is resolved
+        # redarw map now button has been released
         base_map_list = [[cellinterp(cell) for cell in row1] for row1 in Data]
         ScreenSurf = createmapsurf(base_map_list, CamPos[1], CamPos[0], Zoom)
         drawscreen(ScreenSurf, window)
         pg.display.flip()
 
-    # if mouse state is down highligh selected cells
+    # if mouse state is down draw box of selection
     if MouseDown is True and AllType[SelectedTile] == 0:
-        mousepos = pg.mouse.get_pos()
-        drawscreen(ScreenSurf, window)
-        pg.draw.rect(
-            window,
-            (255, 255, 255),
-            pg.Rect(
-                min(ClickDown[0], mousepos[0]),
-                min(ClickDown[1], mousepos[1]),
-                abs(mousepos[0]-ClickDown[0]),
-                abs(mousepos[1]-ClickDown[1])),
-            2)
-        pg.display.flip()
+        drawbox(window)
 
     # Save map to pickle file
     if ActionFlag is False:  # If an action occurs
@@ -325,13 +319,6 @@ def mainloop(window: pg.display) -> None:
     if SaveCounter == SaveCycles:
         writemappickle(Data)
         pg.display.set_caption(f'Frog game editor{FileName} (Saved)')
-
-    # sleep to maintain a constant frame time
-    runtime = perf_counter()-t1_start
-    # print(runtime)
-    if runtime > (1/Fps):
-        runtime = 0
-    sleep((1/Fps)-runtime)
 
 
 def main() -> None:
@@ -346,7 +333,16 @@ def main() -> None:
     pg.display.flip()
 
     while True:
+        t1_start = perf_counter()
+
         mainloop(window)
+
+        # sleep to maintain a constant frame time
+        runtime = perf_counter() - t1_start
+        # print(1/runtime)
+        if runtime > (1 / Fps):
+            runtime = 0
+        sleep((1 / Fps) - runtime)
 
 
 main()
