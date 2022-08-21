@@ -6,6 +6,8 @@ Step limit before death.
 
 Sound
 
+Ability to quit while dead
+
 Boost fps. Hitting 14 while idle, and as low as 3 when spamming. Multiprocessing?
 
 Animations that animate instead of teleport. (sliding frogs)
