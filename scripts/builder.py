@@ -106,7 +106,7 @@ def cellinterp(cell: list) -> list:
     return sprites2blit
 
 
-def drawscreen(maplist: list, top: int, left: int, zoom: int):
+def drawscreen(screen: pygame.Surface):
     """Loop through Screen and blit tiles"""
     # Draw a grey rectangle over all screen to blank
     pygame.draw.rect(
@@ -116,18 +116,7 @@ def drawscreen(maplist: list, top: int, left: int, zoom: int):
     )
 
     # loop over every tile on display in the map and blit sprite
-    for i2 in range(ceil(Width*(WindowScale/zoom))):
-        if -1 < i2 + left < len(maplist[1]):  # only run if in range
-            for j in range((1+WindowScale-Zoom)+ceil(Height*(WindowScale/zoom))):
-                if -1 < j + top < len(maplist):  # only run if in range
-                    tile1 = maplist[(j + top) % len(maplist)][(i2 + left) % len(maplist[1])]
-                    for surf in tile1:
-                        w, h = surf.get_size()
-                        Window.blit(
-                            pygame.transform.scale(surf, (zoom*w, zoom*h)),
-                            (i2*SpriteRes*zoom, j*SpriteRes*zoom),
-                            (0, 0, SpriteRes*zoom, SpriteRes*zoom)
-                        )
+    Window.blit(screen, (0, 0))
 
     # Draw a black rectange for sprite options to sit on
     pygame.draw.rect(
@@ -149,6 +138,23 @@ def drawselectables(surfaces: list):
     for surfnum, surf in enumerate(surfaces):
         Window.blit(surf, ((surfnum*1.09)*SpriteRes+SpriteRes, NewRes*Height+SpriteRes), (0, 0, SpriteRes, SpriteRes))
 
+
+def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pygame.Surface:
+    """loop over every tile on display and create a surface of the map"""
+    mapsurf = pygame.Surface((Width*NewRes, Height*NewRes + NewRes))
+    for i2 in range(ceil(Width * (WindowScale / zoom))):
+        if -1 < i2 + left < len(maplist[1]):  # only run if in range
+            for j in range((1 + WindowScale - Zoom) + ceil(Height * (WindowScale / zoom))):
+                if -1 < j + top < len(maplist):  # only run if in range
+                    tile1 = maplist[(j + top) % len(maplist)][(i2 + left) % len(maplist[1])]
+                    for surf in tile1:
+                        w, h = surf.get_size()
+                        mapsurf.blit(
+                            pygame.transform.scale(surf, (zoom * w, zoom * h)),
+                            (i2 * SpriteRes * zoom, j * SpriteRes * zoom),
+                            (0, 0, SpriteRes * zoom, SpriteRes * zoom)
+                        )
+    return mapsurf
 
 def selecttile(click: tuple) -> int:
     """retuns the index of the clicked tile"""
@@ -193,8 +199,8 @@ pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
 for i3 in range(len(All)):
     All[i3] = amendtransparent(All[i3])
 
-drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
-
+ScreenSurf = createmapsurf(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+drawscreen(ScreenSurf)
 pygame.display.flip()
 
 while True:
@@ -293,14 +299,15 @@ while True:
 
         # redarw map now event is resolved
         BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
-        drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+        ScreenSurf = createmapsurf(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+        drawscreen(ScreenSurf)
         pygame.display.flip()
 
     # if mouse state is down highligh selected cells
     if MouseDown is True and AllType[SelectedTile] == 0:
         MousePos = pygame.mouse.get_pos()
         BaseMaplist = [[cellinterp(cell) for cell in row] for row in Data]
-        drawscreen(BaseMaplist, CamPos[1], CamPos[0], Zoom)
+        drawscreen(ScreenSurf)
         pygame.draw.rect(
             Window,
             (255, 255, 255),
@@ -322,9 +329,6 @@ while True:
     # Once save delay is met save the file
     if Save_counter == Save_cycles:
         writemappickle(Data)
-        f = open("test.txt", "w")
-        dump(Data, f)
-        f.close()
         Saved = "Saved"
         pygame.display.set_caption(f'Frog game editor{FileName} ({Saved})')
 
