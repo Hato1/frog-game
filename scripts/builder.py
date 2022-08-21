@@ -1,5 +1,5 @@
 # Map Builder
-import math
+
 from json import dump, load
 import pygame
 from math import floor, ceil
@@ -21,7 +21,7 @@ NewRes = SpriteRes*WindowScale
 debounce = int(round(time() * 1000))  # set how much input debounce we want
 Fps = 15  # set refresh rate
 Save_Delay = 1  # Save wait time in secodns
-Save_cycles = math.floor(Fps*Save_Delay)
+Save_cycles = floor(Fps*Save_Delay)
 Action_flag = True
 Save_counter = Save_cycles + 1
 MouseDown = False
@@ -29,12 +29,12 @@ SelectedTile = 0
 Saved = "Saved"
 
 # select which map to edit
-FileName = "Map1"
+FileName = "map1"
 
 # import files
 MFile = open("../maps/Default.json")  # Metadata Jason File
 try:
-    MapFile = open("../maps/Map1.map", "rb")  # Map CSV File
+    MapFile = open("../maps/map1.map", "rb")  # Map CSV File
 except FileNotFoundError:
     Data = []
 
@@ -146,7 +146,6 @@ def drawscreen(maplist: list, top: int, left: int, zoom: int):
 
 def drawselectables(surfaces: list):
     """Place selectable options"""
-    indexes = 0
     for surfnum, surf in enumerate(surfaces):
         Window.blit(surf, ((surfnum*1.09)*SpriteRes+SpriteRes, NewRes*Height+SpriteRes), (0, 0, SpriteRes, SpriteRes))
 
