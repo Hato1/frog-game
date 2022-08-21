@@ -24,6 +24,7 @@ MouseDown = False
 SelectedTile = 0  # inital selected tile index
 ClickDown = tuple((0, 0))
 ScreenSurf = pg.Surface((0, 0))
+Redraw = False
 
 # select which map to edit
 FileName = "map1"
@@ -104,7 +105,7 @@ def cellinterp(cell: list) -> list:
 
 
 def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
-    """Loop through Screen and blit tiles"""
+    """place all screen objects in screen"""
     # Draw a grey rectangle over all screen to blank
     pg.draw.rect(
         window,
@@ -128,6 +129,7 @@ def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
         pg.Rect((((SpriteRes + 2) * SelectedTile) + SpriteRes - 2), (Height * NewRes) + SpriteRes - 2, SpriteRes + 4,
                 SpriteRes + 4)
     )
+
     drawselectables(All, window)
 
 
@@ -190,17 +192,20 @@ def applytile(maplist: list, tile: list, tiletype: int) -> list:
     return maplist
 
 
-def drawbox(window: pg.display) -> None:
+def drawbox(window: pg.surface.Surface) -> None:
     global ScreenSurf
     global ClickDown
 
     mousepos = pg.mouse.get_pos()
-    rect = pg.draw.rect(window, (255, 255, 255), pg.Rect(min(ClickDown[0], mousepos[0]), min(ClickDown[1], mousepos[1]),
-                                                         abs(mousepos[0] - ClickDown[0]), abs(mousepos[1] - ClickDown[1])), 2)
-    pg.display.update(rect)
+    drawscreen(ScreenSurf, window)
+    pg.draw.rect(window, (255, 255, 255), pg.Rect(min(ClickDown[0], mousepos[0]),
+                                                  min(ClickDown[1], mousepos[1]),
+                                                  abs(mousepos[0] - ClickDown[0]),
+                                                  abs(mousepos[1] - ClickDown[1])), 2)
+    pg.display.flip()
 
 
-def mainloop(window: pg.display) -> None:
+def mainloop(window: pg.surface.Surface) -> None:
     global Zoom
     global SelectedTile
     global ClickDown
@@ -209,6 +214,7 @@ def mainloop(window: pg.display) -> None:
     global ScreenSurf
     global ActionFlag
     global SaveCounter
+    global Redraw
 
     # handle pygame events
     for event in pg.event.get():
@@ -218,6 +224,7 @@ def mainloop(window: pg.display) -> None:
 
         # use arrow keys to navigate the map
         if event.type == pg.KEYDOWN:
+            Redraw = True
             if event.key == pg.K_UP:
                 CamPos[1] = CamPos[1] - 1
             if event.key == pg.K_DOWN:
@@ -231,6 +238,7 @@ def mainloop(window: pg.display) -> None:
             MouseDown = True
             # on left click
             if event.button == pg.BUTTON_LEFT:
+                Redraw = True
                 ClickDown = pg.mouse.get_pos()
 
                 # If clicking on editable area apply currently selected tile
@@ -253,6 +261,7 @@ def mainloop(window: pg.display) -> None:
                     ind = clickedindex(ClickDown, CamPos)
                     if len(Data[ind[1]][ind[0]]) > 1:
                         ActionFlag = False  # reset the save timer
+                        Redraw = True
                         pg.display.set_caption(f'Frog game editor{FileName} (Unsaved)')
                         Data[ind[1]][ind[0]] = Data[ind[1]][ind[0]][:-1]
 
@@ -262,6 +271,7 @@ def mainloop(window: pg.display) -> None:
             if AllType[SelectedTile] == 0 and event.button == pg.BUTTON_LEFT:
                 click_up = pg.mouse.get_pos()
                 if click_up[1] < Height * NewRes > ClickDown[1]:
+                    Redraw = True
                     ActionFlag = False  # reset the save timer
                     pg.display.set_caption(f'Frog game editor{FileName} (Unsaved)')
 
@@ -292,17 +302,21 @@ def mainloop(window: pg.display) -> None:
                             )
 
         # on scroll zoom
-        if event.type == pg.MOUSEWHEEL and int(round(time() * 1000)) > Debounce:
-            Debounce = int(round(time() * 1000)) + 150
-            Zoom = Zoom + event.y
-            Zoom = 1 if Zoom < 1 else Zoom
-            Zoom = WindowScale if Zoom > WindowScale else Zoom
+        if event.type == pg.MOUSEWHEEL:
+            if int(round(time() * 1000)) > Debounce:
+                Redraw = True
+                Debounce = int(round(time() * 1000)) + 150
+                Zoom = Zoom + event.y
+                Zoom = 1 if Zoom < 1 else Zoom
+                Zoom = WindowScale if Zoom > WindowScale else Zoom
 
         # redarw map now button has been released
-        base_map_list = [[cellinterp(cell) for cell in row1] for row1 in Data]
-        ScreenSurf = createmapsurf(base_map_list, CamPos[1], CamPos[0], Zoom)
-        drawscreen(ScreenSurf, window)
-        pg.display.flip()
+        if Redraw is True:
+            base_map_list = [[cellinterp(cell) for cell in row1] for row1 in Data]
+            ScreenSurf = createmapsurf(base_map_list, CamPos[1], CamPos[0], Zoom)
+            drawscreen(ScreenSurf, window)
+            pg.display.flip()
+            Redraw = False
 
     # if mouse state is down draw box of selection
     if MouseDown is True and AllType[SelectedTile] == 0:
@@ -323,10 +337,10 @@ def mainloop(window: pg.display) -> None:
 
 def main() -> None:
     # Initialise
-    basemaplist = [[cellinterp(cell) for cell in row1] for row1 in Data]  # make list to be used as screen
     window = pg.display.set_mode((Width * NewRes, Height * NewRes + NewRes))  # set display size
     for i3, sprite in enumerate(All):
         All[i3] = amendtransparent(sprite)
+    basemaplist = [[cellinterp(cell) for cell in row1] for row1 in Data]  # make list to be used as screen
     pg.display.set_caption(f'Frog game editor{FileName}')
     screensurf = createmapsurf(basemaplist, CamPos[1], CamPos[0], Zoom)
     drawscreen(screensurf, window)
