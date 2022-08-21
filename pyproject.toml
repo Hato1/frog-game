@@ -11,6 +11,7 @@ pydantic = "^1.9.0"
 mypy = "^0.942"
 multimethod = "^1.8"
 typing-extensions = "^4.3.0"
+VisualGraphDebugger-zacharyh211 = "^0.6"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
