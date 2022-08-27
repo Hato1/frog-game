@@ -2,11 +2,9 @@
 
 Collision resolver
 
-Step limit before death.
+Step limit indicator
 
 Sound
-
-Ability to quit while dead
 
 Boost fps. Hitting 14 while idle, and as low as 3 when spamming. Multiprocessing?
 
@@ -17,6 +15,8 @@ Sound effects
 Music
 
 Barrelling barrel
+
+Conveyor with free/forced movement
 
 Map Parser Parser:
 	Files:
@@ -31,3 +31,7 @@ Map Parser Parser:
 		ParseEntities(map.csv) -> Map
 
 Let the map continue updating after death after a couple seconds
+
+Bugs:
+Cannot quit while dead
+collision with barrels (entities) crashes

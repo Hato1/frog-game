@@ -11,6 +11,7 @@ from .collision_resolver import collision_resolver
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
         self.player = Creature("Player")
+        self.steps_left = 25
         # Map is structured as map[row][col][object]
         if map_file:
             self.map = self._read_map(map_file)
@@ -40,6 +41,11 @@ class Map:
                     new_map[new_pos].append(entity)
                     entity.position = new_pos
         self._collision_detector(new_map, moves_made)
+        self.steps_left -= 1
+        #if not(self.steps_left):
+        if self.steps_left <= 0:
+            self.player.alive = False
+            # Should this go to map.py?
         self.map = new_map.map
 
     def move_object(self, src: tuple, dst: tuple) -> None:
