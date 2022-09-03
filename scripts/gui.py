@@ -16,13 +16,12 @@ import time
 import logging
 
 from pathlib import Path
-
 from .game import Game
 from .map import Map
 from .entity import Creature
 from copy import copy
 from .helper import UP, LEFT, RIGHT, DOWN, Benchmark
-from .gui_helper import get_sprite_box, assets, parse_assets
+from .gui_helper import get_sprite_box, assets, parse_assets, font_render
 
 # Asset tile size
 TSIZE: int = 25
@@ -150,6 +149,28 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     return basemap
 
 
+
+class Hud_element:
+    def __init__(self, source: pygame.surface.Surface, dest: tuple) -> None:
+        self.source = source
+        self.dest = dest
+
+
+class Hud:
+    def __init__(self) -> None:
+        self.elements: dict = {}
+
+    def update_element(self, name: str, source: pygame.surface.Surface, dest: tuple) -> None:
+        self.elements.update({name: Hud_element(source, dest)})
+
+    def get_elements(self): #idk pls no mad @me -> Generator[Tuple[Any, Any], None, None]:
+        return ((element.source, element.dest) for element in self.elements.values())
+
+
+def add_hud(screen: pygame.surface.Surface, hud: Hud) -> None:
+    screen.blits(hud.get_elements())
+
+
 def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
@@ -204,6 +225,7 @@ def draw_map(c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int)
 def pan_screen(
     current_frame: pygame.Surface,
     screen: pygame.surface.Surface,
+    hud: Hud,
     old_map: Map,
     new_map: Map,
     old_center: tuple[int, int],
@@ -222,6 +244,7 @@ def pan_screen(
         xpos = int(disp[0] + xdiff * TSIZE * (i/speed))
         ypos = int(disp[1] + ydiff * TSIZE * (i/speed))
         screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
+        add_hud(screen, hud)
         pygame.display.flip()
         pygame.time.wait(20)
 
@@ -242,8 +265,8 @@ def play_death_animation(
     magic_number = 0
     while True:
         pygame.time.delay(50)
-        font_title = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 36 * 3)
-        you_died = font_title.render("You  Died", True, (130, 20, 60))
+        you_died = font_render("You  Died", "Amatic-Bold.ttf", (130, 20, 60), 36*3)
+        Path()
         you_died = pygame.transform.rotate(you_died, math.sin(time.time() / 1.5) * 10)
         you_died = pygame.transform.scale(
             you_died,
@@ -287,6 +310,8 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
     game = Game()
     # Load the map. This will be a function when we have multiple maps to go between.
     c_map = game.get_map()
+    hud = Hud()
+    hud.update_element("step_count", font_render(str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25), (0,0))
     froglocation = game.get_player_pos()
     basemap = make_basemap(c_map)
     map_changed = True
@@ -306,8 +331,9 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
             frame = draw_map(new_map, copy(basemap), game.is_player_alive(), frame_count)
             new_froglocation = game.get_player_pos()
             if ANIMATIONS and froglocation != new_froglocation:
-                pan_screen(frame, screen, c_map, new_map, froglocation, new_froglocation)
+                pan_screen(frame, screen, hud, c_map, new_map, froglocation, new_froglocation)
             screen.blit(frame, (0, 0), get_disp(*new_froglocation))
+            add_hud(screen, hud)
             pygame.display.flip()
 
             map_changed = False
@@ -320,6 +346,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
         for event in pygame.event.get():
             if process_event(event, game):
                 map_changed = True
+                hud.update_element("step_count", font_render(str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25), (0,0))
                 # Prevent skipping of movement animations
                 break
     play_death_animation(screen, frame, new_froglocation)
