@@ -100,6 +100,10 @@ class Map:
         """Get the number of cols"""
         return self.get_ncols()
 
+    def get_steps_left(self) -> int:
+        """Get the number of remaining steps"""
+        return self.steps_left
+
     def is_player_alive(self) -> bool:
         return self.player.alive
 
