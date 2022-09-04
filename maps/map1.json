@@ -1,0 +1,96 @@
+{
+  "MapSize": [17,10],
+  "Tiles": [
+    {
+      "level": "Dirt",
+      "FileName": "dirt.png",
+      "HueAdjust": "0",
+      "PairedEntity": 0
+    },
+    {
+      "level": "Grass",
+      "FileName": "Grass.png",
+      "HueAdjust": "0",
+      "PairedEntity": 0
+    },
+    {
+      "level": "Stone",
+      "FileName": "Stone.png",
+      "HueAdjust": "0",
+      "PairedEntity": "InvisWall"
+    }
+  ],
+  "Entities": [
+    {
+      "Name" : "Player",
+      "AI": "None",
+      "FileName": "Frog.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "FrogR",
+      "AI": "NormalNorman",
+      "FileName": "FrogR.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "FrogY",
+      "AI": "SpiralingStacy",
+      "FileName": "FrogY.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "FrogP",
+      "AI": "TrickyTrent",
+      "FileName": "FrogP.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "Barrel",
+      "AI": "None",
+      "FileName": "Barrel.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "Leaves",
+      "AI": "None",
+      "FileName": "Leaves.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "RockWall",
+      "AI": "None",
+      "FileName": "rockwall.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "Trees",
+      "AI": "None",
+      "FileName": "Trees.png",
+      "HueAdjust": "0",
+      "SpriteSize": [2, 2]
+    },
+    {
+      "Name" : "Mushroom",
+      "AI": "None",
+      "FileName": "Mushroom.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "InvisWall",
+      "AI": "None",
+      "FileName": "Transparent.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
+    }
+
+  ]
+}
