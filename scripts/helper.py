@@ -29,13 +29,13 @@ class Vector(NamedTuple):
     y: int
 
     def __add__(self, other: tuple) -> Vector:
-        if isinstance(other, Vector) or isinstance(other, Point):
+        if isinstance(other, (Vector, Point)):
             return Vector(self.x+other[0], self.y+other[1])
         return NotImplemented
 
     def __sub__(self, other: tuple) -> Vector:
-        if isinstance(other, Vector) or isinstance(other, Point):
-            return Vector(self.x-other[0], self.y-other[1])
+        if isinstance(other, (Vector, Point)):
+            return Vector(self.x - other[0], self.y - other[1])
         return NotImplemented
 
 
@@ -44,13 +44,13 @@ class Point(NamedTuple):
     y: int
 
     def __add__(self, other: tuple) -> Point:
-        if isinstance(other, Vector) or isinstance(other, Point):
-            return Point(self.x+other[0], self.y+other[1])
+        if isinstance(other, (Vector, Point)):
+            return Point(self.x + other[0], self.y + other[1])
         return NotImplemented
 
     def __sub__(self, other: tuple) -> Point:
-        if isinstance(other, Vector) or isinstance(other, Point):
-            return Point(self.x-other[0], self.y-other[1])
+        if isinstance(other, (Vector, Point)):
+            return Point(self.x - other[0], self.y - other[1])
         return NotImplemented
 
 
@@ -60,13 +60,7 @@ FACING = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3}
 
 def facing(vector: Vector, original_direction: int) -> int:
     if sum(vector) < 0:
-        if min(vector) == vector[0]:
-            return 0
-        else:
-            return 1
+        return 0 if min(vector) == vector[0] else 1
     elif sum(vector) > 0:
-        if max(vector) == vector[0]:
-            return 2
-        else:
-            return 3
+        return 2 if max(vector) == vector[0] else 3
     return original_direction

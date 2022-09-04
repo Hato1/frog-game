@@ -13,10 +13,7 @@ class Map:
         self.player = Creature("Player")
         self.steps_left = 25
         # Map is structured as map[row][col][object]
-        if map_file:
-            self.map = self._read_map(map_file)
-        else:
-            self.map = []
+        self.map = self._read_map(map_file) if map_file else []
 
     def update_creatures(self) -> None:
         """
@@ -34,9 +31,9 @@ class Map:
 
                     # This moves the man
                     for i in range(len(new_map[pos]))[::-1]:
-                        newentitylist = new_map[pos]
-                        entitytomove = newentitylist[i]
-                        if entitytomove.id == entity.id:
+                        new_entity_list = new_map[pos]
+                        entity_to_move = new_entity_list[i]
+                        if entity_to_move.id == entity.id:
                             new_map[pos].pop(i)
                     new_map[new_pos].append(entity)
                     entity.position = new_pos
@@ -78,11 +75,9 @@ class Map:
         return new_map
 
     def in_map(self, pos: tuple) -> bool:
-        if 0 > pos[0] or 0 > pos[1]:
+        if pos[0] < 0 or pos[1] < 0:
             return False
-        if self.get_width()-1 < pos[1] or self.get_height()-1 < pos[0]:
-            return False
-        return True
+        return self.get_width() - 1 >= pos[1] and self.get_height() - 1 >= pos[0]
 
     def get_nrows(self) -> int:
         """Get the height of the map"""
@@ -133,10 +128,7 @@ class Map:
             for y in x:
                 # Add blank if this is an empty space
                 # Add first character of entity name otherwise
-                if not y:
-                    human_friendly += " "
-                else:
-                    human_friendly += y[0].name[0]
+                human_friendly += y[0].name[0] if y else " "
             human_friendly += "|\n|"
         return human_friendly[:-1] + "-" * map_ncols
 
@@ -147,7 +139,7 @@ class Map:
         """Read map from file"""
         pre_map: list[list[list]] = []
         with open(map_file) as f:
-            for row in f.readlines():
+            for row in f:
                 row = row.strip()
                 if set(row) == {"-"}:
                     continue
@@ -158,7 +150,7 @@ class Map:
                     pre_map[-1].append([])
                     if col == "P":
                         pre_map[-1][-1].append(self.player)
-                        self.player.position = Point(len(pre_map)-1, len(pre_map[-1])-1)
+                        self.player.position = Point(len(pre_map) - 1, len(pre_map[-1]) - 1)
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
                     elif col == "G":
