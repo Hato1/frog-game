@@ -22,7 +22,7 @@ class Game:
         new_pos = pos + direction
 
         # Check valid movement
-        if 0 > new_pos[0] or 0 > new_pos[1]:
+        if new_pos[0] < 0 or new_pos[1] < 0:
             return False
         if self.map.get_width()-1 < new_pos[1] or self.map.get_height()-1 < new_pos[0]:
             return False

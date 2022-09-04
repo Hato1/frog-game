@@ -74,10 +74,10 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
 
 def coords_to_pixels(row: int, col: int) -> tuple:
     """takes row and column on sprite map and returns pixel coordinates on basemap
-    and of course, row is col and col is row"""
-    offset = ((8 + col) * TSIZE,
-              4 * TSIZE + row * TSIZE)
-    return offset
+    and of course, row is col and col is row
+
+    returns: Offset?"""
+    return (8 + col) * TSIZE, 4 * TSIZE + row * TSIZE
 
 
 def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
@@ -89,13 +89,12 @@ def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
     # and WINDOW_ROWS on the right. This is probably bad practise.
 
     # Not sure why the left edge has to be pushed 0.5
-    out = (
+    return (
         y * TSIZE + TSIZE//2,
         x * TSIZE,
         WINDOW_COLUMNS * TSIZE,
         WINDOW_ROWS * TSIZE,
     )
-    return out
 
 
 def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
@@ -109,44 +108,30 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     TODO: Extract variables ending in INDEX elsewhere...
     TODO: Is it good or bad style to nest functions where possible?
     """
-
     map_ncols = c_map.get_ncols()
     map_nrows = c_map.get_nrows()
-
-    # The map is padded such that the user won't be able to see out of bounds.
-    # The actual map will be placed in the center of the padded map.
     padded_map_ncols = map_ncols + WINDOW_COLUMNS
     padded_map_nrows = map_nrows + WINDOW_ROWS
     basemap = pygame.Surface((padded_map_ncols * TSIZE, padded_map_nrows * TSIZE))
-
-    # TODO: Map objects should map backgrounds. Let's pull this from c_map eventually.
     tileset_play_area = "Grass"
     tileset_oob = "Stone"
     global spritesheet_dims
     spritesheet_dims = parse_assets(assets)
-
+    plain_tile_index = 0
+    particle_index = 11
     for row in range(padded_map_ncols):
         for col in range(padded_map_nrows):
-            if is_in_play(row, col, map_nrows, map_ncols):
-                ts = tileset_play_area
-            else:
-                ts = tileset_oob
-            # Randomise which column the tile is taken from.
-            plain_tile_index = 0
+            ts = tileset_play_area if is_in_play(row, col, map_nrows, map_ncols) else tileset_oob
+
             rand_tile = random.randrange(spritesheet_dims[ts][plain_tile_index])
-            basemap.blit(assets[ts],
-                         (row * TSIZE, col * TSIZE),
-                         get_sprite_box(col=rand_tile))
-            # 25% chance of adding a random particle to a tile.
+            basemap.blit(assets[ts], (row * TSIZE, col * TSIZE), get_sprite_box(col=rand_tile))
+
             thresh = 0.25
             while random.random() < thresh:
-                particle_index = 11
                 rand_tile = random.randrange(spritesheet_dims["Tileset"][particle_index])
-                basemap.blit(assets["Tileset"],
-                             (row * TSIZE, col * TSIZE),
-                             get_sprite_box(11, rand_tile))
-                thresh = thresh / 2
+                basemap.blit(assets["Tileset"], (row * TSIZE, col * TSIZE), get_sprite_box(11, rand_tile))
 
+                thresh /= 2
     return basemap
 
 
@@ -304,9 +289,11 @@ def play_death_animation(
         screen.blit(any_key, any_key_pos)
         pygame.display.flip()
 
-        if magic_number > 20:
-            if any(event.type == pygame.KEYDOWN for event in pygame.event.get()):
-                return
+        if magic_number > 20 and any(
+                event.type == pygame.KEYDOWN
+                for event in pygame.event.get()
+        ):
+            return
         magic_number += 1
 
 
