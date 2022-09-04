@@ -1,31 +1,43 @@
 # Upcoming Features:
 
-Complete refactor of gui.py
+### SCRUM Tasks:
 
-Collision resolver
+###### Assigned:
 
-Step limit indicator
+1. Jacob: Complete refactor of gui.py
+2. Liam: Collision resolver
+3. Jeremy: Map Editor
 
-Sound
+###### Unassigned:
 
-Boost fps. Hitting 14 while idle, and as low as 3 when spamming. Multiprocessing?
+1. Optimisation. Investigate multiprocessing?
 
-Animations that animate instead of teleport. (sliding frogs)
 
-Sound effects
 
-Music
-
-Barrelling barrel
-
-Conveyor with free/forced movement
-
-Map Parser Parser
-
-Let the map continue updating after death after a couple seconds
-
-Bugs:
+### Bugs:
 
 Cannot quit while dead
 
 Collision with barrels (entities) crashes
+
+
+
+### Before Beta:
+
+1. Sound
+   1. Music
+   2. Sound Effects
+2. Colission
+   1. Resolver
+3. More Entities
+   1. Barelling Barrel
+      1. Push Barrel
+   2. Conveyor Belt
+      1. Pushes objects in facing direction
+4. Move animation
+
+
+
+### Cool Features:
+
+1. After death, let the world slowly 'continue' making steps.
