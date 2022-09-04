@@ -22,6 +22,7 @@ from .entity import Creature
 from copy import copy
 from .helper import UP, LEFT, RIGHT, DOWN, Benchmark
 from .gui_helper import get_sprite_box, assets, parse_assets, font_render
+from typing import Generator
 
 # Asset tile size
 TSIZE: int = 25
@@ -151,6 +152,7 @@ def make_basemap(c_map: Map) -> pygame.Surface:
 
 
 class Hud_element:
+    # Make this a named tuple?
     def __init__(self, source: pygame.surface.Surface, dest: tuple) -> None:
         self.source = source
         self.dest = dest
@@ -161,10 +163,15 @@ class Hud:
         self.elements: dict = {}
 
     def update_element(self, name: str, source: pygame.surface.Surface, dest: tuple) -> None:
+        '''both adds and updates elements'''
         self.elements.update({name: Hud_element(source, dest)})
 
-    def get_elements(self): #idk pls no mad @me -> Generator[Tuple[Any, Any], None, None]:
-        return ((element.source, element.dest) for element in self.elements.values())
+    def get_elements(self) -> tuple:
+        '''returns a list to be used bu blits'''
+        return tuple(
+            (element.source, element.dest)
+            for element in self.elements.values()
+        )
 
 
 def add_hud(screen: pygame.surface.Surface, hud: Hud) -> None:
@@ -279,8 +286,7 @@ def play_death_animation(
             centerx=screen.get_width() / 2,
             centery=screen.get_height() / 3,
         )
-        any_key_font = pygame.font.Font(Path("assets", "Amatic-Bold.ttf"), 25)
-        any_key = any_key_font.render("(Press any key to continue)", True, (130, 20, 60))
+        any_key = font_render("(Press any key to continue)", "Amatic-Bold.ttf", (130, 20, 60), 25)
         any_key_pos = any_key.get_rect(
             centerx=screen.get_width() / 2,
             centery=screen.get_height() * 5 / 6,
