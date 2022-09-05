@@ -2,7 +2,7 @@
 from __future__ import annotations
 # import pygame
 # from gui_helper import get_dims
-from typing import NamedTuple
+from typing import NamedTuple, Union
 import logging
 import pygame as pg
 
@@ -43,12 +43,12 @@ class Point(NamedTuple):
     x: int
     y: int
 
-    def __add__(self, other: tuple) -> Point:
+    def __add__(self, other: Union[Point, tuple]) -> Point:
         if isinstance(other, (Vector, Point)):
             return Point(self.x + other[0], self.y + other[1])
         return NotImplemented
 
-    def __sub__(self, other: tuple) -> Point:
+    def __sub__(self, other: Union[Point, tuple]) -> Point:
         if isinstance(other, (Vector, Point)):
             return Point(self.x - other[0], self.y - other[1])
         return NotImplemented
