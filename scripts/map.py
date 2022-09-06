@@ -1,10 +1,12 @@
 """Module for reading and manipulating the game board"""
 from __future__ import annotations
-from .entity import Creature, Entity
+
 from pathlib import Path
-from typing import Iterator, Optional, overload, Union
-from .helper import Point
+from typing import Iterator, Optional, Union, overload
+
 from .collision_resolver import collision_resolver
+from .entity import Creature, Entity
+from .helper import Point
 
 
 class Map:
@@ -60,7 +62,7 @@ class Map:
         #             if obj.name == obj_name:
         #                 print(row, col)
         #                 return Point(row, col), obj
-        assert False
+        raise IndexError
         # return Point(-1, -1)
 
     def copy(self) -> Map:
@@ -102,10 +104,12 @@ class Map:
         return self.player.alive
 
     @overload
-    def __getitem__(self, index: int) -> list[list]: ...
+    def __getitem__(self, index: int) -> list[list]:
+        ...
 
     @overload
-    def __getitem__(self, index: tuple) -> list: ...
+    def __getitem__(self, index: tuple) -> list:
+        ...
 
     def __getitem__(self, index: Union[int, tuple]) -> Union[list, list[list]]:
         """Index into map with an int"""
@@ -148,12 +152,14 @@ class Map:
                     continue
                 pre_map.append([])
                 for col in row:
-                    if col in ['|', '-']:
+                    if col in ["|", "-"]:
                         continue
                     pre_map[-1].append([])
                     if col == "P":
                         pre_map[-1][-1].append(self.player)
-                        self.player.position = Point(len(pre_map) - 1, len(pre_map[-1]) - 1)
+                        self.player.position = Point(
+                            len(pre_map) - 1, len(pre_map[-1]) - 1
+                        )
                     elif col == "F":
                         pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
                     elif col == "G":
@@ -174,19 +180,31 @@ class Map:
     def _collision_detector(self, new_map: Map, moves_made: list) -> None:
         """calls collision_sorter on all tiles until no conflicts are reported"""
         # proposed_map = self.copy()
-        collision_locs = [(x, y) for x in range(self.get_nrows()) for y in range(self.get_ncols())]
+        collision_locs = [
+            (x, y) for x in range(self.get_nrows()) for y in range(self.get_ncols())
+        ]
         while collision_locs:
             # This is bad, and only runs one pass of conflict resolution
             collision_pos = collision_locs.pop(0)
             self._collision_sorter(collision_pos, new_map, collision_locs)
 
-    def _collision_sorter(self, collision_pos: tuple, new_map: Map, collision_locs: list) -> None:
-        """sorts conflicts on the given tile, calls collision_resolver for each* """
+    def _collision_sorter(
+        self, collision_pos: tuple, new_map: Map, collision_locs: list
+    ) -> None:
+        """sorts conflicts on the given tile, calls collision_resolver for each*"""
         creatures = new_map[collision_pos]
         num_creatures = len(creatures)
         if num_creatures < 2:
             return
-        remaining_pairs = [(x, y) for x in range(num_creatures) for y in range(x+1, num_creatures)]
+        remaining_pairs = [
+            (x, y) for x in range(num_creatures) for y in range(x + 1, num_creatures)
+        ]
         while remaining_pairs:
             current_collision = remaining_pairs.pop()
-            collision_resolver(current_collision, remaining_pairs, collision_pos, new_map, collision_locs)
+            collision_resolver(
+                current_collision,
+                remaining_pairs,
+                collision_pos,
+                new_map,
+                collision_locs,
+            )

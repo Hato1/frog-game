@@ -1,7 +1,7 @@
 # Global hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.3.0
     hooks:
       - id: check-builtin-literals
       - id: check-case-conflict
@@ -33,7 +33,7 @@ repos:
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.8.0.1
+    rev: v0.8.0.4
     hooks:
       - id: shellcheck
   - repo: local
@@ -43,33 +43,28 @@ repos:
       entry: '^\s*print\('
       language: pygrep
       types: [python]
-  - repo: local
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.971'
     hooks:
-      - id: mypy
-        name: mypy
-        language: script
-        require_serial: true
-        entry: run-pre-commit-project-tool
-        args: [mypy]
-        types: [python]
+    -   id: mypy
+        args: [--no-strict-optional, --ignore-missing-imports]
+        additional_dependencies: [pydantic]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
       - id: isort
-        name: isort
-        language: script
-        require_serial: true
-        entry: run-pre-commit-project-tool
-        args: [isort]
-        types: [python]
-      - id: black
-        name: black
-        language: script
-        require_serial: true
-        entry: run-pre-commit-project-tool
-        args: [black]
-        types: [python]
+        args: ["--profile", "black"]
+  - repo: https://github.com/psf/black
+    rev: 22.8.0
+    hooks:
+    - id: black
+      language_version: python3.10
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
       - id: flake8
-        name: flake8
-        language: script
-        require_serial: true
-        entry: run-pre-commit-project-tool
-        args: [flake8]
-        types: [python]
+        additional_dependencies: [flake8-bugbear]
+#  - repo: https://github.com/PyCQA/pydocstyle
+#    rev: 6.1.1
+#    hooks:
+#      - id: pydocstyle

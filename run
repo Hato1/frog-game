@@ -1,5 +1,5 @@
 #!python
 
-from scripts import gui
+from scripts import gui  # noqa: I900
 
-gui.gui_loop()
+gui.main()
