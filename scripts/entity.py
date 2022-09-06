@@ -1,7 +1,9 @@
 """Module for animate objects"""
 from typing import Optional
-from .helper import Vector, facing, Point
-from .ai import NormalNorman, DeadDoug, SpiralingStacy, BarrelingBarrel, TrickyTrent
+
+from .ai import BarrelingBarrel, DeadDoug, NormalNorman, SpiralingStacy, TrickyTrent
+from .helper import Point, Vector, facing
+
 AI_DICT = {
     "NormalNorman": NormalNorman,
     "DeadDoug": DeadDoug,
@@ -14,14 +16,16 @@ UP, RIGHT, DOWN, LEFT = range(4)
 
 class Entity:
     """Entities do not move"""
+
     next_id = 0
+    default_point = Point(-1, -1)
 
     def __init__(
         self,
         name: str,
         solid: bool = False,
         direction: int = UP,
-        position: Point = Point(-1, -1)
+        position: Point = default_point,
     ) -> None:
         """
         Args:
@@ -41,12 +45,15 @@ class Entity:
 
 class Creature(Entity):
     """Creatures do move"""
+
+    default_point = Point(-1, -1)
+
     def __init__(
         self,
         name: str,
         strategy: str = "DeadDoug",
         direction: int = UP,
-        position: Point = Point(-1, -1)
+        position: Point = default_point,
     ) -> None:
         """
         Args:

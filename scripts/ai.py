@@ -1,4 +1,4 @@
-from .helper import UP, LEFT, DOWN, RIGHT, IDLE, facing, Vector, Point
+from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, Vector, facing
 
 
 class Ai:
@@ -9,7 +9,9 @@ class Ai:
         """Get the next position object wants to move in, and the resulting state"""
         raise NotImplementedError
 
-    def make_move(self, position: Point, direction: int, _map: list) -> tuple[Point, int]:
+    def make_move(
+        self, position: Point, direction: int, _map: list
+    ) -> tuple[Point, int]:
         """Get next position and update state"""
         move, new_state = self._get_move(position, _map)
         direction = facing(move, direction)
@@ -20,12 +22,18 @@ class Ai:
 
 class DeadDoug(Ai):
     """Idle"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         return IDLE, 0
 
 
+class InvalidState(Exception):
+    pass
+
+
 class NormalNorman(Ai):
     """Move right and left (0 or 1) or up and down (2 or 3)"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
@@ -36,11 +44,12 @@ class NormalNorman(Ai):
                 return UP, 3
             case 3:
                 return DOWN, 2
-        assert False
+        raise InvalidState
 
 
 class SpiralingStacy(Ai):
     """Moves anticlockwise (0 is bottom left) or clockwise (4 is bottom left)"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
@@ -59,11 +68,12 @@ class SpiralingStacy(Ai):
                 return DOWN, 7
             case 7:
                 return LEFT, 4
-        assert False
+        raise InvalidState
 
 
 class TrickyTrent(Ai):
     """Moves clockwise or anticlockwise in a diamond"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
@@ -82,11 +92,12 @@ class TrickyTrent(Ai):
                 return LEFT + UP, 7
             case 7:
                 return DOWN + LEFT, 4
-        assert False
+        raise InvalidState
 
 
 class BarrelingBarrel(Ai):
     """Moves not at all, up/down/left/right in state (0/1/2/3/4+) until stat"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         match self.state:
             case 0:
@@ -99,10 +110,11 @@ class BarrelingBarrel(Ai):
                 return LEFT, 3
             case 4:
                 return RIGHT, 4
-        assert False
+        raise InvalidState
 
 
 class DirtyDan(Ai):
     """mirrors the player's movements"""
+
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         raise NotImplementedError

@@ -1,5 +1,6 @@
-import pygame as pg
 from pathlib import Path
+
+import pygame as pg
 
 TSIZE = 25
 
@@ -11,9 +12,9 @@ def get_dims(tileset: pg.Surface) -> tuple[int, int]:
 
     assert width, "invalid dimension"
     assert height, "invalid dimension"
-    assert (width % TSIZE == 0), f"image height({width}) is not a multiple of {TSIZE}"
-    assert (height % TSIZE == 0), f"image height({height}) is not a multiple of {TSIZE}"
-    return width//TSIZE, height//TSIZE
+    assert width % TSIZE == 0, f"image height({width}) is not a multiple of {TSIZE}"
+    assert height % TSIZE == 0, f"image height({height}) is not a multiple of {TSIZE}"
+    return width // TSIZE, height // TSIZE
 
 
 def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
@@ -21,7 +22,9 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
     return row * 25, col * 25, 25, 25
 
 
-def font_render(text: str, font_filename: str, color: tuple[int, int, int], font_size: int) -> pg.surface.Surface:
+def font_render(
+    text: str, font_filename: str, color: tuple[int, int, int], font_size: int
+) -> pg.surface.Surface:
     font_title = pg.font.Font(Path("assets", font_filename), font_size)
     rendered_font = font_title.render(text, True, (130, 20, 60))
     return rendered_font
@@ -54,7 +57,11 @@ def parse_assets(images: dict) -> dict:
             empty_spots = 0
             for row in range(nrows):
                 # TODO: A simpler way of checking for an empty spritesheet slot
-                sprite_surface = images[img].subsurface(col*TSIZE, row*TSIZE, TSIZE, TSIZE).convert_alpha()
+                sprite_surface = (
+                    images[img]
+                    .subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE)
+                    .convert_alpha()
+                )
                 surface_alpha = pg.transform.average_color(sprite_surface)[-1]
                 if surface_alpha == 0:
                     empty_spots = empty_spots + 1

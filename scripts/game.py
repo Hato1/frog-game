@@ -1,7 +1,8 @@
 """Module for game logic"""
-from .map import Map
 from pathlib import Path
-from .helper import Vector, Point
+
+from .helper import Point, Vector
+from .map import Map
 
 
 class Game:
@@ -24,7 +25,10 @@ class Game:
         # Check valid movement
         if new_pos[0] < 0 or new_pos[1] < 0:
             return False
-        if self.map.get_width()-1 < new_pos[1] or self.map.get_height()-1 < new_pos[0]:
+        if (
+            self.map.get_width() - 1 < new_pos[1]
+            or self.map.get_height() - 1 < new_pos[0]
+        ):
             return False
         for obj in self.map[new_pos]:
             if obj.solid:

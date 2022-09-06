@@ -1,9 +1,9 @@
 """Various helper functions"""
 from __future__ import annotations
-# import pygame
-# from gui_helper import get_dims
-from typing import NamedTuple, Union
+
 import logging
+from typing import NamedTuple, Union
+
 import pygame as pg
 
 TSIZE = 25
@@ -30,7 +30,7 @@ class Vector(NamedTuple):
 
     def __add__(self, other: tuple) -> Vector:
         if isinstance(other, (Vector, Point)):
-            return Vector(self.x+other[0], self.y+other[1])
+            return Vector(self.x + other[0], self.y + other[1])
         return NotImplemented
 
     def __sub__(self, other: tuple) -> Vector:
@@ -54,7 +54,13 @@ class Point(NamedTuple):
         return NotImplemented
 
 
-UP, LEFT, DOWN, RIGHT, IDLE = Vector(-1, 0), Vector(0, -1), Vector(1, 0), Vector(0, 1), Vector(0, 0)
+UP, LEFT, DOWN, RIGHT, IDLE = (
+    Vector(-1, 0),
+    Vector(0, -1),
+    Vector(1, 0),
+    Vector(0, 1),
+    Vector(0, 0),
+)
 FACING = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3}
 
 
