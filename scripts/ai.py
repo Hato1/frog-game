@@ -19,7 +19,7 @@ class Ai:
 
 
 class DeadDoug(Ai):
-    """Dead dougs don't die"""
+    """Idle"""
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
         return IDLE, 0
 
@@ -104,4 +104,5 @@ class BarrelingBarrel(Ai):
 
 class DirtyDan(Ai):
     """mirrors the player's movements"""
-    # I don't know how to do this
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
+        raise NotImplementedError

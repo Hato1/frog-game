@@ -20,10 +20,12 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
     """Get the box of a sprite from spritesheet"""
     return row * 25, col * 25, 25, 25
 
+
 def font_render(text: str, font_filename: str, color: tuple[int, int, int], font_size: int) -> pg.surface.Surface:
     font_title = pg.font.Font(Path("assets", font_filename), font_size)
     rendered_font = font_title.render(text, True, (130, 20, 60))
     return rendered_font
+
 
 # Pull this from .json
 assets = {
