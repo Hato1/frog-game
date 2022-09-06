@@ -43,3 +43,33 @@ repos:
       entry: '^\s*print\('
       language: pygrep
       types: [python]
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [mypy]
+        types: [python]
+      - id: isort
+        name: isort
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [isort]
+        types: [python]
+      - id: black
+        name: black
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [black]
+        types: [python]
+      - id: flake8
+        name: flake8
+        language: script
+        require_serial: true
+        entry: run-pre-commit-project-tool
+        args: [flake8]
+        types: [python]
