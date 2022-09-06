@@ -2,8 +2,7 @@
 from __future__ import annotations
 from .entity import Creature, Entity
 from pathlib import Path
-from multimethod import multimethod
-from typing import Iterator, Optional
+from typing import Iterator, Optional, overload, Union
 from .helper import Point
 from .collision_resolver import collision_resolver
 
@@ -39,7 +38,7 @@ class Map:
                     entity.position = new_pos
         self._collision_detector(new_map, moves_made)
         self.steps_left -= 1
-        #if not(self.steps_left):
+        # if not(self.steps_left):
         if self.steps_left <= 0:
             self.player.alive = False
             # Should this go to map.py?
@@ -102,15 +101,19 @@ class Map:
     def is_player_alive(self) -> bool:
         return self.player.alive
 
-    @multimethod
-    def __getitem__(self, index: int) -> list[list]:
-        """Index into map with an int"""
-        return self.map[index]
+    @overload
+    def __getitem__(self, index: int) -> list[list]: ...
 
-    @__getitem__.register
-    def _(self, index: tuple) -> list:
-        """Index into map with a tuple"""
-        return self.map[index[0]][index[1]]
+    @overload
+    def __getitem__(self, index: tuple) -> list: ...
+
+    def __getitem__(self, index: Union[int, tuple]) -> Union[list, list[list]]:
+        """Index into map with an int"""
+        if isinstance(index, int):
+            return self.map[index]
+        elif isinstance(index, tuple):
+            return self.map[index[0]][index[1]]
+        raise ValueError
 
     def __iter__(self) -> Iterator:
         return iter(self.map)

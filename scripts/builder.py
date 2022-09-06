@@ -1,4 +1,6 @@
-# Map Builder
+# mypy: ignore-errors
+"""Map Builder Tool"""
+
 
 import itertools
 from json import load

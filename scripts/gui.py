@@ -22,7 +22,6 @@ from .entity import Creature
 from copy import copy
 from .helper import UP, LEFT, RIGHT, DOWN, Benchmark
 from .gui_helper import get_sprite_box, assets, parse_assets, font_render
-from typing import Generator
 
 # Asset tile size
 TSIZE: int = 25
@@ -135,8 +134,7 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     return basemap
 
 
-
-class Hud_element:
+class HudElement:
     # Make this a named tuple?
     def __init__(self, source: pygame.surface.Surface, dest: tuple) -> None:
         self.source = source
@@ -148,11 +146,11 @@ class Hud:
         self.elements: dict = {}
 
     def update_element(self, name: str, source: pygame.surface.Surface, dest: tuple) -> None:
-        '''both adds and updates elements'''
-        self.elements.update({name: Hud_element(source, dest)})
+        """both adds and updates elements"""
+        self.elements.update({name: HudElement(source, dest)})
 
     def get_elements(self) -> tuple:
-        '''returns a list to be used bu blits'''
+        """returns a list to be used by blits"""
         return tuple(
             (element.source, element.dest)
             for element in self.elements.values()
@@ -218,8 +216,6 @@ def pan_screen(
     current_frame: pygame.Surface,
     screen: pygame.surface.Surface,
     hud: Hud,
-    old_map: Map,
-    new_map: Map,
     old_center: tuple[int, int],
     new_center: tuple[int, int]
 ) -> None:
@@ -304,8 +300,16 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
     # Load the map. This will be a function when we have multiple maps to go between.
     c_map = game.get_map()
     hud = Hud()
-    hud.update_element("step_count", font_render(str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25), (0,0))
-    froglocation = game.get_player_pos()
+    hud.update_element(
+        "step_count",
+        font_render(
+            str(game.map.get_steps_left()),
+            "Amatic-Bold.ttf",
+            (130, 20, 60), 25
+        ),
+        (0, 0)
+    )
+    frog_location = game.get_player_pos()
     basemap = make_basemap(c_map)
     map_changed = True
     frame_count = 0
@@ -323,15 +327,14 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
             new_map = game.get_map()
             frame = draw_map(new_map, copy(basemap), game.is_player_alive(), frame_count)
             new_froglocation = game.get_player_pos()
-            if ANIMATIONS and froglocation != new_froglocation:
-                pan_screen(frame, screen, hud, c_map, new_map, froglocation, new_froglocation)
+            if ANIMATIONS and frog_location != new_froglocation:
+                pan_screen(frame, screen, hud, frog_location, new_froglocation)
             screen.blit(frame, (0, 0), get_disp(*new_froglocation))
             add_hud(screen, hud)
             pygame.display.flip()
 
             map_changed = False
-            c_map = new_map
-            froglocation = new_froglocation
+            frog_location = new_froglocation
             if not game.is_player_alive():
                 break
 
@@ -339,7 +342,15 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
         for event in pygame.event.get():
             if process_event(event, game):
                 map_changed = True
-                hud.update_element("step_count", font_render(str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25), (0,0))
+                hud.update_element(
+                    "step_count",
+                    font_render(
+                        str(game.map.get_steps_left()),
+                        "Amatic-Bold.ttf",
+                        (130, 20, 60), 25
+                    ),
+                    (0, 0)
+                )
                 # Prevent skipping of movement animations
                 break
     play_death_animation(screen, frame, new_froglocation)
