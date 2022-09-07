@@ -1,7 +1,14 @@
 """Module for animate objects"""
 from typing import Optional
 
-from .ai import BarrelingBarrel, DeadDoug, NormalNorman, SpiralingStacy, TrickyTrent
+from .ai import (
+    BarrelingBarrel,
+    DeadDoug,
+    NormalNorman,
+    Player,
+    SpiralingStacy,
+    TrickyTrent,
+)
 from .helper import Point, Vector, facing
 
 AI_DICT = {
@@ -10,7 +17,9 @@ AI_DICT = {
     "SpiralingStacy": SpiralingStacy,
     "BarrelingBarrel": BarrelingBarrel,
     "TrickyTrent": TrickyTrent,
+    "Player": Player,
 }
+
 UP, RIGHT, DOWN, LEFT = range(4)
 
 

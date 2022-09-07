@@ -4,14 +4,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
-from .collision_resolver import collision_resolver
+import scripts.collision_behaviours as collision_behaviours
+
 from .entity import Creature, Entity
 from .helper import Point
+
+# from multimethod import multimethod
 
 
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
-        self.player = Creature("Player")
+        self.player = Creature("Player", "Player")
         self.steps_left = 25
         # Map is structured as map[row][col][object]
         self.map = self._read_map(map_file) if map_file else []
@@ -38,13 +41,81 @@ class Map:
                             new_map[pos].pop(i)
                     new_map[new_pos].append(entity)
                     entity.position = new_pos
-        self._collision_detector(new_map, moves_made)
+
+        self.__collision_handler(new_map)
+
         self.steps_left -= 1
         # if not(self.steps_left):
         if self.steps_left <= 0:
             self.player.alive = False
-            # Should this go to map.py?
+
         self.map = new_map.map
+
+    def __collision_handler(self, new_map: Map) -> None:
+        """
+        Handles collisions
+        """
+        # Hours spent on collision resolution: 14.5
+        # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
+        collision_positions = self.__collision_detector(new_map)
+
+        # May want to initialise a second instance of map and collision positions for iterative resolutions:
+        # new_map_nplus1 = new_map.copy()
+        # collision_positions_nplus1 = []
+
+        while collision_positions:
+            current_collision_position = collision_positions.pop(0)
+            collisions_here = self.__collision_sorter(
+                new_map, current_collision_position
+            )
+            while collisions_here:
+                current_collision = collisions_here.pop()
+                entity_strategies = [
+                    Entity.get_strategy_name() for Entity in current_collision
+                ]
+                try:
+                    temp_fn = getattr(collision_behaviours, "_".join(entity_strategies))
+                except AttributeError:
+                    try:
+                        # Perhaps check for generic behaviours (ie walls) here?
+                        temp_fn = getattr(
+                            collision_behaviours, "_".join(reversed(entity_strategies))
+                        )
+                    except AttributeError:
+                        temp_fn = collision_behaviours.no_conflict
+                temp_fn(self)
+
+    def __collision_detector(self, new_map: Map) -> list[Point]:
+        """Finds and returns all potential collision locations"""
+        # Currently unintelligent, assumes all points have conflict
+        collision_locs = [
+            Point(x, y)
+            for x in range(new_map.get_nrows())
+            for y in range(new_map.get_ncols())
+        ]
+        return collision_locs
+
+    def __collision_sorter(
+        self, new_map: Map, current_collision_position: Point
+    ) -> list:
+        """
+        Makes a list ofpointers to each pair of creatures
+        Current implementation first resolves entities which arrive first (lower index)
+        """
+        creatures = new_map[current_collision_position]
+        num_creatures = len(creatures)
+        remaining_pairs = [
+            (creatures[x], creatures[y])
+            for x in range(num_creatures)
+            for y in range(x + 1, num_creatures)
+        ]
+
+        # Something like below might instead resolve by alphabetical order
+        # entity_pair = [new_map[current_collision_position][a] for a in current_collision_position]
+        # entity_pair.sort(key = lambda ent: ent.get_strategy_name())
+        # entity_strategies = [ent.get_strategy_name() for ent in entity_pair]
+
+        return remaining_pairs
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -176,35 +247,3 @@ class Map:
                     elif col == "T":
                         pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
         return pre_map
-
-    def _collision_detector(self, new_map: Map, moves_made: list) -> None:
-        """calls collision_sorter on all tiles until no conflicts are reported"""
-        # proposed_map = self.copy()
-        collision_locs = [
-            (x, y) for x in range(self.get_nrows()) for y in range(self.get_ncols())
-        ]
-        while collision_locs:
-            # This is bad, and only runs one pass of conflict resolution
-            collision_pos = collision_locs.pop(0)
-            self._collision_sorter(collision_pos, new_map, collision_locs)
-
-    def _collision_sorter(
-        self, collision_pos: tuple, new_map: Map, collision_locs: list
-    ) -> None:
-        """sorts conflicts on the given tile, calls collision_resolver for each*"""
-        creatures = new_map[collision_pos]
-        num_creatures = len(creatures)
-        if num_creatures < 2:
-            return
-        remaining_pairs = [
-            (x, y) for x in range(num_creatures) for y in range(x + 1, num_creatures)
-        ]
-        while remaining_pairs:
-            current_collision = remaining_pairs.pop()
-            collision_resolver(
-                current_collision,
-                remaining_pairs,
-                collision_pos,
-                new_map,
-                collision_locs,
-            )
