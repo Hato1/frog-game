@@ -18,6 +18,12 @@ class Ai:
         return Point._make(position + move), direction
 
 
+class Player(Ai):
+    """This is a hacky solution used for conflice resolution"""
+    def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:
+        return IDLE, 0
+
+
 class DeadDoug(Ai):
     """Dead dougs don't die"""
     def _get_move(self, position: Point, _map: list) -> tuple[Vector, int]:

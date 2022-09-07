@@ -41,3 +41,4 @@ Collision with barrels (entities) crashes
 ### Cool Features:
 
 1. After death, let the world slowly 'continue' making steps.
+2. Make the stepcounter change colour and get bigger/shake, maybe vignette the screen
