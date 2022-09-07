@@ -9,21 +9,24 @@ from math import ceil, floor
 from time import perf_counter, sleep, time
 from typing import List
 
-import pygame  # whoops
-import pygame as pg  # whoops
+import pygame as pg
+
+# TODO make config variable
+Config = {
+    "Width": 16,  # number of tiles wide the screen is (make adjustable in the future)
+    "Height": 9,  # number of high wide the screen is (make adjustable in the future)
+    "WindowScale": 3,  # zoom to calculate window size at (would be better to make adjustable)
+    "Zoom": 2,  # default zoom level of the screen
+    "CamPos": [0, 0],  # staring (top left) camera position
+    "SpriteRes": 25,  # resolution single tile sprites (1x1)
+    "Debounce": 1000,
+    "Fps": 15,  # set refresh rate cap
+    "SaveDelay": 1,  # Save wait time (in secodns)
+}
 
 # Declare Global variables
-Width = 16  # number of tiles wide the screen is (make adjustable in the future)
-Height = 9  # number of high wide the screen is (make adjustable in the future)
-WindowScale = 3  # zoom to calculate window size at (would be better to make adjustable)
-Zoom = 2  # default zoom level of the screen
-CamPos = [0, 0]  # staring (top left) camera position
-SpriteRes = 25  # resolution single tile sprites (1x1)
-NewRes = SpriteRes * WindowScale
-Debounce = int(round(time() * 1000))  # set how much input debounce we want
-Fps = 15  # set refresh rate cap
-SaveDelay = 1  # Save wait time (in secodns)
-SaveCycles = floor(Fps * SaveDelay)
+NewRes = Config["SpriteRes"] * Config["WindowScale"]
+SaveCycles = floor(Config["Fps"] * Config["SaveDelay"])
 ActionFlag = True
 SaveCounter = SaveCycles + 1
 MouseDown = False
@@ -31,6 +34,9 @@ SelectedTile = 0  # inital selected tile index
 ClickDown = 0, 0
 ScreenSurf = pg.Surface((0, 0))
 Redraw = False
+CamPos = Config["CamPos"]
+Zoom = Config["Zoom"]
+debounce = Config["Debounce"]
 
 # select which map to edit
 FileName = "map1"
@@ -68,7 +74,7 @@ for row in Data:
 
 # TODO use dictionary for below
 # Extract metadata info we want
-Tiles: List[pygame.Surface] = []
+Tiles: List[pg.Surface] = []
 TileName: List[str] = []
 
 # get a
@@ -119,8 +125,8 @@ def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
         pg.Rect(
             0,
             0,
-            Width * SpriteRes * WindowScale,
-            (Height + 1) * SpriteRes * WindowScale,
+            Config["Width"] * Config["SpriteRes"] * Config["WindowScale"],
+            (Config["Height"] + 1) * Config["SpriteRes"] * Config["WindowScale"],
         ),
     )
 
@@ -132,10 +138,10 @@ def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
         window,
         (0, 0, 0),
         pg.Rect(
-            SpriteRes - 2,
-            Height * NewRes + SpriteRes - 2,
-            Width * NewRes - SpriteRes * 2 - 14,
-            SpriteRes + 4,
+            Config["SpriteRes"] - 2,
+            Config["Height"] * NewRes + Config["SpriteRes"] - 2,
+            Config["Width"] * NewRes - Config["SpriteRes"] * 2 - 14,
+            Config["SpriteRes"] + 4,
         ),
     )
     # Draw a white rectange for the currently selected sprite
@@ -143,10 +149,10 @@ def drawscreen(screen: pg.Surface, window: pg.surface.Surface) -> None:
         window,
         (255, 255, 255),
         pg.Rect(
-            (((SpriteRes + 2) * SelectedTile) + SpriteRes - 2),
-            (Height * NewRes) + SpriteRes - 2,
-            SpriteRes + 4,
-            SpriteRes + 4,
+            (((Config["SpriteRes"] + 2) * SelectedTile) + Config["SpriteRes"] - 2),
+            (Config["Height"] * NewRes) + Config["SpriteRes"] - 2,
+            Config["SpriteRes"] + 4,
+            Config["SpriteRes"] + 4,
         ),
     )
 
@@ -158,18 +164,22 @@ def drawselectables(surfaces: list, window: pg.surface.Surface) -> None:
     for surfnum, surf in enumerate(surfaces):
         window.blit(
             surf,
-            ((surfnum * 1.09) * SpriteRes + SpriteRes, NewRes * Height + SpriteRes),
-            (0, 0, SpriteRes, SpriteRes),
+            (
+                (surfnum * 1.09) * Config["SpriteRes"] + Config["SpriteRes"],
+                NewRes * Config["Height"] + Config["SpriteRes"],
+            ),
+            (0, 0, Config["SpriteRes"], Config["SpriteRes"]),
         )
 
 
 def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pg.Surface:
     """loop over every tile on display and create a surface of the map"""
-    mapsurf = pg.Surface((Width * NewRes, Height * NewRes + NewRes))
-    for i2 in range(ceil(Width * (WindowScale / zoom))):
+    mapsurf = pg.Surface((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes))
+    for i2 in range(ceil(Config["Width"] * (Config["WindowScale"] / zoom))):
         if -1 < i2 + left < len(maplist[1]):  # only run if in range
             for j in range(
-                (1 + WindowScale - Zoom) + ceil(Height * (WindowScale / zoom))
+                (1 + Config["WindowScale"] - Zoom)
+                + ceil(Config["Height"] * (Config["WindowScale"] / zoom))
             ):
                 if -1 < j + top < len(maplist):  # only run if in range
                     tile1 = maplist[(j + top) % len(maplist)][
@@ -179,21 +189,29 @@ def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pg.Surface:
                         w, h = surf.get_size()
                         mapsurf.blit(
                             pg.transform.scale(surf, (zoom * w, zoom * h)),
-                            (i2 * SpriteRes * zoom, j * SpriteRes * zoom),
-                            (0, 0, SpriteRes * zoom, SpriteRes * zoom),
+                            (
+                                i2 * Config["SpriteRes"] * zoom,
+                                j * Config["SpriteRes"] * zoom,
+                            ),
+                            (
+                                0,
+                                0,
+                                Config["SpriteRes"] * zoom,
+                                Config["SpriteRes"] * zoom,
+                            ),
                         )
     return mapsurf
 
 
 def selecttile(click: tuple[int, int]) -> int:
     """retuns the index of the clicked selectable"""
-    return floor(click[0] / (SpriteRes + 2) - 1)
+    return floor(click[0] / (Config["SpriteRes"] + 2) - 1)
 
 
 def clickedindex(click: tuple, campos: list) -> tuple:
     """return the row and column of the clicked tile"""
     index = [
-        (floor(coord / (SpriteRes * Zoom)) + campos[i]) % MapDims[i]
+        (floor(coord / (Config["SpriteRes"] * Zoom)) + campos[i]) % MapDims[i]
         for i, coord in enumerate(click)
     ]
 
@@ -244,12 +262,12 @@ def event_handler(window: pg.surface.Surface) -> None:
     global Zoom
     global SelectedTile
     global ClickDown
-    global Debounce
     global MouseDown
     global ScreenSurf
     global ActionFlag
     global SaveCounter
     global Redraw
+    global debounce
 
     # handle pygame events
     for event in pg.event.get():
@@ -279,7 +297,10 @@ def event_handler(window: pg.surface.Surface) -> None:
                     ClickDown = pg.mouse.get_pos()
 
                     # If clicking on editable area apply currently selected tile
-                    if ClickDown[1] < Height * NewRes and AllType[SelectedTile] == 1:
+                    if (
+                        ClickDown[1] < Config["Height"] * NewRes
+                        and AllType[SelectedTile] == 1
+                    ):
                         ActionFlag = False  # reset the save timer
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
                         ind = clickedindex(ClickDown, CamPos)
@@ -291,9 +312,9 @@ def event_handler(window: pg.surface.Surface) -> None:
 
                     # If clicking on tile selection area change paintbrush tile
                     if (
-                        Height * NewRes + SpriteRes
+                        Config["Height"] * NewRes + Config["SpriteRes"]
                         < ClickDown[1]
-                        < Height * NewRes + (2 * SpriteRes)
+                        < Config["Height"] * NewRes + (2 * Config["SpriteRes"])
                     ):
                         SelectedTile = selecttile(ClickDown)
 
@@ -302,7 +323,7 @@ def event_handler(window: pg.surface.Surface) -> None:
                     ClickDown = pg.mouse.get_pos()
 
                     # Remove top entity if it exists
-                    if ClickDown[1] < Height * NewRes:
+                    if ClickDown[1] < Config["Height"] * NewRes:
                         ind = clickedindex(ClickDown, CamPos)
                         if len(Data[ind[1]][ind[0]]) > 1:
                             ActionFlag = False  # reset the save timer
@@ -317,7 +338,7 @@ def event_handler(window: pg.surface.Surface) -> None:
                 MouseDown = False
                 if AllType[SelectedTile] == 0 and event.button == pg.BUTTON_LEFT:
                     click_up = pg.mouse.get_pos()
-                    if click_up[1] < Height * NewRes > ClickDown[1]:
+                    if click_up[1] < Config["Height"] * NewRes > ClickDown[1]:
                         Redraw = True
                         ActionFlag = False  # reset the save timer
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
@@ -348,12 +369,14 @@ def event_handler(window: pg.surface.Surface) -> None:
 
             # on scroll zoom
             case pg.MOUSEWHEEL:
-                if int(round(time() * 1000)) > Debounce:
+                if int(round(time() * 1000)) > debounce:
                     Redraw = True
-                    Debounce = int(round(time() * 1000)) + 150
+                    debounce = int(round(time() * Config["Debounce"])) + 150
                     Zoom = Zoom + event.y
                     Zoom = max(Zoom, 1)
-                    Zoom = WindowScale if Zoom > WindowScale else Zoom
+                    Zoom = (
+                        Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
+                    )
 
         # redarw map now button has been released
         if Redraw is True:
@@ -383,7 +406,7 @@ def event_handler(window: pg.surface.Surface) -> None:
 def main() -> None:
     # Initialise
     window = pg.display.set_mode(
-        (Width * NewRes, Height * NewRes + NewRes)
+        (Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes)
     )  # set display size
     for i, sprite in enumerate(All):
         All[i] = amend_transparent(sprite)
@@ -403,9 +426,9 @@ def main() -> None:
         # sleep to maintain a constant frame time
         runtime = perf_counter() - t1_start
         # print(1/runtime)
-        if runtime > (1 / Fps):
+        if runtime > (1 / Config["Fps"]):
             runtime = 0
-        sleep((1 / Fps) - runtime)
+        sleep((1 / Config["Fps"]) - runtime)
 
 
 main()
