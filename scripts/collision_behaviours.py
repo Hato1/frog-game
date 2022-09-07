@@ -33,7 +33,11 @@ Notes:
 # from collections import namedtuple
 # from .entity import AI_DICT
 # from .helper import Point
-from .map import Map
+from typing import TYPE_CHECKING
+
+# Dumb hacky hack for PyCharm type checking
+if TYPE_CHECKING:
+    from .map import Map
 
 
 def no_conflict(map: "Map"):
