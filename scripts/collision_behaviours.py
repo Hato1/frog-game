@@ -29,15 +29,41 @@ collision_positions - List of Points where collisions occur
 Notes:
     Force moved entities should go to front of list, if move unmade, or back if move extra
 """
-# import logging
+from logging import warning
+
 # from collections import namedtuple
 # from .entity import AI_DICT
 # from .helper import Point
 from typing import TYPE_CHECKING
 
+# from .entity import Creature, Entity
+
 # Dumb hacky hack for PyCharm type checking
 if TYPE_CHECKING:
     from .map import Map
+
+
+creatures_which_do_not_interact = "DeadDoug"
+creatures_which_kill_player_outright = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
+creatures_which_kill_each_other = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
+
+
+def get_fn(entity_names: list):
+    """picks the fn based on creatures' strategy names"""
+    # want to make a check for Entity (not Creature), return no_conflict
+    # if any([type()])
+    if any([name in creatures_which_do_not_interact for name in entity_names]):
+        return no_conflict
+    if any([name == "Player" for name in entity_names]):
+        if any([name in creatures_which_kill_player_outright for name in entity_names]):
+            return kill_player
+
+    warning(
+        "{} and {} have no programmed interaction!".format(
+            entity_names[0], entity_names[1]
+        )
+    )
+    return no_conflict
 
 
 def no_conflict(map: "Map"):
@@ -49,6 +75,6 @@ def NormalNorman_NormalNorman(map: "Map") -> None:
     return
 
 
-def Player_NormalNorman(map: "Map") -> None:
+def kill_player(map: "Map") -> None:
     map.player.alive = False
     return
