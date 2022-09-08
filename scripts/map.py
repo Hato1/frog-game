@@ -4,8 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
-import scripts.collision_behaviours as collision_behaviours
-
+from .collision_behaviours import get_fn
 from .entity import Creature, Entity
 from .helper import Point
 
@@ -46,7 +45,7 @@ class Map:
 
         self.steps_left -= 1
         # if not(self.steps_left):
-        if self.steps_left <= 0:
+        if self.steps_left == 0:
             self.player.alive = False
 
         self.map = new_map.map
@@ -55,7 +54,7 @@ class Map:
         """
         Handles collisions
         """
-        # Hours spent on collision resolution: 14.5
+        # Hours spent on collision resolution: 16.5
         # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
         collision_positions = self.__collision_detector(new_map)
 
@@ -73,16 +72,7 @@ class Map:
                 entity_strategies = [
                     Entity.get_strategy_name() for Entity in current_collision
                 ]
-                try:
-                    temp_fn = getattr(collision_behaviours, "_".join(entity_strategies))
-                except AttributeError:
-                    try:
-                        # Perhaps check for generic behaviours (ie walls) here?
-                        temp_fn = getattr(
-                            collision_behaviours, "_".join(reversed(entity_strategies))
-                        )
-                    except AttributeError:
-                        temp_fn = collision_behaviours.no_conflict
+                temp_fn = get_fn(entity_strategies)
                 temp_fn(self)
 
     def __collision_detector(self, new_map: Map) -> list[Point]:

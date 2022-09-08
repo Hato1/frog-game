@@ -7,6 +7,7 @@
 1. Jacob: Complete refactor of gui.py
 2. Liam: Collision resolver
 3. Jeremy: Map Editor
+4. Jeremy: Move step counter
 
 ###### Unassigned:
 
@@ -42,3 +43,4 @@ Collision with barrels (entities) crashes
 
 1. After death, let the world slowly 'continue' making steps.
 2. Make the stepcounter change colour and get bigger/shake, maybe vignette the screen
+3. Make all communication non-language
