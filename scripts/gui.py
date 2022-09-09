@@ -26,8 +26,9 @@ from .map import Map
 
 # Asset tile size
 TSIZE: int = 25
-WINDOW_ROWS = 9
-WINDOW_COLUMNS = 16
+# FIXME: Using even numbered tile dims causes the screen to center 0.5 tiles off
+WINDOW_ROWS = 19
+WINDOW_COLUMNS = 33
 ANIMATIONS = True
 
 # Enable to print frametimes to console.
@@ -77,7 +78,8 @@ def coords_to_pixels(row: int, col: int) -> tuple:
     and of course, row is col and col is row
 
     returns: Offset?"""
-    return (8 + col) * TSIZE, 4 * TSIZE + row * TSIZE
+    return (WINDOW_COLUMNS / 2 + col) * TSIZE, (WINDOW_ROWS / 2 + row) * TSIZE
+    # return (8*2 + col) * TSIZE, 4*2 * TSIZE + row * TSIZE
 
 
 def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
@@ -87,10 +89,8 @@ def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
     # To Center the box, we actually don't need to do anything.
     # This is because the basemap is padded WINDOW_COLUMNS on the left
     # and WINDOW_ROWS on the right. This is probably bad practise.
-
-    # Not sure why the left edge has to be pushed 0.5
     return (
-        y * TSIZE + TSIZE // 2,
+        y * TSIZE,
         x * TSIZE,
         WINDOW_COLUMNS * TSIZE,
         WINDOW_ROWS * TSIZE,
@@ -99,7 +99,9 @@ def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
 
 def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
     """Check whether a coordinate on a padded map lies in the map"""
-    return row in range(8, 8 + ncols) and col in range(4, 4 + nrows)
+    return row in range(
+        math.floor(WINDOW_COLUMNS / 2), math.ceil(WINDOW_COLUMNS / 2 + ncols)
+    ) and col in range(math.floor(WINDOW_ROWS / 2), math.ceil(WINDOW_ROWS / 2 + nrows))
 
 
 def make_basemap(c_map: Map) -> pygame.Surface:
