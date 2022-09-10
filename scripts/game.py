@@ -1,7 +1,7 @@
 """Module for game logic"""
 from pathlib import Path
 
-from .helper import Point
+from .helper import Point, Vector
 from .map import Map
 
 
@@ -11,7 +11,7 @@ class Game:
         self.map = Map(Path("maps/map3"))
         # ToDo: Load a player save file for any persistent items/preferences
 
-    def move(self, direction: Point) -> bool:
+    def move(self, direction: Vector) -> bool:
         """Read a move and if valid, perform it and update the game.
 
         Args:
