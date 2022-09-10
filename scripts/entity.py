@@ -9,7 +9,7 @@ from .ai import (
     SpiralingStacy,
     TrickyTrent,
 )
-from .helper import Point, Vector, facing
+from .helper import Point, facing
 
 # TODO: Rename DeadDoug to InanimateIvan
 AI_DICT = {
@@ -53,7 +53,7 @@ class Entity:
         # Used to force creatures next move, ignoring their strategy.
         # TODO: Make this a list of points, FIFO.
         # TODO: Remove Vectors and replace with Points
-        self.next_move: Optional[Vector] = None
+        self.next_move: Optional[Point] = None
 
         self.id = Entity.next_id
         Entity.next_id += 1
