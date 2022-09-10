@@ -74,7 +74,7 @@ class Creature(Entity):
         self.strategy = AI_DICT[strategy]()
         # Can be used to force creatures next move, ignoring their strategy.
         self.next_move: Optional[Vector] = None
-        super(Creature, self).__init__(name, False, direction, position)
+        super().__init__(name, False, direction, position)
 
     def get_next_move(self, position: Point, _map: list) -> Point:
         if self.next_move:

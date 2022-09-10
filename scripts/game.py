@@ -54,6 +54,9 @@ class Game:
         # return full map
         return self.map
 
+    def get_steps_remaining(self):
+        return self.map.get_steps_left()
+
     def is_player_alive(self) -> bool:
         return self.map.player.alive
 

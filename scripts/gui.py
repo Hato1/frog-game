@@ -23,6 +23,7 @@ from .game import Game
 from .gui_helper import assets, font_render, get_sprite_box, parse_assets
 from .helper import DOWN, LEFT, RIGHT, UP, Benchmark
 from .map import Map
+from .sound import SoundSystem
 
 # Asset tile size
 TSIZE: int = 25
@@ -39,6 +40,9 @@ if BENCHMARK:
 
 pygame.init()
 logging.basicConfig(level=1, format="")
+
+# loads the sound system
+sound_system = SoundSystem()
 
 spritesheet_dims: dict
 
@@ -249,6 +253,12 @@ def pan_screen(
         pygame.time.wait(20)
 
 
+def adjust_step_volume(game: Game):
+    # ToDo: implement max step amount instead of hard coding 25
+    volume = 1 - (game.get_steps_remaining() / 25)
+    sound_system.set_sound_volume("step", volume)
+
+
 def play_death_animation(
     screen: pygame.surface.Surface,
     current_frame: pygame.surface.Surface,
@@ -263,6 +273,10 @@ def play_death_animation(
     # B&W filter instead of darken background?
     # Sound effect here would be great!
     magic_number = 0
+
+    # plays croak sound upon death
+    sound_system.play_sound("croak")
+
     while True:
         pygame.time.delay(50)
         you_died = font_render("You  Died", "Amatic-Bold.ttf", (130, 20, 60), 36 * 3)
@@ -355,6 +369,10 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
         # Process Input
         for event in pygame.event.get():
             if process_event(event, game):
+                # ToDo: move step sound and step sound volume here
+                adjust_step_volume(game)
+                sound_system.play_sound("step")
+
                 map_changed = True
                 hud.update_element(
                     "step_count",
