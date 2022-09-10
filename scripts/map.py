@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
 from .collision_behaviours import get_fn
-from .entity import Creature, Entity
+from .entity import Entity
 from .helper import Point
 
 # from multimethod import multimethod
@@ -13,7 +13,7 @@ from .helper import Point
 
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
-        self.player = Creature("Player", "Player")
+        self.player = Entity("Player", "Player")
         self.steps_left = 25
         # Map is structured as map[row][col][object]
         self.map = self._read_map(map_file) if map_file else []
@@ -27,7 +27,7 @@ class Map:
         moves_made: list = []
         for pos, entities in self.iterate():
             for entity in entities:
-                if type(entity) == Creature:
+                if type(entity) == Entity:
                     new_pos = entity.get_next_move(pos, self.map)
                     assert self.in_map(new_pos), f"{entity.name} Cheated!"
                     moves_made.append([entity, pos, new_pos])
@@ -70,7 +70,7 @@ class Map:
             while collisions_here:
                 current_collision = collisions_here.pop()
                 entity_strategies = [
-                    Entity.get_strategy_name() for Entity in current_collision
+                    entity.get_strategy_name() for entity in current_collision
                 ]
                 temp_fn = get_fn(entity_strategies)
                 temp_fn(self)
@@ -222,18 +222,18 @@ class Map:
                             len(pre_map) - 1, len(pre_map[-1]) - 1
                         )
                     elif col == "F":
-                        pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
+                        pre_map[-1][-1].append(Entity("FrogR", "NormalNorman"))
                     elif col == "G":
-                        pre_map[-1][-1].append(Creature("FrogR", "NormalNorman"))
+                        pre_map[-1][-1].append(Entity("FrogR", "NormalNorman"))
                         pre_map[-1][-1][-1].strategy.state = 3
                     elif col == "B":
                         pre_map[-1][-1].append(Entity("Barrel"))
                     elif col == "W":
-                        pre_map[-1][-1].append(Entity("rockwall", True))
+                        pre_map[-1][-1].append(Entity("rockwall", solid=True))
                     elif col == "O":
-                        pre_map[-1][-1].append(Entity("Stone", True))
+                        pre_map[-1][-1].append(Entity("Stone", solid=True))
                     elif col == "S":
-                        pre_map[-1][-1].append(Creature("FrogY", "SpiralingStacy"))
+                        pre_map[-1][-1].append(Entity("FrogY", "SpiralingStacy"))
                     elif col == "T":
-                        pre_map[-1][-1].append(Creature("FrogP", "TrickyTrent"))
+                        pre_map[-1][-1].append(Entity("FrogP", "TrickyTrent"))
         return pre_map

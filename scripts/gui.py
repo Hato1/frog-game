@@ -18,7 +18,6 @@ from pathlib import Path
 
 import pygame
 
-from .entity import Creature
 from .game import Game
 from .gui_helper import assets, font_render, get_sprite_box, parse_assets
 from .helper import DOWN, LEFT, RIGHT, UP, Benchmark
@@ -27,8 +26,8 @@ from .map import Map
 # Asset tile size
 TSIZE: int = 25
 # FIXME: Using even numbered tile dims causes the screen to center 0.5 tiles off
-WINDOW_ROWS = 19
-WINDOW_COLUMNS = 33
+WINDOW_ROWS = 18
+WINDOW_COLUMNS = 32
 ANIMATIONS = True
 
 # Enable to print frametimes to console.
@@ -196,7 +195,8 @@ def draw_map(
             # TODO: Rotation breaks when not using first image of spritesheet,
             # as the entire image is rotated. Current hacky workaround is to only
             # rotate Creatures
-            if type(entity) == Creature:
+            # TODO: Remove magic strings
+            if entity.name not in ["Stone", "rockwall"]:
                 sprite_index = (0, animation_stage)
                 creature_sprite = pygame.Surface((25, 25))
                 creature_sprite.fill((255, 255, 255))

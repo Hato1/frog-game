@@ -11,6 +11,7 @@ from .ai import (
 )
 from .helper import Point, Vector, facing
 
+# TODO: Rename DeadDoug to InanimateIvan
 AI_DICT = {
     "NormalNorman": NormalNorman,
     "DeadDoug": DeadDoug,
@@ -20,11 +21,12 @@ AI_DICT = {
     "Player": Player,
 }
 
+# Entity facing direction constants to index in gui.py
 UP, RIGHT, DOWN, LEFT = range(4)
 
 
 class Entity:
-    """Entities do not move"""
+    """Thing on the map that is not part of the background"""
 
     next_id = 0
     default_point = Point(-1, -1)
@@ -32,15 +34,27 @@ class Entity:
     def __init__(
         self,
         name: str,
-        solid: bool = False,
+        strategy: str = "DeadDoug",
         direction: int = UP,
         position: Point = default_point,
+        solid: bool = False,
     ) -> None:
+        self.alive = True
         """
         Args:
             name: A human friendly name
-            solid: Does the object block the path?
+            strategy: name of creature AI, decides the creatures movement pattern
+            solid: Whether other objects can move onto this object's space.
+            direction: which way the creature is initially facing
         """
+        self.state = 0
+        self.strategy_name = strategy
+        self.strategy = AI_DICT[strategy]()
+        # Used to force creatures next move, ignoring their strategy.
+        # TODO: Make this a list of points, FIFO.
+        # TODO: Remove Vectors and replace with Points
+        self.next_move: Optional[Vector] = None
+
         self.id = Entity.next_id
         Entity.next_id += 1
         self.name = name
@@ -50,31 +64,6 @@ class Entity:
 
     def __str__(self) -> str:
         return self.name
-
-
-class Creature(Entity):
-    """Creatures do move"""
-
-    default_point = Point(-1, -1)
-
-    def __init__(
-        self,
-        name: str,
-        strategy: str = "DeadDoug",
-        direction: int = UP,
-        position: Point = default_point,
-    ) -> None:
-        """
-        Args:
-            strategy: name of creature AI, decides the creatures movement pattern
-            direction: which way the creature is initially facing"""
-        self.alive = True
-        self.state = 0
-        self.strategy_name = strategy
-        self.strategy = AI_DICT[strategy]()
-        # Can be used to force creatures next move, ignoring their strategy.
-        self.next_move: Optional[Vector] = None
-        super(Creature, self).__init__(name, False, direction, position)
 
     def get_next_move(self, position: Point, _map: list) -> Point:
         if self.next_move:
