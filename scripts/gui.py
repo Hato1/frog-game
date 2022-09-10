@@ -289,7 +289,8 @@ def play_death_animation(
 
         white = pygame.Surface(screen.get_size())
 
-        screen.blit(current_frame, get_disp(*new_froglocation))
+        # Comment this out for a neat "bleary" death message.
+        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
 
         white.set_alpha(min((magic_number * 3 - 100), 200))
         screen.blit(white, (0, 0))
