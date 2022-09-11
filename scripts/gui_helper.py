@@ -43,8 +43,8 @@ def pull_assets(map_name: str) -> dict[str, pg.Surface]:
         map_name: str filename (inc. extension) of .json file to be retrieved from
     """
     path_to_json = "maps/" + map_name
-    json_file = open(path_to_json)
-    json_file = json.load(json_file)
+    with open(path_to_json) as open_file:
+        json_file = json.load(open_file)
 
     assets = {}
     for tile in json_file["Tiles"]:
