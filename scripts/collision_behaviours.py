@@ -58,11 +58,7 @@ def get_fn(entity_names: list):
         if any([name in creatures_which_kill_player_outright for name in entity_names]):
             return kill_player
 
-    warning(
-        "{} and {} have no programmed interaction!".format(
-            entity_names[0], entity_names[1]
-        )
-    )
+    warning(f"{entity_names[0]} and {entity_names[1]} have no programmed interaction!")
     return no_conflict
 
 

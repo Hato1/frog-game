@@ -355,13 +355,13 @@ def play_death_animation(
         screen.blit(any_key, any_key_pos)
         pygame.display.flip()
 
-        if any(event.key == pygame.K_q for event in pygame.event.get()):
-            exit_game()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                exit_game()
 
-        if magic_number > 20 and any(
-            event.type == pygame.KEYDOWN for event in pygame.event.get()
-        ):
-            return
+            elif magic_number > 20 and event.type == pygame.KEYDOWN:
+                return
+
         magic_number += 1
 
 

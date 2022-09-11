@@ -30,7 +30,7 @@ def font_render(
     return rendered_font
 
 
-# Pull this from .json
+# ToDo: Pull this from .json
 assets = {
     "Player": pg.image.load("assets/Frog.png"),
     "Barrel": pg.image.load("assets/Barrel.png"),
@@ -43,6 +43,10 @@ assets = {
     "Stone": pg.image.load("assets/Stone.png"),
     "rockwall": pg.image.load("assets/rockwall.png"),
 }
+
+
+# def pull_assets(map_name: str):
+#     json_file = open(map_name)
 
 
 # define the number of sprites for each texture
