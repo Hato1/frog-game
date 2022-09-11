@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pygame as pg
@@ -30,27 +31,35 @@ def font_render(
     return rendered_font
 
 
-# ToDo: Pull this from .json
-assets = {
-    "Player": pg.image.load("assets/Frog.png"),
-    "Barrel": pg.image.load("assets/Barrel.png"),
-    "FrogR": pg.image.load("assets/FrogR.png"),
-    "FrogP": pg.image.load("assets/FrogP.png"),
-    "FrogY": pg.image.load("assets/FrogY.png"),
-    # "Ball": pg.image.load("assets/intro_ball.gif"),
-    "Tileset": pg.image.load("assets/Tileset.png"),
-    "Grass": pg.image.load("assets/Grass.png"),
-    "Stone": pg.image.load("assets/Stone.png"),
-    "rockwall": pg.image.load("assets/rockwall.png"),
-}
+def create_surface(entity_dict: dict) -> pg.Surface:
+    """takes dict retrieved from .json, returns pygame.Surface loaded from correct file"""
+    return pg.image.load(f"assets/{entity_dict['FileName']}")
 
 
-# def pull_assets(map_name: str):
-#     json_file = open(map_name)
+def pull_assets(map_name: str) -> dict[str, pg.Surface]:
+    """returns asset dictionary from a .json file
+
+    Args:
+        map_name: str filename (inc. extension) of .json file to be retrieved from
+    """
+    path_to_json = "maps/" + map_name
+    json_file = open(path_to_json)
+    json_file = json.load(json_file)
+
+    assets = {}
+    for tile in json_file["Tiles"]:
+        assets[tile["Name"]] = create_surface(tile)
+
+    for entity in json_file["Entities"]:
+        assets[entity["Name"]] = create_surface(entity)
+    return assets
+
+
+assets = pull_assets("map1.json")
 
 
 # define the number of sprites for each texture
-# I should cache this
+# ToDo: I should cache this
 def parse_assets(images: dict) -> dict:
     """Returns the number of usable permutations of each image based on the image dims"""
     asset_dims = {}

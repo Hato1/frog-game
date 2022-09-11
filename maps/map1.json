@@ -2,19 +2,31 @@
   "MapSize": [17,10],
   "Tiles": [
     {
-      "level": "Dirt",
+      "Name": "Tileset",
+      "FileName": "Tileset.png",
+      "HueAdjust": "0",
+      "PairedEntity": 0
+    },
+    {
+      "Name": "rockwall",
+      "FileName": "rockwall.png",
+      "HueAdjust": "0",
+      "PairedEntity": 0
+    },
+    {
+      "Name": "Dirt",
       "FileName": "dirt.png",
       "HueAdjust": "0",
       "PairedEntity": 0
     },
     {
-      "level": "Grass",
+      "Name": "Grass",
       "FileName": "Grass.png",
       "HueAdjust": "0",
       "PairedEntity": 0
     },
     {
-      "level": "Stone",
+      "Name": "Stone",
       "FileName": "Stone.png",
       "HueAdjust": "0",
       "PairedEntity": "InvisWall"
@@ -69,13 +81,6 @@
       "FileName": "rockwall.png",
       "HueAdjust": "0",
       "SpriteSize": [1, 1]
-    },
-    {
-      "Name" : "Trees",
-      "AI": "None",
-      "FileName": "Trees.png",
-      "HueAdjust": "0",
-      "SpriteSize": [2, 2]
     },
     {
       "Name" : "Mushroom",
