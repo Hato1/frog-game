@@ -26,8 +26,8 @@ class Game:
         if new_pos[0] < 0 or new_pos[1] < 0:
             return False
         if (
-            self.map.get_width() - 1 < new_pos[1]
-            or self.map.get_height() - 1 < new_pos[0]
+            self.map.get_height() - 1 < new_pos[1]
+            or self.map.get_width() - 1 < new_pos[0]
         ):
             return False
         for obj in self.map[new_pos]:
@@ -53,6 +53,9 @@ class Game:
     def get_map(self) -> Map:
         # return full map
         return self.map
+
+    def get_steps_remaining(self):
+        return self.map.get_steps_left()
 
     def is_player_alive(self) -> bool:
         return self.map.player.alive

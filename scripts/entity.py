@@ -52,7 +52,6 @@ class Entity:
         self.strategy = AI_DICT[strategy]()
         # Used to force creatures next move, ignoring their strategy.
         # TODO: Make this a list of points, FIFO.
-        # TODO: Remove Vectors and replace with Points
         self.next_move: Optional[Point] = None
 
         self.id = Entity.next_id
@@ -61,21 +60,25 @@ class Entity:
         self.solid = solid
         self.direction = direction
         self.position = position
+        self.position_history: list[Point] = []
 
     def __str__(self) -> str:
         return self.name
 
-    def get_next_move(self, position: Point, _map: list) -> Point:
+    def make_move(self, _map: list):
+        self.position, self.direction = self.get_next_move(self.position, _map)
+        # assert self.in_map(new_pos), f"{entity.name} Cheated!"
+
+    def get_next_move(self, position: Point, _map: list) -> tuple[Point, int]:
         if self.next_move:
-            self.direction = facing(self.next_move, self.direction)
-            try:
-                return position + self.next_move
-            finally:
-                self.next_move = None
-        move, self.direction = self.strategy.make_move(position, self.direction, _map)
+            move = position + self.next_move
+            direction = facing(self.next_move, self.direction)
+            self.next_move = None
+        else:
+            move, direction = self.strategy.make_move(position, self.direction, _map)
         assert type(move) == Point, f"{self.name} returned invalid move: {type(move)}."
         assert len(move) == 2, f"{self.name} requests invalid move: {move}"
-        return move
+        return move, direction
 
     def get_strategy_name(self) -> str:
         return self.strategy_name

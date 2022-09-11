@@ -22,6 +22,7 @@ from .game import Game
 from .gui_helper import assets, font_render, get_sprite_box, parse_assets
 from .helper import DOWN, LEFT, RIGHT, UP, Benchmark
 from .map import Map
+from .sound import SoundSystem
 
 # Asset tile size
 TSIZE: int = 25
@@ -32,12 +33,15 @@ ANIMATIONS = True
 
 # Enable to print frametimes to console.
 # TODO: Make this a commandline argument
-BENCHMARK = False
+BENCHMARK = True
 if BENCHMARK:
     benchmark = Benchmark()
 
 pygame.init()
 logging.basicConfig(level=1, format="")
+
+# loads the sound system
+sound_system = SoundSystem()
 
 spritesheet_dims: dict
 
@@ -109,8 +113,8 @@ def make_basemap(c_map: Map) -> pygame.Surface:
     TODO: Extract variables ending in INDEX elsewhere...
     TODO: Is it good or bad style to nest functions where possible?
     """
-    map_ncols = c_map.get_ncols()
-    map_nrows = c_map.get_nrows()
+    map_ncols = c_map.get_height()
+    map_nrows = c_map.get_width()
     padded_map_ncols = map_ncols + WINDOW_COLUMNS
     padded_map_nrows = map_nrows + WINDOW_ROWS
     basemap = pygame.Surface((padded_map_ncols * TSIZE, padded_map_nrows * TSIZE))
@@ -177,7 +181,7 @@ def add_hud(screen: pygame.surface.Surface, hud: Hud) -> None:
 
 
 def draw_map(
-    c_map: Map, basemap: pygame.Surface, draw_player: bool, frame: int
+    _map: Map, basemap: pygame.Surface, draw_player: bool, frame: int
 ) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
@@ -186,41 +190,77 @@ def draw_map(
     #         for entity in c_map[row][col]:
     animation_stage = [0, 2, 3][frame % 3]
     # animation_stage = random.choice([0, 2, 3])
-    for pos, entities in c_map.iterate():
-        for entity in entities:
-            if entity.name == "Player" and not draw_player:
-                continue
-            sprite = assets[entity.name]
-            sprite_index = (0, 0)
-            # TODO: Rotation breaks when not using first image of spritesheet,
-            # as the entire image is rotated. Current hacky workaround is to only
-            # rotate Creatures
-            # TODO: Remove magic strings
-            if entity.name not in ["Stone", "rockwall"]:
-                sprite_index = (0, animation_stage)
-                creature_sprite = pygame.Surface((25, 25))
-                creature_sprite.fill((255, 255, 255))
-                creature_sprite.set_colorkey("white")
-                creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
-                creature_sprite = pygame.transform.rotate(
-                    creature_sprite, 90 * entity.direction
+    for entity in _map:
+        if entity.name == "Player" and not draw_player:
+            continue
+        sprite = assets[entity.name]
+        sprite_index = (0, 0)
+        # TODO: Rotation breaks when not using first image of spritesheet,
+        # as the entire image is rotated. Current hacky workaround is to only
+        # rotate Creatures
+        # TODO: Remove magic strings
+        if entity.name not in ["Stone", "rockwall"]:
+            sprite_index = (0, animation_stage)
+            creature_sprite = pygame.Surface((25, 25))
+            creature_sprite.fill((255, 255, 255))
+            creature_sprite.set_colorkey("white")
+            creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
+            creature_sprite = pygame.transform.rotate(
+                creature_sprite, 90 * entity.direction
+            )
+            basemap.blit(creature_sprite, coords_to_pixels(*entity.position))
+        else:
+            if entity.name == "Stone":
+                # TODO: Delete this hacky fix to prevent rock textures randomising.
+                # TODO: Stone should be a part of basemap to improve fps.
+                random.seed(f"{entity.position}")
+                plain_tile_index = 0
+                global spritesheet_dims
+                sprite_num = random.randrange(
+                    spritesheet_dims["Stone"][plain_tile_index]
                 )
-                basemap.blit(creature_sprite, coords_to_pixels(*pos))
-            else:
-                if entity.name == "Stone":
-                    # TODO: Delete this hacky fix to prevent rock textures randomising.
-                    # TODO: Stone should be a part of basemap to improve fps.
-                    random.seed(f"{pos}")
-                    plain_tile_index = 0
-                    global spritesheet_dims
-                    sprite_num = random.randrange(
-                        spritesheet_dims["Stone"][plain_tile_index]
-                    )
-                    sprite_index = (plain_tile_index, sprite_num)
-                    random.seed()
-                basemap.blit(
-                    sprite, coords_to_pixels(*pos), get_sprite_box(*sprite_index)
-                )
+                sprite_index = (plain_tile_index, sprite_num)
+                random.seed()
+            basemap.blit(
+                sprite,
+                coords_to_pixels(*entity.position),
+                get_sprite_box(*sprite_index),
+            )
+    # for pos, entities in c_map:
+    #     for entity in entities:
+    #         if entity.name == "Player" and not draw_player:
+    #             continue
+    #         sprite = assets[entity.name]
+    #         sprite_index = (0, 0)
+    #         # TODO: Rotation breaks when not using first image of spritesheet,
+    #         # as the entire image is rotated. Current hacky workaround is to only
+    #         # rotate Creatures
+    #         # TODO: Remove magic strings
+    #         if entity.name not in ["Stone", "rockwall"]:
+    #             sprite_index = (0, animation_stage)
+    #             creature_sprite = pygame.Surface((25, 25))
+    #             creature_sprite.fill((255, 255, 255))
+    #             creature_sprite.set_colorkey("white")
+    #             creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
+    #             creature_sprite = pygame.transform.rotate(
+    #                 creature_sprite, 90 * entity.direction
+    #             )
+    #             basemap.blit(creature_sprite, coords_to_pixels(*pos))
+    #         else:
+    #             if entity.name == "Stone":
+    #                 # TODO: Delete this hacky fix to prevent rock textures randomising.
+    #                 # TODO: Stone should be a part of basemap to improve fps.
+    #                 random.seed(f"{pos}")
+    #                 plain_tile_index = 0
+    #                 global spritesheet_dims
+    #                 sprite_num = random.randrange(
+    #                     spritesheet_dims["Stone"][plain_tile_index]
+    #                 )
+    #                 sprite_index = (plain_tile_index, sprite_num)
+    #                 random.seed()
+    #             basemap.blit(
+    #                 sprite, coords_to_pixels(*pos), get_sprite_box(*sprite_index)
+    #             )
     return basemap
 
 
@@ -249,6 +289,12 @@ def pan_screen(
         pygame.time.wait(20)
 
 
+def adjust_step_volume(game: Game):
+    # ToDo: implement max step amount instead of hard coding 25
+    volume = 1 - (game.get_steps_remaining() / 25)
+    sound_system.set_sound_volume("step", volume)
+
+
 def play_death_animation(
     screen: pygame.surface.Surface,
     current_frame: pygame.surface.Surface,
@@ -263,6 +309,10 @@ def play_death_animation(
     # B&W filter instead of darken background?
     # Sound effect here would be great!
     magic_number = 0
+
+    # plays croak sound upon death
+    sound_system.play_sound("croak")
+
     while True:
         pygame.time.delay(50)
         you_died = font_render("You  Died", "Amatic-Bold.ttf", (130, 20, 60), 36 * 3)
@@ -328,12 +378,12 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
 
     # Game loop
     while True:
-        if BENCHMARK:
-            benchmark.log_time_delta()
 
         # Update game
         # Set max fps to 30 (33ms).
         if map_changed or (now := pygame.time.get_ticks()) - last_frame_time > 750:
+            if BENCHMARK:
+                benchmark.log_time_delta()
             last_frame_time = now
             frame_count += 1
             new_map = game.get_map()
@@ -355,6 +405,10 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
         # Process Input
         for event in pygame.event.get():
             if process_event(event, game):
+                # ToDo: move step sound and step sound volume here
+                adjust_step_volume(game)
+                sound_system.play_sound("step")
+
                 map_changed = True
                 hud.update_element(
                     "step_count",
@@ -368,6 +422,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
                 )
                 # Prevent skipping of movement animations
                 break
+
     play_death_animation(screen, frame, new_froglocation)
 
 

@@ -1,6 +1,7 @@
 """Module for reading and manipulating the game board"""
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
@@ -13,50 +14,33 @@ from .helper import Point
 
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
-        self.player = Entity("Player", "Player")
         self.steps_left = 25
-        # Map is structured as map[row][col][object]
-        self.map = self._read_map(map_file) if map_file else []
+        self.entities: list[Entity] = []
+        # TODO: Collision map?
+        if map_file:
+            self.width, self.height = self._populate_entity_list(map_file)
 
     def update_creatures(self) -> None:
         """
         Update all Creatures using move_object
         Run conflict resolver
         """
-        new_map = self.copy()
-        moves_made: list = []
-        for pos, entities in self.iterate():
-            for entity in entities:
-                if type(entity) == Entity:
-                    new_pos = entity.get_next_move(pos, self.map)
-                    assert self.in_map(new_pos), f"{entity.name} Cheated!"
-                    moves_made.append([entity, pos, new_pos])
+        for entity in self.entities:
+            entity.make_move(self.entities)
 
-                    # This moves the man
-                    for i in range(len(new_map[pos]))[::-1]:
-                        new_entity_list = new_map[pos]
-                        entity_to_move = new_entity_list[i]
-                        if entity_to_move.id == entity.id:
-                            new_map[pos].pop(i)
-                    new_map[new_pos].append(entity)
-                    entity.position = new_pos
-
-        self.__collision_handler(new_map)
+        self._collision_handler()
 
         self.steps_left -= 1
-        # if not(self.steps_left):
-        if self.steps_left == 0:
+        if not self.steps_left:
             self.player.alive = False
 
-        self.map = new_map.map
-
-    def __collision_handler(self, new_map: Map) -> None:
+    def _collision_handler(self) -> None:
         """
         Handles collisions
         """
         # Hours spent on collision resolution: 16.5
         # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
-        collision_positions = self.__collision_detector(new_map)
+        collision_positions = self._collision_detector()
 
         # May want to initialise a second instance of map and collision positions for iterative resolutions:
         # new_map_nplus1 = new_map.copy()
@@ -64,9 +48,7 @@ class Map:
 
         while collision_positions:
             current_collision_position = collision_positions.pop(0)
-            collisions_here = self.__collision_sorter(
-                new_map, current_collision_position
-            )
+            collisions_here = self._collision_sorter(current_collision_position)
             while collisions_here:
                 current_collision = collisions_here.pop()
                 entity_strategies = [
@@ -75,29 +57,33 @@ class Map:
                 temp_fn = get_fn(entity_strategies)
                 temp_fn(self)
 
-    def __collision_detector(self, new_map: Map) -> list[Point]:
+    def _collision_detector(self) -> list[Point]:
         """Finds and returns all potential collision locations"""
-        # Currently unintelligent, assumes all points have conflict
-        collision_locs = [
-            Point(x, y)
-            for x in range(new_map.get_nrows())
-            for y in range(new_map.get_ncols())
-        ]
-        return collision_locs
+        # TODO: Only return positions with at-least 2 entities
+        return sorted(list({entity.position for entity in self.entities}))
 
-    def __collision_sorter(
-        self, new_map: Map, current_collision_position: Point
-    ) -> list:
+    def _collision_sorter(
+        self,
+        current_collision_position: Point,
+    ) -> list[tuple[Entity, Entity]]:
         """
-        Makes a list ofpointers to each pair of creatures
+        Makes a list of pointers to each pair of creatures
         Current implementation first resolves entities which arrive first (lower index)
+        # TODO: Resolve entities in some order (order of arrival?). Currently alphabetical.
+
+        Returns:
+            list: Remaining pairs of entities to be resolved.
         """
-        creatures = new_map[current_collision_position]
-        num_creatures = len(creatures)
-        remaining_pairs = [
-            (creatures[x], creatures[y])
-            for x in range(num_creatures)
-            for y in range(x + 1, num_creatures)
+        entities = [
+            entity
+            for entity in self.entities
+            if entity.position == current_collision_position
+        ]
+        num_entities = len(entities)
+        return [
+            (entities[x], entities[y])
+            for x in range(num_entities)
+            for y in range(x + 1, num_entities)
         ]
 
         # Something like below might instead resolve by alphabetical order
@@ -105,135 +91,110 @@ class Map:
         # entity_pair.sort(key = lambda ent: ent.get_strategy_name())
         # entity_strategies = [ent.get_strategy_name() for ent in entity_pair]
 
-        return remaining_pairs
-
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
         pass
 
     def find_object(self, obj_name: str) -> tuple:
-        """Get the coordinates of an object, if it exists"""
-        for pos, entities in self.iterate():
-            for entity in entities:
-                if entity.name == obj_name:
-                    return pos, entity
-        # for row in range(self.get_nrows()):
-        #     for col in range(self.get_ncols()):
-        #         for obj in self[row, col]:
-        #             if obj.name == obj_name:
-        #                 print(row, col)
-        #                 return Point(row, col), obj
-        raise IndexError
-        # return Point(-1, -1)
+        """Get the coordinates of an object"""
+        for entity in self.entities:
+            if str(entity) == obj_name:
+                return entity.position
+        raise ValueError
 
     def copy(self) -> Map:
         new_map = Map(None)
-        for row in self.map:
-            new_map.map.append([])
-            for entities in row:
-                new_map.map[-1].append([])
-                for entity in entities:
-                    new_map.map[-1][-1].append(entity)
+        # TODO: Do we really need to deep copy?
+        new_map.entities = copy.deepcopy(self.entities)
         return new_map
 
     def in_map(self, pos: tuple) -> bool:
-        if pos[0] < 0 or pos[1] < 0:
-            return False
-        return self.get_width() - 1 >= pos[1] and self.get_height() - 1 >= pos[0]
-
-    def get_nrows(self) -> int:
-        """Get the height of the map"""
-        return len(self.map)
-
-    def get_ncols(self) -> int:
-        """Get the width of the map"""
-        return len(self.map[0])
+        raise NotImplementedError
+        # if pos[0] < 0 or pos[1] < 0:
+        #     return False
+        # return self.get_width() - 1 >= pos[1] and self.get_height() - 1 >= pos[0]
 
     def get_height(self) -> int:
         """Get the number of rows"""
-        return self.get_nrows()
+        return self.height
 
     def get_width(self) -> int:
         """Get the number of cols"""
-        return self.get_ncols()
+        return self.width
 
     def get_steps_left(self) -> int:
         """Get the number of remaining steps"""
+        # Todo: Decide whether to insert into entity?
         return self.steps_left
 
     def is_player_alive(self) -> bool:
         return self.player.alive
 
     @overload
-    def __getitem__(self, index: int) -> list[list]:
+    def __getitem__(self, index: int) -> list:
         ...
 
     @overload
-    def __getitem__(self, index: tuple) -> list:
+    def __getitem__(self, index: Union[tuple, Point]) -> list:
         ...
 
     def __getitem__(self, index: Union[int, tuple]) -> Union[list, list[list]]:
-        """Index into map with an int"""
+        """Retrieve elements of the map at the given row or (row, col) pair"""
         if isinstance(index, int):
-            return self.map[index]
-        elif isinstance(index, tuple):
-            return self.map[index[0]][index[1]]
+            return [entity for entity in self.entities if entity.position.x == index]
+        elif isinstance(index, (tuple, Point)):
+            index = Point(*index)
+            return [entity for entity in self.entities if entity.position == index]
         raise ValueError
 
     def __iter__(self) -> Iterator:
-        return iter(self.map)
-
-    def iterate(self) -> Iterator[tuple[Point, list]]:
-        for row in range(self.get_nrows()):
-            for col in range(self.get_ncols()):
-                yield Point(row, col), self[row][col]
+        self.entities.sort(key=lambda x: x.position)
+        yield from self.entities
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
-        map_ncols = len(self.map[0]) + 2
-        human_friendly = "-" * map_ncols + "\n|"
-        for x in self.map:
-            for y in x:
-                # Add blank if this is an empty space
-                # Add first character of entity name otherwise
-                human_friendly += y[0].name[0] if y else " "
-            human_friendly += "|\n|"
-        return human_friendly[:-1] + "-" * map_ncols
+        raise NotImplementedError
 
     def __len__(self) -> int:
-        return len(self.map)
+        raise NotImplementedError
 
-    def _read_map(self, map_file: Path) -> list:
-        """Read map from file"""
-        pre_map: list[list[list]] = []
-        with open(map_file) as f:
-            for row in f:
-                row = row.strip()
-                if set(row) == {"-"}:
+    def _new_entity_from_char(self, entity: str, point: Point):
+        match entity:
+            case "P":
+                self.player = Entity("Player", "Player", position=point)
+                self.entities.append(self.player)
+            case "F":
+                self.entities.append(Entity("FrogR", "NormalNorman", position=point))
+            case "G":
+                self.entities.append(Entity("FrogR", "NormalNorman", position=point))
+                # TODO: Make this less ugly. Create AI object here instead of in entity?
+                self.entities[-1].strategy.state = 3
+            case "B":
+                self.entities.append(Entity("Barrel", position=point))
+            case "W":
+                self.entities.append(Entity("rockwall", solid=True, position=point))
+            case "O":
+                self.entities.append(Entity("Stone", solid=True, position=point))
+            case "S":
+                self.entities.append(Entity("FrogY", "SpiralingStacy", position=point))
+            case "T":
+                self.entities.append(Entity("FrogP", "TrickyTrent", position=point))
+
+    def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
+        """Read entities from a map file and insert them into the entity list"""
+        with open(map_file) as file:
+            x = 0
+            max_y = 0
+            for line in file:
+                y = 0
+                line = line.strip()
+                if set(line) == {"-"}:
                     continue
-                pre_map.append([])
-                for col in row:
-                    if col in ["|", "-"]:
+                for char in line:
+                    if char in ["|", "-"]:
                         continue
-                    pre_map[-1].append([])
-                    if col == "P":
-                        pre_map[-1][-1].append(self.player)
-                        self.player.position = Point(
-                            len(pre_map) - 1, len(pre_map[-1]) - 1
-                        )
-                    elif col == "F":
-                        pre_map[-1][-1].append(Entity("FrogR", "NormalNorman"))
-                    elif col == "G":
-                        pre_map[-1][-1].append(Entity("FrogR", "NormalNorman"))
-                        pre_map[-1][-1][-1].strategy.state = 3
-                    elif col == "B":
-                        pre_map[-1][-1].append(Entity("Barrel"))
-                    elif col == "W":
-                        pre_map[-1][-1].append(Entity("rockwall", solid=True))
-                    elif col == "O":
-                        pre_map[-1][-1].append(Entity("Stone", solid=True))
-                    elif col == "S":
-                        pre_map[-1][-1].append(Entity("FrogY", "SpiralingStacy"))
-                    elif col == "T":
-                        pre_map[-1][-1].append(Entity("FrogP", "TrickyTrent"))
-        return pre_map
+                    self._new_entity_from_char(char, Point(x, y))
+                    y += 1
+                    max_y = max(y, max_y)
+                x += 1
+        return x, max_y
