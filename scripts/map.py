@@ -5,7 +5,7 @@ import copy
 from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
-from .collision_behaviours import get_fn
+from .collision_behaviours import get_highest_priorityfn
 from .entity import Entity
 from .helper import Point
 
@@ -36,52 +36,53 @@ class Map:
 
     def _collision_handler(self) -> None:
         """
-        Handles collisions
+        Finds positions of collisions (collision_detector), wraps over them all (resolve_space) until all resolved
         """
-        # Hours spent on collision resolution: 16.5
+        # Hours spent on collision resolution: 19.5
         # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
         collision_positions = self._collision_detector()
 
         # May want to initialise a second instance of map and collision positions for iterative resolutions:
         # new_map_nplus1 = new_map.copy()
         # collision_positions_nplus1 = []
-
         while collision_positions:
             current_collision_position = collision_positions.pop(0)
-            collisions_here = self._collision_sorter(current_collision_position)
-            while collisions_here:
-                current_collision = collisions_here.pop()
-                entity_strategies = [
-                    entity.get_strategy_name() for entity in current_collision
-                ]
-                temp_fn = get_fn(entity_strategies)
-                temp_fn(self)
+            positions_to_recheck = self._resolve_space(current_collision_position)
+            collision_positions.extend(positions_to_recheck)
+
+    def _resolve_space(self, position):
+        """makes list of pairs (make_pairs), resolves pairs in priority order per get_highest_priorityfn"""
+        entities_on_space = [e for e in self.entities if e.position == position]
+        pairs = self._make_pairs(entities_on_space)
+        moved_entities = []
+        while pairs:
+            temp_fn, pair = get_highest_priorityfn(pairs)
+            pairs.remove(pair)
+            # We pass pairs to remove objects from it that leave the space.
+            moved_entities.extend(temp_fn(pair, pairs, entities_on_space))
+        return [e.position for e in moved_entities]
 
     def _collision_detector(self) -> list[Point]:
-        """Finds and returns all potential collision locations"""
+        """
+        Finds and returns all potential collision locations
+        {} is set, to ensure uniqueness
+        """
         # TODO: Only return positions with at-least 2 entities
         return sorted(list({entity.position for entity in self.entities}))
 
-    def _collision_sorter(
+    def _make_pairs(
         self,
-        current_collision_position: Point,
+        entities_on_space: list,
     ) -> list[tuple[Entity, Entity]]:
         """
         Makes a list of pointers to each pair of creatures
-        Current implementation first resolves entities which arrive first (lower index)
         # TODO: Resolve entities in some order (order of arrival?). Currently alphabetical.
-
         Returns:
-            list: Remaining pairs of entities to be resolved.
+            list: All pairs of entities on space
         """
-        entities = [
-            entity
-            for entity in self.entities
-            if entity.position == current_collision_position
-        ]
-        num_entities = len(entities)
+        num_entities = len(entities_on_space)
         return [
-            (entities[x], entities[y])
+            (entities_on_space[x], entities_on_space[y])
             for x in range(num_entities)
             for y in range(x + 1, num_entities)
         ]
@@ -170,7 +171,9 @@ class Map:
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
                 self.entities[-1].strategy.state = 3
             case "B":
-                self.entities.append(Entity("Barrel", position=point))
+                self.entities.append(
+                    Entity("Barrel", "BarrelingBarrel", position=point)
+                )
             case "W":
                 self.entities.append(Entity("rockwall", solid=True, position=point))
             case "O":
