@@ -8,11 +8,13 @@ Viewer:
 Height/Width refer to pixel values to be displayed.
 Rows/Columns are coordinates in the game map/grid.
 """
+import itertools
 import logging
 import math
 import random
 import sys
 import time
+from collections import namedtuple
 from copy import copy
 from pathlib import Path
 
@@ -20,30 +22,37 @@ import pygame
 
 from .game import Game
 from .gui_helper import assets, font_render, get_sprite_box, parse_assets
-from .helper import DOWN, LEFT, RIGHT, UP, Benchmark
-from .map import Map
+from .helper import DOWN, LEFT, RIGHT, UP, Benchmark, Point
 from .sound import SoundSystem
 
 # Asset tile size
 TSIZE: int = 25
 # FIXME: Using even numbered tile dims causes the screen to center 0.5 tiles off
-WINDOW_ROWS = 18
-WINDOW_COLUMNS = 32
+WINDOW_TILE_HEIGHT = 18
+WINDOW_TILE_WIDTH = 32
 ANIMATIONS = True
 
 # Enable to print frametimes to console.
 # TODO: Make this a commandline argument
-BENCHMARK = True
+BENCHMARK = False
 if BENCHMARK:
     benchmark = Benchmark()
 
 pygame.init()
-logging.basicConfig(level=1, format="")
+
+# TODO: Set this in command line argument
+# If you want to be spammed less choose a different logging level:
+# DEBUG
+# INFO
+# WARNING
+# ERROR
+# CRITICAL
+logging.basicConfig(level=logging.DEBUG, format="")
 
 # loads the sound system
 sound_system = SoundSystem()
 
-spritesheet_dims: dict
+SPRITESHEET_DIMS: dict = {}
 
 
 def process_event(event: pygame.event.Event, game: Game) -> bool:
@@ -55,23 +64,26 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
     D: move right
     Q: quits the game
     R: kills the player (Restart)
+
+    Returns:
+        bool: If movement input was accepted (Screen must be redrawn)
     """
     if event.type == pygame.QUIT:
         exit_game()
     elif event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_q:
-            exit_game()
-        if event.key == pygame.K_r:
-            game.kill_player()
+        match event.key:
+            case pygame.K_q:
+                exit_game()
+            case pygame.K_r:
+                game.kill_player()
 
-        if game.is_player_alive():
-            if event.key in [pygame.K_w, pygame.K_UP]:
+            case pygame.K_w | pygame.K_UP:
                 return game.move(UP)
-            elif event.key in [pygame.K_a, pygame.K_LEFT]:
+            case pygame.K_a | pygame.K_LEFT:
                 return game.move(LEFT)
-            elif event.key in [pygame.K_s, pygame.K_DOWN]:
+            case pygame.K_s | pygame.K_DOWN:
                 return game.move(DOWN)
-            elif event.key in [pygame.K_d, pygame.K_RIGHT]:
+            case pygame.K_d | pygame.K_RIGHT:
                 return game.move(RIGHT)
     return False
 
@@ -81,90 +93,91 @@ def exit_game():
     sys.exit()
 
 
-def coords_to_pixels(row: int, col: int) -> tuple:
-    """takes row and column on sprite map and returns pixel coordinates on basemap
-    and of course, row is col and col is row
+def coords_to_pixels(point: Point) -> tuple:
+    """Convert a tile-space coordinate to pixel-space.
 
-    returns: Offset?"""
-    return (WINDOW_COLUMNS / 2 + col) * TSIZE, (WINDOW_ROWS / 2 + row) * TSIZE
-    # return (8*2 + col) * TSIZE, 4*2 * TSIZE + row * TSIZE
+    We have to account for the map buffer tiles.
+    """
+    return (WINDOW_TILE_WIDTH / 2 + point.x) * TSIZE, (
+        WINDOW_TILE_HEIGHT / 2 + point.y
+    ) * TSIZE
 
 
 def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
     """Get the window-sized box centering the coordinate"""
-    # I think X and Y are backwards. Pygame implementation??
 
     # To Center the box, we actually don't need to do anything.
     # This is because the basemap is padded WINDOW_COLUMNS on the left
     # and WINDOW_ROWS on the right. This is probably bad practise.
     return (
-        y * TSIZE,
         x * TSIZE,
-        WINDOW_COLUMNS * TSIZE,
-        WINDOW_ROWS * TSIZE,
+        y * TSIZE,
+        WINDOW_TILE_WIDTH * TSIZE,
+        WINDOW_TILE_HEIGHT * TSIZE,
     )
 
 
-def is_in_play(row: int, col: int, nrows: int, ncols: int) -> bool:
+def point_in_map(x: int, y: int, map_width: int, map_height: int) -> bool:
     """Check whether a coordinate on a padded map lies in the map"""
-    return row in range(
-        math.floor(WINDOW_COLUMNS / 2), math.ceil(WINDOW_COLUMNS / 2 + ncols)
-    ) and col in range(math.floor(WINDOW_ROWS / 2), math.ceil(WINDOW_ROWS / 2 + nrows))
+    if x not in range(WINDOW_TILE_WIDTH // 2, WINDOW_TILE_WIDTH // 2 + map_width):
+        return False
+    elif y not in range(WINDOW_TILE_HEIGHT // 2, WINDOW_TILE_HEIGHT // 2 + map_height):
+        return False
+    else:
+        return True
 
 
-def make_basemap(c_map: Map) -> pygame.Surface:
-    """creates the background, should run once
+def make_basemap(map_width: int, map_height: int) -> pygame.Surface:
+    """Creates the background, should run only once per map.
 
-    TODO: Extract variables ending in INDEX elsewhere...
-    TODO: Is it good or bad style to nest functions where possible?
+    We pad the map so the void isn't visible past the map edges.
+
+    TODO: Split this into smaller functions
     """
-    map_ncols = c_map.get_height()
-    map_nrows = c_map.get_width()
-    padded_map_ncols = map_ncols + WINDOW_COLUMNS
-    padded_map_nrows = map_nrows + WINDOW_ROWS
-    basemap = pygame.Surface((padded_map_ncols * TSIZE, padded_map_nrows * TSIZE))
-    tileset_play_area = "Grass"
-    tileset_oob = "Stone"
-    global spritesheet_dims
-    spritesheet_dims = parse_assets(assets)
+    # map_width, map_height = map_height, map_width
+    padded_width = map_width + WINDOW_TILE_WIDTH
+    padded_height = map_height + WINDOW_TILE_HEIGHT
+    basemap = pygame.Surface((padded_width * TSIZE, padded_height * TSIZE))
+
+    # TEMP: Default ground tile.
+    default_map_tile = "Grass"
+    # TEMP: Pad the map with this tile.
+    default_padding_tile = "Stone"
+
+    # TODO: Define these somewhere else. Named Tuple?
     plain_tile_index = 0
     particle_index = 11
-    for row in range(padded_map_ncols):
-        for col in range(padded_map_nrows):
-            ts = (
-                tileset_play_area
-                if is_in_play(row, col, map_nrows, map_ncols)
-                else tileset_oob
-            )
 
-            rand_tile = random.randrange(spritesheet_dims[ts][plain_tile_index])
+    for x, y in itertools.product(range(padded_width), range(padded_height)):
+        tile_name = (
+            default_map_tile
+            if point_in_map(x, y, map_width, map_height)
+            else default_padding_tile
+        )
+
+        # Randomly choose which grass tile to draw
+        rand_tile = random.randrange(SPRITESHEET_DIMS[tile_name][plain_tile_index])
+        basemap.blit(
+            assets[tile_name], (x * TSIZE, y * TSIZE), get_sprite_box(col=rand_tile)
+        )
+
+        # Randomly add fallen leaves
+        thresh = 0.25
+        while random.random() < thresh:
+            rand_tile = random.randrange(SPRITESHEET_DIMS["Tileset"][particle_index])
             basemap.blit(
-                assets[ts], (row * TSIZE, col * TSIZE), get_sprite_box(col=rand_tile)
+                assets["Tileset"],
+                (x * TSIZE, y * TSIZE),
+                get_sprite_box(particle_index, rand_tile),
             )
 
-            thresh = 0.25
-            while random.random() < thresh:
-                rand_tile = random.randrange(
-                    spritesheet_dims["Tileset"][particle_index]
-                )
-                basemap.blit(
-                    assets["Tileset"],
-                    (row * TSIZE, col * TSIZE),
-                    get_sprite_box(11, rand_tile),
-                )
-
-                thresh /= 2
+            thresh /= 2
     return basemap
 
 
-class HudElement:  # noqa: B903
-    # Make this a named tuple?
-    def __init__(self, source: pygame.surface.Surface, dest: tuple) -> None:
-        self.source = source
-        self.dest = dest
-
-
 class Hud:
+    HudElement = namedtuple("HudElement", "source dest")
+
     def __init__(self) -> None:
         self.elements: dict = {}
 
@@ -172,7 +185,7 @@ class Hud:
         self, name: str, source: pygame.surface.Surface, dest: tuple
     ) -> None:
         """both adds and updates elements"""
-        self.elements.update({name: HudElement(source, dest)})
+        self.elements.update({name: self.HudElement(source, dest)})
 
     def get_elements(self) -> tuple:
         """returns a list to be used by blits"""
@@ -186,16 +199,14 @@ def add_hud(screen: pygame.surface.Surface, hud: Hud) -> None:
 
 
 def draw_map(
-    _map: Map, basemap: pygame.Surface, draw_player: bool, frame: int
+    entities: list, basemap: pygame.Surface, draw_player: bool, frame: int
 ) -> pygame.Surface:
     """Draws entities on basemap"""
     # TODO: Make a nicer way of iterating through map objects while keeping the indexes
-    # for row in range(c_map.get_nrows()):
-    #     for col in range(c_map.get_ncols()):
-    #         for entity in c_map[row][col]:
+
     animation_stage = [0, 2, 3][frame % 3]
     # animation_stage = random.choice([0, 2, 3])
-    for entity in _map:
+    for entity in entities:
         if entity.name == "Player" and not draw_player:
             continue
         sprite = assets[entity.name]
@@ -213,59 +224,23 @@ def draw_map(
             creature_sprite = pygame.transform.rotate(
                 creature_sprite, 90 * entity.direction
             )
-            basemap.blit(creature_sprite, coords_to_pixels(*entity.position))
+            basemap.blit(creature_sprite, coords_to_pixels(entity.position))
         else:
             if entity.name == "Stone":
                 # TODO: Delete this hacky fix to prevent rock textures randomising.
                 # TODO: Stone should be a part of basemap to improve fps.
                 random.seed(f"{entity.position}")
                 plain_tile_index = 0
-                global spritesheet_dims
                 sprite_num = random.randrange(
-                    spritesheet_dims["Stone"][plain_tile_index]
+                    SPRITESHEET_DIMS["Stone"][plain_tile_index]
                 )
                 sprite_index = (plain_tile_index, sprite_num)
                 random.seed()
             basemap.blit(
                 sprite,
-                coords_to_pixels(*entity.position),
+                coords_to_pixels(entity.position),
                 get_sprite_box(*sprite_index),
             )
-    # for pos, entities in c_map:
-    #     for entity in entities:
-    #         if entity.name == "Player" and not draw_player:
-    #             continue
-    #         sprite = assets[entity.name]
-    #         sprite_index = (0, 0)
-    #         # TODO: Rotation breaks when not using first image of spritesheet,
-    #         # as the entire image is rotated. Current hacky workaround is to only
-    #         # rotate Creatures
-    #         # TODO: Remove magic strings
-    #         if entity.name not in ["Stone", "rockwall"]:
-    #             sprite_index = (0, animation_stage)
-    #             creature_sprite = pygame.Surface((25, 25))
-    #             creature_sprite.fill((255, 255, 255))
-    #             creature_sprite.set_colorkey("white")
-    #             creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
-    #             creature_sprite = pygame.transform.rotate(
-    #                 creature_sprite, 90 * entity.direction
-    #             )
-    #             basemap.blit(creature_sprite, coords_to_pixels(*pos))
-    #         else:
-    #             if entity.name == "Stone":
-    #                 # TODO: Delete this hacky fix to prevent rock textures randomising.
-    #                 # TODO: Stone should be a part of basemap to improve fps.
-    #                 random.seed(f"{pos}")
-    #                 plain_tile_index = 0
-    #                 global spritesheet_dims
-    #                 sprite_num = random.randrange(
-    #                     spritesheet_dims["Stone"][plain_tile_index]
-    #                 )
-    #                 sprite_index = (plain_tile_index, sprite_num)
-    #                 random.seed()
-    #             basemap.blit(
-    #                 sprite, coords_to_pixels(*pos), get_sprite_box(*sprite_index)
-    #             )
     return basemap
 
 
@@ -282,8 +257,8 @@ def pan_screen(
     Best to keep move history in entities and read the new_map and most recent move.
     """
     speed = 5
-    ydiff = int(new_center[0] - old_center[0])
-    xdiff = int(new_center[1] - old_center[1])
+    xdiff = int(new_center[0] - old_center[0])
+    ydiff = int(new_center[1] - old_center[1])
     disp = get_disp(*old_center)
     for i in range(speed):
         xpos = int(disp[0] + xdiff * TSIZE * (i / speed))
@@ -370,7 +345,6 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
     now = pygame.time.get_ticks()
     game = Game()
     # Load the map. This will be a function when we have multiple maps to go between.
-    c_map = game.get_map()
     hud = Hud()
     hud.update_element(
         "step_count",
@@ -380,7 +354,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
         (0, 0),
     )
     frog_location = game.get_player_pos()
-    basemap = make_basemap(c_map)
+    basemap = make_basemap(game.get_map().get_width(), game.get_map().get_height())
     map_changed = True
     frame_count = 0
 
@@ -396,7 +370,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
             frame_count += 1
             new_map = game.get_map()
             frame = draw_map(
-                new_map, copy(basemap), game.is_player_alive(), frame_count
+                new_map.entities, copy(basemap), game.is_player_alive(), frame_count
             )
             new_froglocation = game.get_player_pos()
             if ANIMATIONS and frog_location != new_froglocation:
@@ -412,6 +386,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
 
         # Process Input
         for event in pygame.event.get():
+            # If step made
             if process_event(event, game):
                 # ToDo: move step sound and step sound volume here
                 adjust_step_volume(game)
@@ -437,7 +412,10 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
 def main() -> None:
     # Initialising stuff
     screen = pygame.display.set_mode(
-        (WINDOW_COLUMNS * TSIZE, WINDOW_ROWS * TSIZE), pygame.SCALED | pygame.RESIZABLE
+        (WINDOW_TILE_WIDTH * TSIZE, WINDOW_TILE_HEIGHT * TSIZE),
+        pygame.SCALED | pygame.RESIZABLE,
     )
+    global SPRITESHEET_DIMS
+    SPRITESHEET_DIMS = parse_assets(assets)
     while True:
         gui_loop(screen)

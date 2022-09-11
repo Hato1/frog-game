@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from pathlib import Path
 from typing import Iterator, Optional, Union, overload
 
@@ -33,6 +34,8 @@ class Map:
         self.steps_left -= 1
         if not self.steps_left:
             self.player.alive = False
+
+        logging.debug(self)
 
     def _collision_handler(self) -> None:
         """
@@ -154,7 +157,17 @@ class Map:
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
-        raise NotImplementedError
+        _map = [[" "] * self.get_width() for _col in range(self.get_height())]
+        for entity in self.entities:
+            pos = entity.position
+            _map[pos.y][pos.x] = entity.name[0]
+
+        _map = ["".join(row) for row in _map]
+        _map = "│" + "│\n│".join(_map) + "│"
+
+        _map = "┌" + "─" * self.get_width() + "┐\n" + _map
+        _map = _map + "\n└" + "─" * self.get_width() + "┘"
+        return _map
 
     def __len__(self) -> int:
         raise NotImplementedError
@@ -186,10 +199,10 @@ class Map:
     def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
         """Read entities from a map file and insert them into the entity list"""
         with open(map_file) as file:
-            x = 0
-            max_y = 0
+            y = 0
+            max_x = 0
             for line in file:
-                y = 0
+                x = 0
                 line = line.strip()
                 if set(line) == {"-"}:
                     continue
@@ -197,7 +210,7 @@ class Map:
                     if char in ["|", "-"]:
                         continue
                     self._new_entity_from_char(char, Point(x, y))
-                    y += 1
-                    max_y = max(y, max_y)
-                x += 1
-        return x, max_y
+                    x += 1
+                    max_x = max(x, max_x)
+                y += 1
+        return max_x, y

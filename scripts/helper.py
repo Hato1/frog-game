@@ -17,7 +17,7 @@ class Benchmark:
         new_time = pg.time.get_ticks()
         difference = new_time - self.time
         self.time = new_time
-        logging.debug(msg=difference)
+        logging.debug(msg=f"Milliseconds between main loop runs: {difference}")
 
 
 def add_tuple(x: tuple, y: tuple) -> tuple:
@@ -40,10 +40,10 @@ class Point(NamedTuple):
 
 
 UP, LEFT, DOWN, RIGHT, IDLE = (
-    Point(-1, 0),
     Point(0, -1),
-    Point(1, 0),
+    Point(-1, 0),
     Point(0, 1),
+    Point(1, 0),
     Point(0, 0),
 )
 FACING = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3}
@@ -52,7 +52,7 @@ FACING = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3}
 def facing(point: Point, original_direction: int) -> int:
     """Get the cardinal direction an entity should be facing after making a move."""
     if sum(point) < 0:
-        return 0 if min(point) == point[0] else 1
+        return 1 if min(point) == point[0] else 0
     elif sum(point) > 0:
-        return 2 if max(point) == point[0] else 3
+        return 3 if max(point) == point[0] else 2
     return original_direction

@@ -19,6 +19,9 @@ class Game:
 
         Returns True if the move was valid, False otherwise.
         """
+        if not self.is_player_alive():
+            return False
+
         pos = self.get_player_pos()
         new_pos = pos + direction
 
@@ -26,8 +29,8 @@ class Game:
         if new_pos[0] < 0 or new_pos[1] < 0:
             return False
         if (
-            self.map.get_height() - 1 < new_pos[1]
-            or self.map.get_width() - 1 < new_pos[0]
+            self.map.get_width() - 1 < new_pos[0]
+            or self.map.get_height() - 1 < new_pos[1]
         ):
             return False
         for obj in self.map[new_pos]:
