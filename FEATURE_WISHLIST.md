@@ -17,8 +17,6 @@
 
 ### Bugs:
 
-Cannot quit while dead
-
 Collision with barrels (entities) crashes
 
 

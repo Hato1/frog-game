@@ -57,10 +57,10 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
     R: kills the player (Restart)
     """
     if event.type == pygame.QUIT:
-        sys.exit()
+        exit_game()
     elif event.type == pygame.KEYDOWN:
         if event.key == pygame.K_q:
-            sys.exit()
+            exit_game()
         if event.key == pygame.K_r:
             game.kill_player()
 
@@ -74,6 +74,11 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
             elif event.key in [pygame.K_d, pygame.K_RIGHT]:
                 return game.move(RIGHT)
     return False
+
+
+def exit_game():
+    """Exits game"""
+    sys.exit()
 
 
 def coords_to_pixels(row: int, col: int) -> tuple:
@@ -349,6 +354,9 @@ def play_death_animation(
         any_key.set_alpha(magic_number * 3 - 100)
         screen.blit(any_key, any_key_pos)
         pygame.display.flip()
+
+        if any(event.key == pygame.K_q for event in pygame.event.get()):
+            exit_game()
 
         if magic_number > 20 and any(
             event.type == pygame.KEYDOWN for event in pygame.event.get()
