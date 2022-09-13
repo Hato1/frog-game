@@ -1,6 +1,4 @@
 """
-TODO: URGENT - make temp_fn(pair, pairs, entities_on_space): return moved_entities
-TODO: URGENT - make get_highest_priorityfn(pairs): return temp_fn, pair
 Behaviours for collisions between each pair of entities
 
 Function names are "strategy1_strategy2"
@@ -32,13 +30,13 @@ Notes:
     Force moved entities should go to front of list, if move unmade, or back if move extra
 """
 from logging import warning
+from typing import Union
+
+from .entity import Entity
 
 # from collections import namedtuple
 # from .entity import AI_DICT
-# from .helper import Point
-from typing import Union
-
-# from .entity import Creature, Entity
+from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point
 
 # Dumb hacky hack for PyCharm type checking. Needs TYPE_CHECKING from typing
 # if TYPE_CHECKING:
@@ -48,6 +46,15 @@ from typing import Union
 creatures_which_do_not_interact = "DeadDoug"
 creatures_which_kill_player_outright = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
 creatures_which_kill_each_other = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
+creatures_which_push_rocks = (
+    "NormalNorman",
+    "SpiralingStacy",
+    "TrickyTrent",
+    "Player",
+    "BarrelingBarrel",
+)
+
+
 # get_highest_priorityfn(pairs): return temp_fn, pair
 
 
@@ -63,6 +70,11 @@ def get_highest_priorityfn(pairs: list):
     if pair := check_get_pair(pairs, "Player", creatures_which_kill_player_outright):
         # Perhaps make a new fn which also removes non-interacting creatures from collisions_here
         return kill_player, pair
+    if pair := check_get_pair(pairs, "Player", "BarrelingBarrel"):
+        return Player_BarrelingBarrel, pair
+    if pair := check_get_pair(pairs, "SlidingStone_Any", creatures_which_push_rocks):
+        return SlidingStone_Any, pair
+
     # if check_pairs(pair_names, "Player"):
     #     if check_names(entity_names, creatures_which_kill_player_outright):
     #         return kill_player
@@ -101,16 +113,33 @@ def check_get_pair(
     return pair
 
 
-# def get_ind(name: str) -> int:
-#     """given an entity name, finds its index in entity_strategies (= current_collision)"""
-#     entities_are_name = entity_strategies == name
-#     return [i for i, x in enumerate(entities_are_name) if x]
+def push(pusher: Entity, pushee: Entity) -> Point:
+    """pusher pushes pushee, returns direction of push"""
+    push_direction = pusher.position - pusher.position_history[-1]
+    pushee.force_move([push_direction])
+    return push_direction
+
+
+# Fn shunted to entity.force_move()
+# def move_entity(entity: Entity, direction: Point) -> None:
+# 	"""Moves entity in direction"""
+# 	entity.position += direction
+
+
+def get_ind(pair: tuple, name: str) -> bool:
+    """given a pair and entity name, finds its index in pair"""
+    return pair[1].get_strategy_name() == name
 
 
 def remove_from_collisions(target_entity):
     # indices_with_entity = [i for i, entity in enumerate(collisions_here)
     # if entity == target_entity]
     return
+
+
+# From here down are the functions which resolve specific interactions
+# These take the form of:
+# temp_fn(pair: tuple, pairs: list of tuples, entities_on_space: list) -> list
 
 
 def no_conflict(pair: tuple, pairs: list, entities_on_space: list) -> list:
@@ -129,7 +158,24 @@ def NormalNorman_NormalNorman(
     return []
 
 
-# def Player_BarrelingBarrel(pair: tuple, pairs: list, entities_on_space: list) -> list:
-#     # up/down/left/right in state (0/1/2/3/4+)
-#     barrel = current_collision[get_ind("BarrelingBarrel")]
-#     return []
+def Player_BarrelingBarrel(pair: tuple, pairs: list, entities_on_space: list) -> list:
+    # up/down/left/right in state (0/1/2/3/4)
+    # TODO: remove barrel from pairs
+    barrel_ind = get_ind(pair, "BarrelingBarrel")
+    push_dir = push(pair[not barrel_ind], pair[barrel_ind])
+
+    # WET line incoming:
+    next_state = [
+        i for i, d in enumerate([IDLE, UP, DOWN, LEFT, RIGHT]) if d == push_dir
+    ]
+    # ^^ duplicate of facing from helper.py
+    pair[barrel_ind].force_state(next_state[0])
+    pair[barrel_ind].force_facing(push_dir)
+    return [pair[barrel_ind]]
+
+
+def SlidingStone_Any(pair: tuple, pairs: list, entities_on_space: list) -> list:
+    """Sliding Stone gets pushed around"""
+    SS_ind = get_ind(pair, "SlidingStone")
+    push(pair[not SS_ind], pair[SS_ind])
+    return [pair[SS_ind]]

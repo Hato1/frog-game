@@ -90,6 +90,13 @@
       "FileName": "Transparent.png",
       "HueAdjust": "0",
       "SpriteSize": [1, 1]
+    },
+    {
+      "Name" : "SlidingStone",
+      "AI": "SlidingStone",
+      "FileName": "SlidingStone.png",
+      "HueAdjust": "0",
+      "SpriteSize": [1, 1]
     }
 
   ]

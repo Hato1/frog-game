@@ -1,5 +1,7 @@
 from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, facing
 
+# TODO: _map is not used
+
 
 class Ai:
     def __init__(self, state: int = 0):
@@ -21,7 +23,7 @@ class Ai:
 
 
 class Player(Ai):
-    """This is a hacky solution used for conflice resolution"""
+    """This is a hacky solution used for conflict resolution"""
 
     def _get_move(self, position: Point, _map: list) -> tuple[Point, int]:
         return IDLE, 0
@@ -103,7 +105,7 @@ class TrickyTrent(Ai):
 
 
 class BarrelingBarrel(Ai):
-    """Moves not at all, up/down/left/right in state (0/1/2/3/4+) until stat"""
+    """Moves idle/up/down/left/right in state (0/1/2/3/4) until changed"""
 
     def _get_move(self, position: Point, _map: list) -> tuple[Point, int]:
         match self.state:
@@ -125,3 +127,10 @@ class DirtyDan(Ai):
 
     def _get_move(self, position: Point, _map: list) -> tuple[Point, int]:
         raise NotImplementedError
+
+
+class SlidingStone(Ai):
+    """DeadDoug, but pushable"""
+
+    def _get_move(self, position: Point, _map: list) -> tuple[Point, int]:
+        return IDLE, 0

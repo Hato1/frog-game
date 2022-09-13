@@ -41,7 +41,7 @@ class Map:
         """
         Finds positions of collisions (collision_detector), wraps over them all (resolve_space) until all resolved
         """
-        # Hours spent on collision resolution: 19.5
+        # Hours spent on collision resolution: 23
         # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
         collision_positions = self._collision_detector()
 
@@ -53,7 +53,7 @@ class Map:
             positions_to_recheck = self._resolve_space(current_collision_position)
             collision_positions.extend(positions_to_recheck)
 
-    def _resolve_space(self, position):
+    def _resolve_space(self, position: Point) -> list[Point]:
         """makes list of pairs (make_pairs), resolves pairs in priority order per get_highest_priorityfn"""
         entities_on_space = [e for e in self.entities if e.position == position]
         pairs = self._make_pairs(entities_on_space)
@@ -70,7 +70,7 @@ class Map:
         Finds and returns all potential collision locations
         {} is set, to ensure uniqueness
         """
-        # TODO: Only return positions with at-least 2 entities
+        # TODO: Only return positions with at least 2 entities
         return sorted(list({entity.position for entity in self.entities}))
 
     def _make_pairs(
@@ -195,6 +195,10 @@ class Map:
                 self.entities.append(Entity("FrogY", "SpiralingStacy", position=point))
             case "T":
                 self.entities.append(Entity("FrogP", "TrickyTrent", position=point))
+            case "L":
+                self.entities.append(
+                    Entity("SlidingStone", "SlidingStone", position=point)
+                )
 
     def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
         """Read entities from a map file and insert them into the entity list"""
