@@ -109,3 +109,6 @@ class Entity:
 
     def get_strategy_name(self) -> str:
         return self.strategy_name
+
+    def get_state(self) -> int:
+        return self.strategy.state

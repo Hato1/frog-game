@@ -1,6 +1,6 @@
 from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, facing
 
-# TODO: _map is not used
+# TODO: _map is not used (I think?)
 
 
 class Ai:

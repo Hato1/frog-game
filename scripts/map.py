@@ -41,19 +41,24 @@ class Map:
         """
         Finds positions of collisions (collision_detector), wraps over them all (resolve_space) until all resolved
         """
-        # Hours spent on collision resolution: 23
+        # Hours spent on collision resolution: 26
         # Would be more efficient to have a boolean table for "Does this tile need conflict resolution"
         collision_positions = self._collision_detector()
-
+        # Initialise a number of collsisons resolved, to throw an error if it loops
+        num_collisions_resolved = 0
         # May want to initialise a second instance of map and collision positions for iterative resolutions:
         # new_map_nplus1 = new_map.copy()
         # collision_positions_nplus1 = []
         while collision_positions:
             current_collision_position = collision_positions.pop(0)
-            positions_to_recheck = self._resolve_space(current_collision_position)
+            positions_to_recheck, num_collisions_resolved = self._resolve_space(
+                current_collision_position, num_collisions_resolved
+            )
             collision_positions.extend(positions_to_recheck)
 
-    def _resolve_space(self, position: Point) -> list[Point]:
+    def _resolve_space(
+        self, position: Point, num_collisions_resolved: int
+    ) -> tuple[list[Point], int]:
         """makes list of pairs (make_pairs), resolves pairs in priority order per get_highest_priorityfn"""
         entities_on_space = [e for e in self.entities if e.position == position]
         pairs = self._make_pairs(entities_on_space)
@@ -63,7 +68,12 @@ class Map:
             pairs.remove(pair)
             # We pass pairs to remove objects from it that leave the space.
             moved_entities.extend(temp_fn(pair, pairs, entities_on_space))
-        return [e.position for e in moved_entities]
+            num_collisions_resolved += 1
+            if num_collisions_resolved > 1000:
+                self._inf_loop_error(pair)
+                if num_collisions_resolved > 1015:
+                    raise NotImplementedError("Loop not resolved after 1000 iterations")
+        return [e.position for e in moved_entities], num_collisions_resolved
 
     def _collision_detector(self) -> list[Point]:
         """
@@ -94,6 +104,14 @@ class Map:
         # entity_pair = [new_map[current_collision_position][a] for a in current_collision_position]
         # entity_pair.sort(key = lambda ent: ent.get_strategy_name())
         # entity_strategies = [ent.get_strategy_name() for ent in entity_pair]
+
+    def _inf_loop_error(self, pair: list) -> None:
+        """if infinite loop, prints an error with a few useful diagnostics"""
+        logging.error("Pairs at location:")
+        logging.error(pair[0].position)
+        logging.error("Pairs have strategies:")
+        logging.error([e.get_strategy_name() for e in pair])
+        logging.error("Too many pairs resolved. Infinite loop?")
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
