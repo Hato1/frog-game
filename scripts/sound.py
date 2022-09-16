@@ -10,7 +10,7 @@ class SoundSystem:
 
     Attributes
     ----------
-    sounds_dict : dict
+    _sounds_dict : dict
         dictionary that stores playable sounds
     """
 
@@ -19,10 +19,14 @@ class SoundSystem:
         initialises pygame.mixer and creates helper variables
         """
         pygame.mixer.init()
+        self.playing_music = False
+        self.muted = False
+
         self.load_song("summer_samba.mp3")
         self.play_song()
+        self.toggle_music()
 
-        self.sounds_dict: dict[str, Union[tuple, pygame.Sound]] = {}
+        self._sounds_dict: dict[str, Union[tuple, pygame.Sound]] = {}
         self.load_sound("croak", "croak.ogg")
         self.load_multi_sound(
             "step",
@@ -42,7 +46,7 @@ class SoundSystem:
         """
 
         path_to_sound = "assets/sounds/" + sound_file
-        self.sounds_dict[sound_name] = pygame.mixer.Sound(path_to_sound)
+        self._sounds_dict[sound_name] = pygame.mixer.Sound(path_to_sound)
 
     def load_multi_sound(self, sound_name: str, sound_files: tuple) -> None:
         """
@@ -61,7 +65,7 @@ class SoundSystem:
             path_to_sound = "assets/sounds/" + file
             sounds.append(pygame.mixer.Sound(path_to_sound))
         sounds = tuple(sounds)
-        self.sounds_dict[sound_name] = sounds
+        self._sounds_dict[sound_name] = sounds
 
     def set_sound_volume(self, sound_name: str, volume: float) -> None:
         """sets the volume for all sounds associated with the key sound_name
@@ -71,7 +75,7 @@ class SoundSystem:
             volume: float between 0.0 and 1.0 inclusive
         """
 
-        sound = self.sounds_dict[sound_name]
+        sound = self._sounds_dict[sound_name]
         if type(sound) == tuple:
             for s in sound:
                 s.set_volume(volume)
@@ -87,13 +91,26 @@ class SoundSystem:
             sound_name: key for sound_dict
         """
 
-        if type(self.sounds_dict[sound_name]) == tuple:
-            sound = choice(self.sounds_dict[sound_name])
+        if type(self._sounds_dict[sound_name]) == tuple:
+            sound = choice(self._sounds_dict[sound_name])
 
         else:
-            sound = self.sounds_dict[sound_name]
+            sound = self._sounds_dict[sound_name]
 
         sound.play()
+
+    def toggle_mute(self):
+        """toggles volume between 0 and 1"""
+        if self.muted:
+            for sound in self._sounds_dict:
+                self.set_sound_volume(sound, 1.0)
+            pygame.mixer.music.set_volume(1.0)
+            self.muted = False
+        else:
+            for sound in self._sounds_dict:
+                self.set_sound_volume(sound, 0.0)
+            pygame.mixer.music.set_volume((0.0))
+            self.muted = True
 
     @staticmethod
     def load_song(song_name: str) -> None:
@@ -102,9 +119,20 @@ class SoundSystem:
         path_to_song = "assets/sounds/" + song_name
         pygame.mixer.music.load(path_to_song)
 
-    @staticmethod
-    def play_song() -> None:
+    def play_song(self) -> None:
         """plays the currently loaded song on loop indefinitely"""
         # ToDo: check to see if music is loaded
 
         pygame.mixer.music.play(loops=-1)
+        self.playing_music = True
+
+    def toggle_music(self) -> None:
+        """toggles play/pause state for music"""
+
+        if self.playing_music:
+            pygame.mixer.music.pause()
+            self.playing_music = False
+
+        else:
+            pygame.mixer.music.unpause()
+            self.playing_music = True

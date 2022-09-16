@@ -47,7 +47,7 @@ pygame.init()
 # WARNING
 # ERROR
 # CRITICAL
-logging.basicConfig(level=logging.DEBUG, format="")
+logging.basicConfig(level=logging.WARNING, format="")
 
 # loads the sound system
 sound_system = SoundSystem()
@@ -72,8 +72,6 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
         exit_game()
     elif event.type == pygame.KEYDOWN:
         match event.key:
-            case pygame.K_q:
-                exit_game()
             case pygame.K_r:
                 game.kill_player()
 
@@ -86,6 +84,20 @@ def process_event(event: pygame.event.Event, game: Game) -> bool:
             case pygame.K_d | pygame.K_RIGHT:
                 return game.move(RIGHT)
     return False
+
+
+def process_universal_input(event: pygame.event.Event):
+    """feed pygame events to allow the player to perform actions
+    that aren't dependent on the players alive status"""
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_q:
+            exit_game()
+
+        elif event.key == pygame.K_m:
+            sound_system.toggle_mute()
+
+        elif event.key == pygame.K_p:
+            sound_system.toggle_music()
 
 
 def exit_game():
@@ -271,8 +283,9 @@ def pan_screen(
 
 def adjust_step_volume(game: Game):
     # ToDo: implement max step amount instead of hard coding 25
-    volume = 1 - (game.get_steps_remaining() / 25)
-    sound_system.set_sound_volume("step", volume)
+    if not sound_system.muted:
+        volume = 1 - (game.get_steps_remaining() / 25)
+        sound_system.set_sound_volume("step", volume)
 
 
 def play_death_animation(
@@ -331,10 +344,9 @@ def play_death_animation(
         pygame.display.flip()
 
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                exit_game()
+            process_universal_input(event)
 
-            elif magic_number > 20 and event.type == pygame.KEYDOWN:
+            if magic_number > 20 and event.type == pygame.KEYDOWN:
                 return
 
         magic_number += 1
@@ -386,9 +398,10 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
 
         # Process Input
         for event in pygame.event.get():
+            process_universal_input(event)
+
             # If step made
             if process_event(event, game):
-                # ToDo: move step sound and step sound volume here
                 adjust_step_volume(game)
                 sound_system.play_sound("step")
 
