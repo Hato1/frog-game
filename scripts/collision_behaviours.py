@@ -28,7 +28,7 @@ collision_positions - List of Points where collisions occur
 
 Notes:
     TODO: Force moved entities should go to front of list, if move unmade, or back if move extra
-    TODO: should really make "pair" a named tuple to avoid indexing shennanigans
+    TODO: should really make "pair" a named tuple to avoid indexing shenanigans
 """
 from logging import warning
 from typing import Union
@@ -54,7 +54,7 @@ creatures_which_push = (
     "Player",
     "SlidingStone",
 )
-creaures_which_get_pushed = (
+creatures_which_get_pushed = (
     "SlidingStone",
     "BarrelingBarrel",
 )
@@ -65,46 +65,44 @@ creatures_which_barrel_kills = (
     "Player",
 )
 
-# get_highest_priorityfn(pairs): return temp_fn, pair
-
 
 def get_highest_priorityfn(pairs: list):
-    """
-    returns the pair with highest priority, and the fn to handle their collision
-    TODO: think about the case of equal priority interactions
+    """Returns the function that resolves the highest priority interaction, and the pair involved.
+    TODO: Think about the case of equal priority interactions
     TODO: Think about whether using "case:" would make sense
+    TODO: Named tuples instead of magic strings.
     """
-    # want to make a check for Entity (not Creature), return no_conflict
-    # if any([type()])
     # pair_names = [(e.get_strategy_name() for e in pair) for pair in pairs]
 
+    # Kill player
     if pair := check_get_pair(pairs, "Player", creatures_which_kill_player_outright):
         # Perhaps make a new fn which also removes non-interacting creatures from collisions_here
         return kill_player, pair
     # if pair := check_get_pair(pairs, "Player", "BarrelingBarrel"):
     #     return Player_BarrelingBarrel, pair
-    if pair := check_get_pair(pairs, creaures_which_get_pushed, creatures_which_push):
-        if all([entity.get_strategy_name() == "SlidingStone" for entity in pair]):
+
+    # Push objects
+    # TODO: Predefine order of check_get_pair so we don't have to mess with pair indexes
+    if pair := check_get_pair(pairs, creatures_which_get_pushed, creatures_which_push):
+        if all(entity.get_strategy_name() == "SlidingStone" for entity in pair):
             warning("Multiple sliding stones on same space not implemented")
             return no_conflict, pair
         if "BarrelingBarrel" in [entity.get_strategy_name() for entity in pair]:
             barrel_state = pair[get_ind(pair, "BarrelingBarrel")].get_state()
             if not barrel_state:
-                return Pusher_BoringBarrel, pair
+                return pusher_boringbarrel, pair
         if "SlidingStone" in [entity.get_strategy_name() for entity in pair]:
-            return SlidingStone_Any, pair
-    if pair := check_get_pair(pairs, "SlidingStone", "BarrelingBarrel"):
-        return SlidingStone_BarrelingBarrel, pair
-
+            return slidingstone_any, pair
+    # if pair := check_get_pair(pairs, "SlidingStone", "BarrelingBarrel"):
+    #     return SlidingStone_BarrelingBarrel, pair
     # if check_pairs(pair_names, "Player"):
     #     if check_names(entity_names, creatures_which_kill_player_outright):
     #         return kill_player
     #     if check_names(entity_names, "BarrelingBarrel"):
     #         return Player_BarrelingBarrel
-    # if check_names("Barrel"):
-    #     makehappy(barrel)
-    pair = pairs[0]
-    return no_conflict_warning, pair
+
+    # No collision found
+    return no_conflict_warning, pairs[0]
 
 
 # Generic functions:
@@ -143,7 +141,7 @@ def push(pusher: Entity, pushee: Entity) -> Point:
     return push_direction
 
 
-def block(blocker: Entity, blockee: Entity) -> Point:
+def block(_blocker: Entity, blockee: Entity) -> Point:
     """blocks blockee"""
     push_direction = blockee.position_history[-1] - blockee.position
     blockee.force_move([push_direction])
@@ -174,32 +172,31 @@ def remove_from_collisions(pairs: list, target_entity: Entity):
 # temp_fn(pair: tuple, pairs: list of tuples, entities_on_space: list) -> list
 
 
-def no_conflict(pair: tuple, pairs: list, entities_on_space: list) -> list:
+def no_conflict(_pair: tuple, _pairs: list, _entities_on_space: list) -> list:
     return []
 
 
-def no_conflict_warning(pair: tuple, pairs: list, entities_on_space: list) -> list:
+def no_conflict_warning(pair: tuple, _pairs: list, _entities_on_space: list) -> list:
     warning(
-        "{} and {} have no programmed interaction!".format(
-            pair[0].get_strategy_name(), pair[1].get_strategy_name()
-        )
+        f"{pair[0].get_strategy_name()} and {pair[1].get_strategy_name()} have no programmed interaction!"
     )
     return []
 
 
-def kill_player(pair: tuple, pairs: list, entities_on_space: list) -> list:
-    warning("DIE PLAYER!!")
+def kill_player(pair: tuple, _pairs: list, _entities_on_space: list) -> list:
+    p = pair[get_ind(pair, "Player")]
+    p.alive = False
     return []
 
 
-def NormalNorman_NormalNorman(
-    pair: tuple, pairs: list, entities_on_space: list
+def normalnorman_normalnorman(
+    _pair: tuple, _pairs: list, _entities_on_space: list
 ) -> list:
     # LEAPFROG #Prefreence to up, followed by right
     return []
 
 
-def Pusher_BoringBarrel(pair: tuple, pairs: list, entities_on_space: list) -> list:
+def pusher_boringbarrel(pair: tuple, pairs: list, _entities_on_space: list) -> list:
     # still/up/down/left/right in state (0/1/2/3/4)
     # TODO: remove barrel from pairs
     barrel_ind = get_ind(pair, "BarrelingBarrel")
@@ -217,17 +214,17 @@ def Pusher_BoringBarrel(pair: tuple, pairs: list, entities_on_space: list) -> li
     return [pair[barrel_ind]]
 
 
-def SlidingStone_Any(pair: tuple, pairs: list, entities_on_space: list) -> list:
+def slidingstone_any(pair: tuple, pairs: list, _entities_on_space: list) -> list:
     """Sliding Stone gets pushed around"""
-    SS_ind = get_ind(pair, "SlidingStone")
-    move = push(pair[not SS_ind], pair[SS_ind])
+    ss_ind = get_ind(pair, "SlidingStone")
+    move = push(pair[not ss_ind], pair[ss_ind])
     if move != IDLE:
-        remove_from_collisions(pairs, pair[SS_ind])
-    return [pair[SS_ind]]
+        remove_from_collisions(pairs, pair[ss_ind])
+    return [pair[ss_ind]]
 
 
-def SlidingStone_BarrelingBarrel(
-    pair: tuple, pairs: list, entities_on_space: list
+def slidingstone_barrelingbarrel(
+    pair: tuple, _pairs: list, _entities_on_space: list
 ) -> list:
     """Sliding Stone stops Barreling Barrel"""
     barrel_ind = get_ind(pair, "BarrelingBarrel")

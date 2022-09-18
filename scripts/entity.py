@@ -64,6 +64,7 @@ class Entity:
         self.solid = solid
         self.direction = direction
         self.position = position
+        self.alive = True
         # TODO: also needs other properties, eg state
         self.position_history: list[Point] = []
 
