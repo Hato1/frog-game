@@ -4,13 +4,18 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
-from typing import Iterator, Optional, Union, overload
+from typing import Callable, Iterator, Optional, Union, overload
 
 from .collision_behaviours import get_highest_priorityfn
 from .entity import Entity
 from .helper import Point
 
+logger = logging.getLogger("Frog")
+
+
 # from multimethod import multimethod
+MAP_WIDTH = 0
+MAP_HEIGHT = 0
 
 
 class Map:
@@ -19,7 +24,9 @@ class Map:
         self.entities: list[Entity] = []
         # TODO: Collision map?
         if map_file:
-            self.width, self.height = self._populate_entity_list(map_file)
+            global MAP_WIDTH
+            global MAP_HEIGHT
+            MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(map_file)
 
     def update_creatures(self) -> None:
         """
@@ -27,7 +34,7 @@ class Map:
         Run conflict resolver
         """
         for entity in self.entities:
-            entity.make_move(self.entities)
+            entity.make_move(self.entities, Point(MAP_WIDTH, MAP_HEIGHT))
 
         self._collision_handler()
 
@@ -35,7 +42,7 @@ class Map:
         if not self.steps_left:
             self.player.alive = False
 
-        logging.debug(self)
+        logger.debug(self)
 
     def _collision_handler(self) -> None:
         """Resolves all collisions.
@@ -58,7 +65,7 @@ class Map:
             positions_to_recheck, num_collisions_resolved = self._resolve_space(
                 current_collision_position,
                 num_collisions_resolved,
-                verbose=num_collisions_resolved < 1000,
+                verbose=num_collisions_resolved > 1000,
             )
             assert (
                 num_collisions_resolved < 1015
@@ -78,10 +85,12 @@ class Map:
             temp_fn, pair = get_highest_priorityfn(pairs)
             pairs.remove(pair)
             # We pass pairs to remove objects from it that leave the space.
-            moved_entities.extend(temp_fn(pair, pairs, entities_on_space))
+            moved_entities.extend(
+                temp_fn(pair, pairs, entities_on_space, self.entities)
+            )
             num_collisions_resolved += 1
             if verbose:
-                self.log_collision_resolution(pair)
+                self.log_collision_resolution(temp_fn, pair)
         return [e.position for e in moved_entities], num_collisions_resolved
 
     def _collision_detector(self) -> list[Point]:
@@ -105,13 +114,11 @@ class Map:
         ]
 
     @staticmethod
-    def log_collision_resolution(pair: list) -> None:
+    def log_collision_resolution(temp_fn: Callable, pair: list) -> None:
         """if infinite loop, prints an error with a few useful diagnostics"""
-        logging.error("Pairs at location:")
-        logging.error(pair[0].position)
-        logging.error("Pairs have strategies:")
-        logging.error([e.get_strategy_name() for e in pair])
-        logging.error("Too many pairs resolved. Infinite loop?")
+        logger.error(
+            f"Traceback: Used resolution function '{temp_fn.__qualname__}' at {pair[0].position} on {[e.get_strategy_name() for e in pair]}"
+        )
 
     def move_object(self, src: tuple, dst: tuple) -> None:
         """Uses conflict resolver"""
@@ -136,13 +143,15 @@ class Map:
         #     return False
         # return self.get_width() - 1 >= pos[1] and self.get_height() - 1 >= pos[0]
 
-    def get_height(self) -> int:
+    @staticmethod
+    def get_height() -> int:
         """Get the number of rows"""
-        return self.height
+        return MAP_HEIGHT
 
-    def get_width(self) -> int:
+    @staticmethod
+    def get_width() -> int:
         """Get the number of cols"""
-        return self.width
+        return MAP_WIDTH
 
     def get_steps_left(self) -> int:
         """Get the number of remaining steps"""
@@ -183,7 +192,7 @@ class Map:
         _map = ["".join(row) for row in _map]
         _map = "│" + "│\n│".join(_map) + "│"
 
-        _map = "┌" + "─" * self.get_width() + "┐\n" + _map
+        _map = "\n┌" + "─" * self.get_width() + "┐\n" + _map
         _map = _map + "\n└" + "─" * self.get_width() + "┘"
         return _map
 

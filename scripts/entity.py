@@ -1,6 +1,8 @@
 """Module for animate objects"""
 from typing import Optional
 
+from scripts import map
+
 from .ai import (
     BarrelingBarrel,
     DeadDoug,
@@ -10,7 +12,7 @@ from .ai import (
     SpiralingStacy,
     TrickyTrent,
 )
-from .helper import Point, facing
+from .helper import Point, get_facing_direction, is_in_map
 
 # TODO: Rename DeadDoug to InanimateIvan
 AI_DICT = {
@@ -49,7 +51,6 @@ class Entity:
             solid: Whether other objects can move onto this object's space.
             direction: which way the creature is initially facing
         """
-        # self.state = 0
         # Entities do not have states. Entity.strategys have states
         self.strategy_name = strategy
         self.strategy = AI_DICT[strategy]()
@@ -71,34 +72,45 @@ class Entity:
     def __str__(self) -> str:
         return self.name
 
-    def force_move(self, forced_moves: list[Point]):
+    def force_move(self, forced_moves: list[Point], entity_list):
         """Handles moves forced by collisions"""
         # Perhaps change facing direction here?
         # Would be nice to integrate into get_next_move or make_move
         for move in forced_moves:
-            self.position = self.position + move
+            new_pos = self.position + move
+            if is_in_map(new_pos, Point(map.MAP_WIDTH, map.MAP_HEIGHT)) and not any(
+                entity.solid for entity in entity_list if entity.position == new_pos
+            ):
+                self.position = new_pos
+            else:
+                return False
+        return True
 
     def force_state(self, next_state: int) -> None:
         self.strategy.state = next_state
 
     def force_facing(self, move) -> None:
-        self.direction = facing(move, self.direction)
+        self.direction = get_facing_direction(move, self.direction)
 
-    def make_move(self, _map: list):
+    def make_move(self, entity_list: list, dims: tuple[int, int]):
         """Default move behaviour"""
         # TODO: Ensure position history is sensible when force_move is used
         self.position_history.append(self.position)
-        self.position, self.direction = self.get_next_move(self.position, _map)
+        self.position, self.direction = self.get_next_move(
+            self.position, entity_list, dims
+        )
         # assert self.in_map(new_pos), f"{entity.name} Cheated!"
 
-    def get_next_move(self, position: Point, _map: list) -> tuple[Point, int]:
+    def get_next_move(
+        self, position: Point, entity_list: list, dims: tuple[int, int]
+    ) -> tuple[Point, int]:
         if self.next_move:
             next_position = position + self.next_move
-            direction = facing(self.next_move, self.direction)
+            direction = get_facing_direction(self.next_move, self.direction)
             self.next_move = None
         else:
             next_position, direction = self.strategy.make_move(
-                position, self.direction, _map
+                position, self.direction, entity_list, dims
             )
         assert (
             type(next_position) == Point
@@ -106,6 +118,9 @@ class Entity:
         assert (
             len(next_position) == 2
         ), f"{self.name} requests invalid move: {next_position}"
+        assert is_in_map(
+            next_position, dims
+        ), f"{self} tried to leave the play area at {next_position}!"
         return next_position, direction
 
     def get_strategy_name(self) -> str:

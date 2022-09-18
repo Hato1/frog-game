@@ -40,14 +40,8 @@ if BENCHMARK:
 
 pygame.init()
 
-# TODO: Set this in command line argument
-# If you want to be spammed less choose a different logging level:
-# DEBUG
-# INFO
-# WARNING
-# ERROR
-# CRITICAL
-logging.basicConfig(level=logging.WARNING, format="")
+logger = logging.getLogger("Frog")
+
 
 # loads the sound system
 sound_system = SoundSystem()
