@@ -29,6 +29,14 @@ AI_DICT = {
 UP, RIGHT, DOWN, LEFT = range(4)
 
 
+def solid_entity_at(point, entity_list):
+    return any(entity.solid for entity in entity_list if entity.position == point)
+
+
+def entity_at(point, entity_list):
+    return any(entity for entity in entity_list if entity.position == point)
+
+
 class Entity:
     """Thing on the map that is not part of the background"""
 
@@ -77,13 +85,18 @@ class Entity:
         # Perhaps change facing direction here?
         # Would be nice to integrate into get_next_move or make_move
         for move in forced_moves:
-            new_pos = self.position + move
-            if is_in_map(new_pos, Point(map.MAP_WIDTH, map.MAP_HEIGHT)) and not any(
-                entity.solid for entity in entity_list if entity.position == new_pos
-            ):
-                self.position = new_pos
-            else:
-                return False
+            assert move != Point(0, 0)
+            check_tile = self.position
+            while True:
+                check_tile += move
+                if solid_entity_at(check_tile, entity_list):
+                    return False
+                elif not is_in_map(check_tile, Point(map.MAP_WIDTH, map.MAP_HEIGHT)):
+                    return False
+                # Temp, stops entities from being force pushed onto something
+                elif not entity_at(check_tile, entity_list):
+                    self.position = self.position + move
+                    break
         return True
 
     def force_state(self, next_state: int) -> None:

@@ -65,6 +65,14 @@ creatures_which_barrel_kills = (
     "TrickyTrent",
     "Player",
 )
+creatures_which_cannot_overlap = (
+    "NormalNorman",
+    "SpiralingStacy",
+    "TrickyTrent",
+    "Player",
+    "SlidingStone",
+    "BarrelingBarrel",
+)
 
 
 def get_highest_priorityfn(pairs: list):
@@ -138,6 +146,8 @@ def check_state(pair: tuple, which: str) -> int:
 def push(pusher: Entity, pushee: Entity, entity_list: list) -> Union[Point, bool]:
     """pusher pushes pushee, returns direction of push"""
     push_direction = pusher.position - pusher.position_history[-1]
+    if push_direction == Point(0, 0):
+        return False
     if pushee.force_move([push_direction], entity_list):
         return push_direction
     else:
@@ -222,6 +232,7 @@ def pusher_boringbarrel(
     # ^^ duplicate of facing from helper.py
     if not next_state:
         remove_from_collisions(pairs, pair[barrel_ind])
+        return []
     pair[barrel_ind].force_state(next_state[0])
     pair[barrel_ind].force_facing(push_dir)
     return [pair[barrel_ind]]

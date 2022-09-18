@@ -124,8 +124,9 @@ class BarrelingBarrel(Ai):
         dest = position + direction
         if not is_in_map(dest, dims):
             return IDLE, 0
-        if any(entity.solid for entity in entity_list if entity.position == dest):
+        if any(entity for entity in entity_list if entity.position == dest):
             return IDLE, 0
+
         return direction, new_state
 
 
