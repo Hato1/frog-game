@@ -141,3 +141,9 @@ class Entity:
 
     def get_state(self) -> int:
         return self.strategy.state
+
+    def animates(self):
+        return self.name not in ["Stone", "rockwall"]
+
+    def randomises(self):
+        return self.name in ["Stone"]

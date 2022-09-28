@@ -1,21 +1,9 @@
-import json
 from pathlib import Path
 
 import pygame as pg
 
-TSIZE = 25
-
-
-def get_dims(tileset: pg.Surface) -> tuple[int, int]:
-    """Get the dimensions of a spritesheet"""
-    width = tileset.get_width()
-    height = tileset.get_height()
-
-    assert width, "invalid dimension"
-    assert height, "invalid dimension"
-    assert width % TSIZE == 0, f"image height({width}) is not a multiple of {TSIZE}"
-    assert height % TSIZE == 0, f"image height({height}) is not a multiple of {TSIZE}"
-    return width // TSIZE, height // TSIZE
+from GAME_CONSTANTS import *
+from scripts.helper import Point
 
 
 def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
@@ -31,54 +19,25 @@ def font_render(
     return rendered_font
 
 
-def create_surface(entity_dict: dict) -> pg.Surface:
-    """takes dict retrieved from .json, returns pygame.Surface loaded from correct file"""
-    return pg.image.load(f"assets/{entity_dict['FileName']}")
+def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
+    """Get the window-sized box centering the coordinate"""
+
+    # To Center the box, we actually don't need to do anything.
+    # This is because the basemap is padded WINDOW_COLUMNS on the left
+    # and WINDOW_ROWS on the right. This is probably bad practise.
+    return (
+        x * TSIZE,
+        y * TSIZE,
+        WINDOW_TILE_WIDTH * TSIZE,
+        WINDOW_TILE_HEIGHT * TSIZE,
+    )
 
 
-def pull_assets(map_name: str) -> dict[str, pg.Surface]:
-    """returns asset dictionary from a .json file
+def coords_to_pixels(point: Point) -> tuple:
+    """Convert a tile-space coordinate to pixel-space.
 
-    Args:
-        map_name: str filename (inc. extension) of .json file to be retrieved from
+    We have to account for the map buffer tiles.
     """
-    path_to_json = "maps/" + map_name
-    with open(path_to_json) as open_file:
-        json_file = json.load(open_file)
-
-    assets = {}
-    for tile in json_file["Tiles"]:
-        assets[tile["Name"]] = create_surface(tile)
-
-    for entity in json_file["Entities"]:
-        assets[entity["Name"]] = create_surface(entity)
-    return assets
-
-
-assets = pull_assets("map1.json")
-
-
-# define the number of sprites for each texture
-# ToDo: I should cache this
-def parse_assets(images: dict) -> dict:
-    """Returns the number of usable permutations of each image based on the image dims"""
-    asset_dims = {}
-    for img in images:
-        ncols, nrows = get_dims(images[img])
-        data = []
-        for col in range(ncols):
-            empty_spots = 0
-            for row in range(nrows):
-                # TODO: A simpler way of checking for an empty spritesheet slot
-                sprite_surface = (
-                    images[img]
-                    .subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE)
-                    .convert_alpha()
-                )
-                surface_alpha = pg.transform.average_color(sprite_surface)[-1]
-                if surface_alpha == 0:
-                    empty_spots = empty_spots + 1
-            number_of_states = nrows - empty_spots
-            data.append(number_of_states)
-        asset_dims[img] = data
-    return asset_dims
+    return (WINDOW_TILE_WIDTH / 2 + point.x) * TSIZE, (
+        WINDOW_TILE_HEIGHT / 2 + point.y
+    ) * TSIZE

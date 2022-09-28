@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import NamedTuple, Union
+from typing import NamedTuple
 
 import pygame as pg
-
-TSIZE = 25
 
 
 class Benchmark:
@@ -20,6 +18,7 @@ class Benchmark:
         logging.debug(msg=f"Milliseconds between main loop runs: {difference}")
 
 
+# Is this used?
 def add_tuple(x: tuple, y: tuple) -> tuple:
     return tuple(x + y for x, y in zip(x, y))
 
@@ -28,15 +27,19 @@ class Point(NamedTuple):
     x: int
     y: int
 
-    def __add__(self, other: Union[Point, tuple]) -> Point:
+    def __add__(self, other: Point | tuple) -> Point:
         if isinstance(other, Point):
             return Point(self.x + other[0], self.y + other[1])
         return NotImplemented
 
-    def __sub__(self, other: Union[Point, tuple]) -> Point:
+    def __sub__(self, other: Point | tuple) -> Point:
         if isinstance(other, Point):
             return Point(self.x - other[0], self.y - other[1])
         return NotImplemented
+
+    def __mul__(self, other: int):  # type: ignore[override]
+        """Multiply vector by a scalar"""
+        return Point(self.x * other, self.y * other)
 
 
 UP, LEFT, DOWN, RIGHT, IDLE = (
