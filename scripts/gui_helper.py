@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pygame as pg
@@ -41,3 +42,8 @@ def coords_to_pixels(point: Point) -> tuple:
     return (WINDOW_TILE_WIDTH / 2 + point.x) * TSIZE, (
         WINDOW_TILE_HEIGHT / 2 + point.y
     ) * TSIZE
+
+
+def exit_game():
+    """Exits game"""
+    sys.exit()

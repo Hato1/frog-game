@@ -12,7 +12,6 @@ import itertools
 import logging
 import math
 import random
-import sys
 import time
 from copy import copy
 from pathlib import Path
@@ -26,8 +25,11 @@ from .game import Game
 from .gui_drawing import animate_step
 from .gui_helper import coords_to_pixels, font_render, get_disp, get_sprite_box
 from .gui_hud import Hud, add_hud
-from .helper import DOWN, LEFT, RIGHT, UP, Benchmark
+from .gui_input import process_event, process_universal_input
+from .helper import Benchmark
 from .sound import SoundSystem
+
+logger = logging.getLogger("Frog")
 
 # Enable to print frametimes to console.
 # TODO: Make this a commandline argument
@@ -36,61 +38,7 @@ if BENCHMARK:
 
 pygame.init()
 
-logger = logging.getLogger("Frog")
-
-
-# loads the sound system
 sound_system = SoundSystem()
-
-
-def process_event(event: pygame.event.Event, game: Game) -> bool:
-    """Accepts user input
-
-    W: move up
-    A: move left
-    S: move down
-    D: move right
-    Q: quits the game
-    R: kills the player (Restart)
-
-    Returns:
-        bool: If movement input was accepted (Screen must be redrawn)
-    """
-    if event.type == pygame.QUIT:
-        exit_game()
-    elif event.type == pygame.KEYDOWN:
-        match event.key:
-            case pygame.K_r:
-                game.kill_player()
-
-            case pygame.K_w | pygame.K_UP:
-                return game.move(UP)
-            case pygame.K_a | pygame.K_LEFT:
-                return game.move(LEFT)
-            case pygame.K_s | pygame.K_DOWN:
-                return game.move(DOWN)
-            case pygame.K_d | pygame.K_RIGHT:
-                return game.move(RIGHT)
-    return False
-
-
-def process_universal_input(event: pygame.event.Event):
-    """feed pygame events to allow the player to perform actions
-    that aren't dependent on the players alive status"""
-    if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_q:
-            exit_game()
-
-        elif event.key == pygame.K_m:
-            sound_system.toggle_mute()
-
-        elif event.key == pygame.K_p:
-            sound_system.toggle_music()
-
-
-def exit_game():
-    """Exits game"""
-    sys.exit()
 
 
 def point_in_map(x: int, y: int, map_width: int, map_height: int) -> bool:
@@ -265,7 +213,7 @@ def play_death_animation(
         pygame.display.flip()
 
         for event in pygame.event.get():
-            process_universal_input(event)
+            process_universal_input(event, sound_system)
 
             if magic_number > 20 and event.type == pygame.KEYDOWN:
                 return
@@ -327,7 +275,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
 
         # Process Input
         for event in pygame.event.get():
-            process_universal_input(event)
+            process_universal_input(event, sound_system)
 
             # If step made
             if process_event(event, game):
