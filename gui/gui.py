@@ -12,7 +12,6 @@ import itertools
 import math
 import random
 import time
-from copy import copy
 from pathlib import Path
 
 import pygame
@@ -20,15 +19,9 @@ import pygame
 from game.game import Game
 from GAME_CONSTANTS import *
 from gui.asset_loader import get_assets, get_spritesheet_dims
-from gui.drawing import animate_step
-from gui.helper import (
-    Benchmark,
-    coords_to_pixels,
-    font_render,
-    get_disp,
-    get_sprite_box,
-)
-from gui.hud import Hud, add_hud
+from gui.drawing import animate_step, draw_game
+from gui.helper import Benchmark, font_render, get_sprite_box
+from gui.hud import Hud
 from gui.sound import SoundSystem
 from gui.user_input import process_event, process_universal_input
 
@@ -78,16 +71,12 @@ def make_basemap(map_width: int, map_height: int) -> pygame.Surface:
 
     for x, y in itertools.product(range(padded_width), range(padded_height)):
         tile_name = (
-            default_map_tile
-            if point_in_map(x, y, map_width, map_height)
-            else default_padding_tile
+            default_map_tile if point_in_map(x, y, map_width, map_height) else default_padding_tile
         )
 
         # Randomly choose which grass tile to draw
         rand_tile = random.randrange(spritesheet_dims[tile_name][plain_tile_index])
-        basemap.blit(
-            assets[tile_name], (x * TSIZE, y * TSIZE), get_sprite_box(col=rand_tile)
-        )
+        basemap.blit(assets[tile_name], (x * TSIZE, y * TSIZE), get_sprite_box(col=rand_tile))
 
         # Randomly add fallen leaves
         thresh = 0.25
@@ -103,54 +92,6 @@ def make_basemap(map_width: int, map_height: int) -> pygame.Surface:
     return basemap
 
 
-def draw_map(
-    entities: list, basemap: pygame.Surface, draw_player: bool, frame: int
-) -> pygame.Surface:
-    """Draws entities on basemap"""
-    # TODO: Make a nicer way of iterating through map objects while keeping the indexes
-
-    animation_stage = [0, 2, 3][frame % 3]
-    # animation_stage = random.choice([0, 2, 3])
-    assets = get_assets()
-    spritesheet_dims = get_spritesheet_dims()
-    for entity in entities:
-        if entity.name == "Player" and not draw_player:
-            continue
-        sprite = assets[entity.name]
-        sprite_index = (0, 0)
-        # TODO: Rotation breaks when not using first image of spritesheet,
-        # as the entire image is rotated. Current hacky workaround is to only
-        # rotate Creatures
-        # TODO: Remove magic strings
-        if entity.name not in ["Stone", "rockwall"]:
-            sprite_index = (0, animation_stage)
-            creature_sprite = pygame.Surface((25, 25))
-            creature_sprite.fill((255, 255, 255))
-            creature_sprite.set_colorkey("white")
-            creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
-            creature_sprite = pygame.transform.rotate(
-                creature_sprite, 90 * entity.direction
-            )
-            basemap.blit(creature_sprite, coords_to_pixels(entity.position))
-        else:
-            if entity.name == "Stone":
-                # TODO: Delete this hacky fix to prevent rock textures randomising.
-                # TODO: Stone should be a part of basemap to improve fps.
-                random.seed(f"{entity.position}")
-                plain_tile_index = 0
-                sprite_num = random.randrange(
-                    spritesheet_dims["Stone"][plain_tile_index]
-                )
-                sprite_index = (plain_tile_index, sprite_num)
-                random.seed()
-            basemap.blit(
-                sprite,
-                coords_to_pixels(entity.position),
-                get_sprite_box(*sprite_index),
-            )
-    return basemap
-
-
 def adjust_step_volume(game: Game):
     # ToDo: implement max step amount instead of hard coding 25
     if not sound_system.muted:
@@ -158,11 +99,7 @@ def adjust_step_volume(game: Game):
         sound_system.set_sound_volume("step", volume)
 
 
-def play_death_animation(
-    screen: pygame.surface.Surface,
-    current_frame: pygame.surface.Surface,
-    new_froglocation: tuple,
-) -> None:
+def play_death_animation(screen: pygame.surface.Surface) -> None:
     # Player dead
 
     # This is incredibly ugly, needs rewrite.
@@ -170,8 +107,8 @@ def play_death_animation(
     # for about 0.2 seconds so player doesn't skip death screen.
     # darken background (current_map) so it's clear you can't interact.
     # B&W filter instead of darken background?
-    # Sound effect here would be great!
     magic_number = 0
+    current_frame = screen.copy()
 
     # plays croak sound upon death
     sound_system.play_sound("croak")
@@ -192,9 +129,7 @@ def play_death_animation(
             centerx=screen.get_width() / 2,
             centery=screen.get_height() / 3,
         )
-        any_key = font_render(
-            "(Press any key to continue)", "Amatic-Bold.ttf", (130, 20, 60), 25
-        )
+        any_key = font_render("(Press any key to continue)", "Amatic-Bold.ttf", (130, 20, 60), 25)
         any_key_pos = any_key.get_rect(
             centerx=screen.get_width() / 2,
             centery=screen.get_height() * 5 / 6,
@@ -203,7 +138,7 @@ def play_death_animation(
         white = pygame.Surface(screen.get_size())
 
         # Comment this out for a neat "bleary" death message.
-        screen.blit(current_frame, (0, 0), get_disp(*new_froglocation))
+        screen.blit(current_frame, (0, 0))
 
         white.set_alpha(min((magic_number * 3 - 100), 200))
         screen.blit(white, (0, 0))
@@ -230,9 +165,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
     hud = Hud()
     hud.update_element(
         "step_count",
-        font_render(
-            str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25
-        ),
+        font_render(str(game.map.get_steps_left()), "Amatic-Bold.ttf", (130, 20, 60), 25),
         (0, 0),
     )
     frog_location = game.get_player_pos()
@@ -251,9 +184,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
             last_frame_time = now
             frame_count += 1
             new_map = game.get_map()
-            frame = draw_map(
-                new_map.entities, copy(basemap), game.is_player_alive(), frame_count
-            )
+
             new_froglocation = game.get_player_pos()
             if ANIMATIONS and frog_location != new_froglocation:
                 # pan_screen(frame, screen, hud, frog_location, new_froglocation)
@@ -265,9 +196,14 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
                     frame_count,
                     10,
                 )
-            screen.blit(frame, (0, 0), get_disp(*new_froglocation))
-            add_hud(screen, hud)
-            pygame.display.flip()
+            draw_game(
+                basemap,
+                screen,
+                hud,
+                new_map.entities,
+                frame_count,
+                game.is_player_alive(),
+            )
 
             map_changed = False
             frog_location = new_froglocation
@@ -297,7 +233,7 @@ def gui_loop(screen: pygame.surface.Surface) -> None:
                 # Prevent skipping of movement animations
                 break
 
-    play_death_animation(screen, frame, new_froglocation)
+    play_death_animation(screen)
 
 
 def main() -> None:
