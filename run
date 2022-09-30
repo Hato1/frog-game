@@ -36,8 +36,8 @@ class CustomFormatter(logging.Formatter):
 # ERROR
 # CRITICAL
 
-# create logger with 'spam_application'
-logger = logging.getLogger("Frog")
+# Setting root logger is bad practise, but that doesn't stop me!
+logger = logging.root
 logger.setLevel(logging.DEBUG)
 
 # create console handler with a higher log level
@@ -45,6 +45,5 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
-
 
 gui.main()

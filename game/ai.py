@@ -9,8 +9,6 @@ from game.helper import (
     is_in_map,
 )
 
-# TODO: entity_list is not used (I think?)
-
 
 class Ai:
     def __init__(self, state: int = 0):

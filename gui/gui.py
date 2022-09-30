@@ -9,7 +9,6 @@ Height/Width refer to pixel values to be displayed.
 Rows/Columns are coordinates in the game map/grid.
 """
 import itertools
-import logging
 import math
 import random
 import time
@@ -32,8 +31,6 @@ from gui.helper import (
 from gui.hud import Hud, add_hud
 from gui.sound import SoundSystem
 from gui.user_input import process_event, process_universal_input
-
-logger = logging.getLogger("Frog")
 
 # Enable to print frametimes to console.
 # TODO: Make this a commandline argument

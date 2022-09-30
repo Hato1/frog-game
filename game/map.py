@@ -10,9 +10,6 @@ from game.collision_behaviours import get_highest_priorityfn
 from game.entity import Entity
 from game.helper import Point
 
-logger = logging.getLogger("Frog")
-
-
 # from multimethod import multimethod
 MAP_WIDTH = 0
 MAP_HEIGHT = 0
@@ -42,7 +39,7 @@ class Map:
         if not self.steps_left:
             self.player.alive = False
 
-        logger.debug(self)
+        logging.debug(self)
 
     def _collision_handler(self) -> None:
         """Resolves all collisions.
@@ -116,7 +113,7 @@ class Map:
     @staticmethod
     def log_collision_resolution(temp_fn: Callable, pair: list) -> None:
         """if infinite loop, prints an error with a few useful diagnostics"""
-        logger.error(
+        logging.error(
             f"Traceback: Used resolution function '{temp_fn.__qualname__}' at {pair[0].position} on {[e.get_strategy_name() for e in pair]}"
         )
 

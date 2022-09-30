@@ -39,12 +39,6 @@ from game.entity import Entity
 # from .entity import AI_DICT
 from game.helper import DOWN, IDLE, LEFT, RIGHT, UP, Point
 
-# Dumb hacky hack for PyCharm type checking. Needs TYPE_CHECKING from typing
-# if TYPE_CHECKING:
-#     from .map import Map
-
-logger = logging.getLogger("Frog")
-
 creatures_which_do_not_interact = "DeadDoug"
 creatures_which_kill_player_outright = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
 creatures_which_kill_each_other = ("NormalNorman", "SpiralingStacy", "TrickyTrent")
@@ -94,7 +88,7 @@ def get_highest_priorityfn(pairs: list):
     # TODO: Predefine order of check_get_pair so we don't have to mess with pair indexes
     if pair := check_get_pair(pairs, creatures_which_get_pushed, creatures_which_push):
         if all(entity.get_strategy_name() == "SlidingStone" for entity in pair):
-            logger.warning("Multiple sliding stones on same space not implemented")
+            logging.warning("Multiple sliding stones on same space not implemented")
             return no_conflict, pair
         if "BarrelingBarrel" in [entity.get_strategy_name() for entity in pair]:
             barrel_state = pair[get_ind(pair, "BarrelingBarrel")].get_state()
@@ -194,7 +188,7 @@ def no_conflict(
 def no_conflict_warning(
     pair: tuple, _pairs: list, _entities_on_space: list, _entity_list: list
 ) -> list:
-    logger.warning(
+    logging.warning(
         f"{pair[0].get_strategy_name()} and {pair[1].get_strategy_name()} have no programmed interaction!"
     )
     return []

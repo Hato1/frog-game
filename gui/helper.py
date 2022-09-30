@@ -7,8 +7,6 @@ import pygame as pg
 from game.helper import Point
 from GAME_CONSTANTS import *
 
-logger = logging.getLogger("Frog")
-
 
 class Benchmark:
     def __init__(self) -> None:
@@ -18,7 +16,7 @@ class Benchmark:
         new_time = pg.time.get_ticks()
         difference = new_time - self.time
         self.time = new_time
-        logger.debug(msg=f"Milliseconds between main loop runs: {difference}")
+        logging.debug(msg=f"Milliseconds between main loop runs: {difference}")
 
 
 def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
@@ -30,8 +28,7 @@ def font_render(
     text: str, font_filename: str, color: tuple[int, int, int], font_size: int
 ) -> pg.surface.Surface:
     font_title = pg.font.Font(Path("assets", font_filename), font_size)
-    rendered_font = font_title.render(text, True, (130, 20, 60))
-    return rendered_font
+    return font_title.render(text, True, (130, 20, 60))
 
 
 def get_disp(x: int, y: int) -> tuple[int, int, int, int]:
