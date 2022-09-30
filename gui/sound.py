@@ -1,5 +1,4 @@
 from random import choice
-from typing import Union
 
 import pygame
 
@@ -26,7 +25,7 @@ class SoundSystem:
         self.play_song()
         self.toggle_music()
 
-        self._sounds_dict: dict[str, Union[tuple, pygame.Sound]] = {}
+        self._sounds_dict: dict[str, tuple | pygame.Sound] = {}
         self.load_sound("croak", "croak.ogg")
         self.load_multi_sound(
             "step",
@@ -109,7 +108,7 @@ class SoundSystem:
         else:
             for sound in self._sounds_dict:
                 self.set_sound_volume(sound, 0.0)
-            pygame.mixer.music.set_volume((0.0))
+            pygame.mixer.music.set_volume(0.0)
             self.muted = True
 
     @staticmethod

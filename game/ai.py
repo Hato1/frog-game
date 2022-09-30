@@ -1,4 +1,13 @@
-from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, get_facing_direction, is_in_map
+from game.helper import (
+    DOWN,
+    IDLE,
+    LEFT,
+    RIGHT,
+    UP,
+    Point,
+    get_facing_direction,
+    is_in_map,
+)
 
 # TODO: entity_list is not used (I think?)
 

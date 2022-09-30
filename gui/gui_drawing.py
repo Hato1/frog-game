@@ -4,9 +4,9 @@ from copy import copy
 import pygame as pg
 
 from GAME_CONSTANTS import *
-from scripts.asset_loader import get_assets, get_spritesheet_dims
-from scripts.gui_helper import coords_to_pixels, get_disp, get_sprite_box
-from scripts.gui_hud import Hud, add_hud
+from gui.asset_loader import get_assets, get_spritesheet_dims
+from gui.gui_helper import coords_to_pixels, get_disp, get_sprite_box
+from gui.gui_hud import Hud, add_hud
 
 
 def pan_screen(
@@ -21,17 +21,18 @@ def pan_screen(
     TODO: Slide creatures from old_map position to new_map position (Warning: Hard)
     Best to keep move history in entities and read the new_map and most recent move.
     """
-    speed = 5
+    frames = 2
+    speed = 1
     xdiff = int(new_center[0] - old_center[0])
     ydiff = int(new_center[1] - old_center[1])
     disp = get_disp(*old_center)
-    for i in range(speed):
-        xpos = int(disp[0] + xdiff * TSIZE * (i / speed))
-        ypos = int(disp[1] + ydiff * TSIZE * (i / speed))
+    for i in range(frames):
+        xpos = int(disp[0] + xdiff * TSIZE * (i / frames))
+        ypos = int(disp[1] + ydiff * TSIZE * (i / frames))
         screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
         add_hud(screen, hud)
         pg.display.flip()
-        pg.time.wait(20)
+        pg.time.wait(speed)
 
 
 def get_creature_sprite(entity, animation_stage: int) -> pg.Surface:
@@ -113,6 +114,8 @@ def animate_step(
     animation_stage = [0, 2, 3][frame % 3]
     # TODO: Remove magic strings
 
+    speed = 10
+
     for frame in range(animation_length):
         display_box = None
         scene = copy(basemap)
@@ -133,4 +136,4 @@ def animate_step(
         screen.blit(scene, (0, 0), display_box)
         add_hud(screen, hud)
         pg.display.flip()
-        pg.time.wait(20)
+        pg.time.wait(speed)

@@ -18,16 +18,20 @@ from pathlib import Path
 
 import pygame
 
+from game.game import Game
 from GAME_CONSTANTS import *
-
-from .asset_loader import get_assets, get_spritesheet_dims
-from .game import Game
-from .gui_drawing import animate_step
-from .gui_helper import coords_to_pixels, font_render, get_disp, get_sprite_box
-from .gui_hud import Hud, add_hud
-from .gui_input import process_event, process_universal_input
-from .helper import Benchmark
-from .sound import SoundSystem
+from gui.asset_loader import get_assets, get_spritesheet_dims
+from gui.gui_drawing import animate_step
+from gui.gui_helper import (
+    Benchmark,
+    coords_to_pixels,
+    font_render,
+    get_disp,
+    get_sprite_box,
+)
+from gui.gui_hud import Hud, add_hud
+from gui.gui_input import process_event, process_universal_input
+from gui.sound import SoundSystem
 
 logger = logging.getLogger("Frog")
 

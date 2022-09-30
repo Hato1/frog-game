@@ -6,9 +6,9 @@ import logging
 from pathlib import Path
 from typing import Callable, Iterator, Optional, Union, overload
 
-from .collision_behaviours import get_highest_priorityfn
-from .entity import Entity
-from .helper import Point
+from game.collision_behaviours import get_highest_priorityfn
+from game.entity import Entity
+from game.helper import Point
 
 logger = logging.getLogger("Frog")
 

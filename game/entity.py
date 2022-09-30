@@ -1,9 +1,8 @@
 """Module for animate objects"""
 from typing import Optional
 
-from scripts import map
-
-from .ai import (
+from game import map
+from game.ai import (
     BarrelingBarrel,
     DeadDoug,
     NormalNorman,
@@ -12,7 +11,7 @@ from .ai import (
     SpiralingStacy,
     TrickyTrent,
 )
-from .helper import Point, get_facing_direction, is_in_map
+from game.helper import Point, get_facing_direction, is_in_map
 
 # TODO: Rename DeadDoug to InanimateIvan
 AI_DICT = {

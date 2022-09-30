@@ -1,26 +1,7 @@
 """Various helper functions"""
 from __future__ import annotations
 
-import logging
 from typing import NamedTuple
-
-import pygame as pg
-
-
-class Benchmark:
-    def __init__(self) -> None:
-        self.time = pg.time.get_ticks()
-
-    def log_time_delta(self) -> None:
-        new_time = pg.time.get_ticks()
-        difference = new_time - self.time
-        self.time = new_time
-        logging.debug(msg=f"Milliseconds between main loop runs: {difference}")
-
-
-# Is this used?
-def add_tuple(x: tuple, y: tuple) -> tuple:
-    return tuple(x + y for x, y in zip(x, y))
 
 
 class Point(NamedTuple):

@@ -1,8 +1,8 @@
 """Module for game logic"""
 from pathlib import Path
 
-from .helper import Point
-from .map import Map
+from game.helper import Point
+from game.map import Map
 
 
 class Game:

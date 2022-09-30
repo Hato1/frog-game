@@ -33,11 +33,11 @@ Notes:
 import logging
 from typing import Union
 
-from .entity import Entity
+from game.entity import Entity
 
 # from collections import namedtuple
 # from .entity import AI_DICT
-from .helper import DOWN, IDLE, LEFT, RIGHT, UP, Point
+from game.helper import DOWN, IDLE, LEFT, RIGHT, UP, Point
 
 # Dumb hacky hack for PyCharm type checking. Needs TYPE_CHECKING from typing
 # if TYPE_CHECKING:

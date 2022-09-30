@@ -2,7 +2,7 @@
 
 import logging
 
-from scripts import gui  # noqa: I900
+from gui import gui  # noqa: I900
 
 
 class CustomFormatter(logging.Formatter):

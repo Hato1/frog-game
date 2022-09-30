@@ -1,8 +1,8 @@
 import pygame as pg
 
-from .game import Game
-from .gui_helper import exit_game
-from .helper import DOWN, LEFT, RIGHT, UP
+from game.game import Game
+from game.helper import DOWN, LEFT, RIGHT, UP
+from gui.gui_helper import exit_game
 
 
 def process_event(event: pg.event.Event, game: Game) -> bool:
