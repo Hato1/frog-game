@@ -5,8 +5,8 @@ import pygame as pg
 
 from GAME_CONSTANTS import *
 from gui.asset_loader import get_assets, get_spritesheet_dims
-from gui.gui_helper import coords_to_pixels, get_disp, get_sprite_box
-from gui.gui_hud import Hud, add_hud
+from gui.helper import coords_to_pixels, get_disp, get_sprite_box
+from gui.hud import Hud, add_hud
 
 
 def pan_screen(
