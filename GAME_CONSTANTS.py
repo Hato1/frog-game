@@ -1,3 +1,5 @@
+"""Application configuration"""
+
 # Asset tile size
 TSIZE: int = 25
 # FIXME: Using even numbered tile dims causes the screen to center 0.5 tiles off
