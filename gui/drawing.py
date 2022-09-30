@@ -3,36 +3,9 @@ from copy import copy
 
 import pygame as pg
 
-from GAME_CONSTANTS import *
 from gui.asset_loader import get_assets, get_spritesheet_dims
 from gui.helper import coords_to_pixels, get_disp, get_sprite_box
 from gui.hud import Hud, add_hud
-
-
-def pan_screen(
-    current_frame: pg.Surface,
-    screen: pg.surface.Surface,
-    hud: Hud,
-    old_center: tuple[int, int],
-    new_center: tuple[int, int],
-) -> None:
-    """Smoothly pan the screen from old to new center
-
-    TODO: Slide creatures from old_map position to new_map position (Warning: Hard)
-    Best to keep move history in entities and read the new_map and most recent move.
-    """
-    frames = 2
-    speed = 1
-    xdiff = int(new_center[0] - old_center[0])
-    ydiff = int(new_center[1] - old_center[1])
-    disp = get_disp(*old_center)
-    for i in range(frames):
-        xpos = int(disp[0] + xdiff * TSIZE * (i / frames))
-        ypos = int(disp[1] + ydiff * TSIZE * (i / frames))
-        screen.blit(current_frame, (0, 0), (xpos, ypos, disp[2], disp[3]))
-        add_hud(screen, hud)
-        pg.display.flip()
-        pg.time.wait(speed)
 
 
 def get_creature_sprite(entity, animation_stage: int) -> pg.Surface:
@@ -126,9 +99,7 @@ def animate_step(
                 sprite = get_random_sprite(entity)
             else:
                 sprite = get_default_sprite(entity)
-            interpolated_position = get_interpolated_position(
-                entity, frame / animation_length
-            )
+            interpolated_position = get_interpolated_position(entity, frame / animation_length)
             scene.blit(sprite, coords_to_pixels(interpolated_position))
             if entity.name == "Player":
                 display_box = get_disp(*interpolated_position)

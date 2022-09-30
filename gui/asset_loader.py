@@ -27,19 +27,20 @@ def create_surface(entity_dict: dict) -> pg.Surface:
 def get_assets() -> dict[str, pg.Surface]:
     """returns asset dictionary from a .json file
 
-    map_name: str filename (inc. extension) of .json file to be retrieved from
+    This function is cached with size (1). That means it stores the output from the last
+    (1) time it was run with unique arguments. In this case get_assets doesn't take
+    arguments so changing cache size has no effect. ~The more you know~
     """
+    # Name of json file to retrieve assets from
     map_name = "map1.json"
     path_to_json = f"maps/{map_name}"
     with open(path_to_json) as open_file:
         json_file = json.load(open_file)
 
-    all_assets = {}
-    for tile in json_file["Tiles"]:
-        all_assets[tile["Name"]] = create_surface(tile)
-    for entity in json_file["Entities"]:
-        all_assets[entity["Name"]] = create_surface(entity)
-    return all_assets
+    tiles = {tile["Name"]: create_surface(tile) for tile in json_file["Tiles"]}
+    entities = {entity["Name"]: create_surface(entity) for entity in json_file["Entities"]}
+
+    return tiles | entities
 
 
 # define the number of sprites for each texture
@@ -57,9 +58,7 @@ def get_spritesheet_dims() -> dict:
             for row in range(nrows):
                 # TODO: A simpler way of checking for an empty spritesheet slot
                 sprite_surface = (
-                    images[img]
-                    .subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE)
-                    .convert_alpha()
+                    images[img].subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE).convert_alpha()
                 )
                 surface_alpha = pg.transform.average_color(sprite_surface)[-1]
                 if surface_alpha == 0:

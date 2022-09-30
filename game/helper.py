@@ -30,7 +30,6 @@ UP, LEFT, DOWN, RIGHT, IDLE = (
     Point(1, 0),
     Point(0, 0),
 )
-FACING = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3}
 
 
 def get_facing_direction(move: Point, original_direction: int) -> int:
