@@ -1,4 +1,3 @@
-import logging
 import sys
 from pathlib import Path
 
@@ -6,17 +5,6 @@ import pygame as pg
 
 from game.helper import Point
 from GAME_CONSTANTS import *
-
-
-class Benchmark:
-    def __init__(self) -> None:
-        self.time = pg.time.get_ticks()
-
-    def log_time_delta(self) -> None:
-        new_time = pg.time.get_ticks()
-        difference = new_time - self.time
-        self.time = new_time
-        logging.debug(msg=f"Milliseconds between main loop runs: {difference}")
 
 
 def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
@@ -50,9 +38,7 @@ def coords_to_pixels(point: Point) -> tuple:
 
     We have to account for the map buffer tiles.
     """
-    return (WINDOW_TILE_WIDTH / 2 + point.x) * TSIZE, (
-        WINDOW_TILE_HEIGHT / 2 + point.y
-    ) * TSIZE
+    return (WINDOW_TILE_WIDTH / 2 + point.x) * TSIZE, (WINDOW_TILE_HEIGHT / 2 + point.y) * TSIZE
 
 
 def exit_game():

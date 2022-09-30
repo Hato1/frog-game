@@ -39,7 +39,7 @@ class Map:
         if not self.steps_left:
             self.player.alive = False
 
-        logging.debug(self)
+        logging.info(self)
 
     def _collision_handler(self) -> None:
         """Resolves all collisions.
@@ -64,9 +64,7 @@ class Map:
                 num_collisions_resolved,
                 verbose=num_collisions_resolved > 1000,
             )
-            assert (
-                num_collisions_resolved < 1015
-            ), "Infinite loop in collision resolution!"
+            assert num_collisions_resolved < 1015, "Infinite loop in collision resolution!"
             collision_points.extend(positions_to_recheck)
 
     def _resolve_space(
@@ -82,9 +80,7 @@ class Map:
             temp_fn, pair = get_highest_priorityfn(pairs)
             pairs.remove(pair)
             # We pass pairs to remove objects from it that leave the space.
-            moved_entities.extend(
-                temp_fn(pair, pairs, entities_on_space, self.entities)
-            )
+            moved_entities.extend(temp_fn(pair, pairs, entities_on_space, self.entities))
             num_collisions_resolved += 1
             if verbose:
                 self.log_collision_resolution(temp_fn, pair)
@@ -208,9 +204,7 @@ class Map:
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
                 self.entities[-1].strategy.state = 3
             case "B":
-                self.entities.append(
-                    Entity("Barrel", "BarrelingBarrel", position=point)
-                )
+                self.entities.append(Entity("Barrel", "BarrelingBarrel", position=point))
             case "W":
                 self.entities.append(Entity("rockwall", solid=True, position=point))
             case "O":
@@ -220,9 +214,7 @@ class Map:
             case "T":
                 self.entities.append(Entity("FrogP", "TrickyTrent", position=point))
             case "L":
-                self.entities.append(
-                    Entity("SlidingStone", "SlidingStone", position=point)
-                )
+                self.entities.append(Entity("SlidingStone", "SlidingStone", position=point))
 
     def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
         """Read entities from a map file and insert them into the entity list"""
@@ -242,3 +234,6 @@ class Map:
                     max_x = max(x, max_x)
                 y += 1
         return max_x, y
+
+    def get_entities(self):
+        return self.entities

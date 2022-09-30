@@ -2,6 +2,7 @@
 
 import logging
 
+from GAME_CONSTANTS import LOG_LEVEL
 from gui import gui  # noqa: I900
 
 
@@ -38,11 +39,11 @@ class CustomFormatter(logging.Formatter):
 
 # Setting root logger is bad practise, but that doesn't stop me!
 logger = logging.root
-logger.setLevel(logging.DEBUG)
+logger.setLevel(LOG_LEVEL)
 
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(LOG_LEVEL)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 

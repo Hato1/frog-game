@@ -1,31 +1,31 @@
 from __future__ import annotations
 
+import logging
 from copy import copy
 from typing import TYPE_CHECKING
 
 import pygame as pg
 
+from GAME_CONSTANTS import ANIMATION_LENGTH, FPS, PASSIVE_ANIMATION_SPEED
 from gui.asset_loader import get_creature_sprite, get_default_sprite, get_random_sprite
 from gui.helper import coords_to_pixels, get_disp
 from gui.hud import add_hud
 
 if TYPE_CHECKING:
     from game.helper import Point
-    from gui.hud import Hud
 
 
 def draw_game(
     basemap: pg.Surface,
     screen: pg.surface,
-    hud: Hud,
+    clock: pg.time.Clock,
     entities: list,
-    frame: int,
     draw_player: bool,
 ):
     """Draws entities on basemap"""
 
     # TODO: Improve sprite animation stage transitions.
-    animation_stage = [0, 2, 3][frame % 3]
+    animation_stage = [0, 2, 3][(pg.time.get_ticks() // PASSIVE_ANIMATION_SPEED) % 3]
 
     display_box = None
     scene = copy(basemap)
@@ -41,9 +41,10 @@ def draw_game(
             if not draw_player:
                 continue
         scene.blit(sprite, coords_to_pixels(entity.position))
-    assert display_box
+    assert display_box, "Where player gone? :("
     screen.blit(scene, (0, 0), display_box)
-    add_hud(screen, hud)
+    add_hud(screen)
+    logging.debug(f"Frametime: {clock.tick(FPS)}")
     pg.display.flip()
 
 
@@ -64,19 +65,14 @@ def get_interpolated_position(entity, travel_progress: float) -> Point:
 def animate_step(
     basemap: pg.Surface,
     screen: pg.Surface,
-    hud: Hud,
+    clock: pg.time.Clock,
     entities: list,
-    frame: int,
-    animation_length: int,
 ):
     # TODO: Improve sprite animation stage transitions.
-    animation_stage = [0, 2, 3][frame % 3]
-    # TODO: Remove magic strings
+    animation_stage = [0, 2, 3][(pg.time.get_ticks() // PASSIVE_ANIMATION_SPEED) % 3]
     # TODO: Stay DRY by creating a common helper function with draw_game
-
-    speed = 10
-
-    for frame in range(animation_length):
+    start_time = pg.time.get_ticks()
+    while pg.time.get_ticks() - start_time < ANIMATION_LENGTH:
         display_box = None
         scene = copy(basemap)
         for entity in entities:
@@ -86,12 +82,15 @@ def animate_step(
                 sprite = get_random_sprite(entity)
             else:
                 sprite = get_default_sprite(entity)
-            interpolated_position = get_interpolated_position(entity, frame / animation_length)
-            scene.blit(sprite, coords_to_pixels(interpolated_position))
+            position = get_interpolated_position(
+                entity, (pg.time.get_ticks() - start_time) / ANIMATION_LENGTH
+            )
+            scene.blit(sprite, coords_to_pixels(position))
+            # Magic String >:(
             if entity.name == "Player":
-                display_box = get_disp(*interpolated_position)
-        assert display_box
+                display_box = get_disp(*position)
+        assert display_box, "Where player gone? :("
         screen.blit(scene, (0, 0), display_box)
-        add_hud(screen, hud)
+        add_hud(screen)
+        logging.debug(f"Frametime: {clock.tick(FPS)}")
         pg.display.flip()
-        pg.time.wait(speed)

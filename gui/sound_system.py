@@ -2,6 +2,8 @@ from random import choice
 
 import pygame
 
+from game.game import Game
+
 
 class SoundSystem:
     """
@@ -135,3 +137,13 @@ class SoundSystem:
         else:
             pygame.mixer.music.unpause()
             self.playing_music = True
+
+    @staticmethod
+    def adjust_step_volume(game: Game):
+        # ToDo: implement max step amount instead of hard coding 25
+        if not sound_system.muted:
+            volume = 1 - (game.get_steps_remaining() / 25)
+            sound_system.set_sound_volume("step", volume)
+
+
+sound_system = SoundSystem()

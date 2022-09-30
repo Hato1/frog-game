@@ -3,6 +3,8 @@ import pygame as pg
 from game.game import Game
 from game.helper import DOWN, LEFT, RIGHT, UP
 from gui.helper import exit_game
+from gui.hud import hud
+from gui.sound_system import sound_system
 
 
 def process_event(event: pg.event.Event, game: Game) -> bool:
@@ -36,7 +38,7 @@ def process_event(event: pg.event.Event, game: Game) -> bool:
     return False
 
 
-def process_universal_input(event: pg.event.Event, sound_system):
+def process_universal_input(event: pg.event.Event):
     """feed pygame events to allow the player to perform actions
     that aren't dependent on the players alive status"""
     if event.type == pg.KEYDOWN:
@@ -45,6 +47,30 @@ def process_universal_input(event: pg.event.Event, sound_system):
 
         elif event.key == pg.K_m:
             sound_system.toggle_mute()
+            return True
 
         elif event.key == pg.K_p:
             sound_system.toggle_music()
+            return True
+    return False
+
+
+def process_user_input(game):
+    """Process valid user input when the game is active
+
+    Returns:
+        True if map has changed (Player took a step)
+    """
+    for event in pg.event.get():
+        if process_universal_input(event):
+            continue
+
+        # If step made
+        if process_event(event, game):
+            sound_system.adjust_step_volume(game)
+            sound_system.play_sound("step")
+
+            hud.update_step_counter(game.get_steps_left())
+            # Return early to prevent skipping of movement animations
+            return True
+    return False

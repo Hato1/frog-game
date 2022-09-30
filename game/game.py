@@ -19,7 +19,7 @@ class Game:
 
         Returns True if the move was valid, False otherwise.
         """
-        if not self.is_player_alive():
+        if not self.player_alive():
             return False
 
         pos = self.get_player_pos()
@@ -28,10 +28,7 @@ class Game:
         # Check valid movement
         if new_pos[0] < 0 or new_pos[1] < 0:
             return False
-        if (
-            self.map.get_width() - 1 < new_pos[0]
-            or self.map.get_height() - 1 < new_pos[1]
-        ):
+        if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
             return False
         for obj in self.map[new_pos]:
             if obj.solid:
@@ -61,7 +58,7 @@ class Game:
         """returns number of steps remaining"""
         return self.map.get_steps_left()
 
-    def is_player_alive(self) -> bool:
+    def player_alive(self) -> bool:
         return self.map.player.alive
 
     def get_player_pos(self) -> Point:
@@ -69,3 +66,12 @@ class Game:
 
     def kill_player(self) -> None:
         self.map.player.alive = False
+
+    def get_map_dims(self):
+        return self.map.get_width(), self.map.get_height()
+
+    def get_entities(self):
+        return self.map.get_entities()
+
+    def get_steps_left(self):
+        return self.map.get_steps_left()
