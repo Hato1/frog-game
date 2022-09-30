@@ -1,9 +1,11 @@
 import json
+import random
 from functools import lru_cache
 
 import pygame as pg
 
 from GAME_CONSTANTS import *
+from gui.helper import get_sprite_box
 
 
 def get_dims(tileset: pg.Surface) -> tuple[int, int]:
@@ -67,3 +69,63 @@ def get_spritesheet_dims() -> dict:
             data.append(number_of_states)
         asset_dims[img] = data
     return asset_dims
+
+
+def get_creature_sprite(entity, animation_stage: int) -> pg.Surface:
+    """Get a creature sprite ot the specified animation frame.
+
+    Also rotates the creature to the directions it is facing."""
+    assets = get_assets()
+    sprite = assets[entity.name]
+    sprite_index = (0, animation_stage)
+    creature_sprite = pg.Surface((25, 25))
+    creature_sprite.fill((255, 255, 255))
+    creature_sprite.set_colorkey("white")
+    creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
+    creature_sprite = pg.transform.rotate(creature_sprite, 90 * entity.direction)
+    return creature_sprite
+
+
+def get_random_sprite(entity):
+    """Get a random sprite from a spritesheet.
+
+    Currently used to randomise rock patterns
+    """
+    assets = get_assets()
+    spritesheet_dims = get_spritesheet_dims()
+    sprite = assets[entity.name]
+    # TODO: Delete this hacky fix to prevent rock textures randomising.
+    # TODO: Stone should be a part of basemap to improve fps.
+    random.seed(f"{entity.position}")
+    plain_tile_index = 0
+    sprite_num = random.randrange(spritesheet_dims["Stone"][plain_tile_index])
+    sprite_index = plain_tile_index, sprite_num
+    random.seed()
+
+    random_sprite = pg.Surface((25, 25))
+    random_sprite.fill((255, 255, 255))
+    random_sprite.set_colorkey("white")
+    random_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
+
+    return random_sprite
+
+
+def get_default_sprite(entity):
+    """Get first sprite
+
+    Currently used to get rockwall sprite
+    """
+    assets = get_assets()
+    sprite = assets[entity.name]
+    # TODO: Delete this hacky fix to prevent rock textures randomising.
+    # TODO: Stone should be a part of basemap to improve fps.
+    plain_tile_index = 0
+    sprite_num = 0
+    sprite_index = plain_tile_index, sprite_num
+
+    random_sprite = pg.Surface((25, 25))
+    random_sprite.fill((255, 255, 255))
+    random_sprite.set_colorkey("white")
+    random_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
+
+    return random_sprite
