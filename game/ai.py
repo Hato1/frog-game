@@ -14,9 +14,12 @@ class Ai:
     def __init__(self, state: int = 0):
         self.state: int = state
 
+    def get_name(self):
+        return self.__class__.__name__
+
     def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
         """Get the next position object wants to move in, and the resulting state"""
-        raise NotImplementedError
+        return IDLE, 0
 
     def make_move(
         self, position: Point, direction: int, entity_list: list, dims: tuple[int, int]
@@ -31,13 +34,6 @@ class Ai:
 
 class Player(Ai):
     """This is a hacky solution used for conflict resolution"""
-
-    def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
-        return IDLE, 0
-
-
-class DeadDoug(Ai):
-    """Idle"""
 
     def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
         return IDLE, 0

@@ -2,31 +2,12 @@
 from enum import Enum
 from typing import Optional
 
-from game.ai import (
-    BarrelingBarrel,
-    DeadDoug,
-    NormalNorman,
-    Player,
-    SlidingStone,
-    SpiralingStacy,
-    TrickyTrent,
-)
+from game.ai import Ai
 from game.helper import Point, get_facing_direction, is_in_map
 
 # Delete me :(
 MAP_WIDTH = 28
 MAP_HEIGHT = 23
-
-# TODO: Rename DeadDoug to InanimateIvan
-AI_DICT = {
-    "NormalNorman": NormalNorman,
-    "DeadDoug": DeadDoug,
-    "SpiralingStacy": SpiralingStacy,
-    "BarrelingBarrel": BarrelingBarrel,
-    "TrickyTrent": TrickyTrent,
-    "Player": Player,
-    "SlidingStone": SlidingStone,
-}
 
 
 class Tags(str, Enum):
@@ -56,7 +37,7 @@ class Entity:
     def __init__(
         self,
         name: str,
-        strategy: str = "DeadDoug",
+        strategy: Ai = None,
         direction: int = UP,
         position: Point = default_point,
         tags: list[str] = None,
@@ -69,8 +50,8 @@ class Entity:
             direction: which way the creature is initially facing
         """
         # Entities do not have states. Entity.strategies have states
-        self.strategy_name = strategy
-        self.strategy = AI_DICT[strategy]()
+        # self.strategy_name = strategy
+        self.strategy: Ai = strategy or Ai()
         # Used to force creatures next move, ignoring their strategy.
         # Is this necessary, or is force_move sufficient?
         # TODO: Make this a list of points, FIFO.
@@ -142,7 +123,7 @@ class Entity:
         return next_position, direction
 
     def get_strategy_name(self) -> str:
-        return self.strategy_name
+        return self.strategy.get_name()
 
     def get_state(self) -> int:
         return self.strategy.state

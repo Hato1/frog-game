@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Callable, Iterator, Optional, Union, overload
 
+from game import ai
 from game.collision_behaviours import get_highest_priorityfn
 from game.entity import Entity, Tags
 from game.helper import Point
@@ -196,35 +197,35 @@ class Map:
         match entity:
             case "P":
                 self.player = Entity(
-                    "Player", "Player", position=point, tags=[Tags.hops, Tags.solid]
+                    "Player", ai.Player(), position=point, tags=[Tags.hops, Tags.solid]
                 )
                 self.entities.append(self.player)
             case "F":
                 self.entities.append(
-                    Entity("FrogR", "NormalNorman", position=point, tags=[Tags.hops])
+                    Entity("FrogR", ai.NormalNorman(), position=point, tags=[Tags.hops])
                 )
             case "G":
                 self.entities.append(
-                    Entity("FrogR", "NormalNorman", position=point, tags=[Tags.hops])
+                    Entity("FrogR", ai.NormalNorman(), position=point, tags=[Tags.hops])
                 )
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
                 self.entities[-1].strategy.state = 3
             case "B":
-                self.entities.append(Entity("Barrel", "BarrelingBarrel", position=point))
+                self.entities.append(Entity("Barrel", ai.BarrelingBarrel(), position=point))
             case "W":
                 self.entities.append(Entity("rockwall", position=point, tags=[Tags.solid]))
             case "O":
                 self.entities.append(Entity("Stone", position=point, tags=[Tags.solid]))
             case "S":
                 self.entities.append(
-                    Entity("FrogY", "SpiralingStacy", position=point, tags=[Tags.hops])
+                    Entity("FrogY", ai.SpiralingStacy(), position=point, tags=[Tags.hops])
                 )
             case "T":
                 self.entities.append(
-                    Entity("FrogP", "TrickyTrent", position=point, tags=[Tags.hops])
+                    Entity("FrogP", ai.TrickyTrent(), position=point, tags=[Tags.hops])
                 )
             case "L":
-                self.entities.append(Entity("SlidingStone", "SlidingStone", position=point))
+                self.entities.append(Entity("SlidingStone", ai.SlidingStone(), position=point))
 
     def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
         """Read entities from a map file and insert them into the entity list"""
