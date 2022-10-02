@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from copy import copy
 from typing import TYPE_CHECKING
 
@@ -45,7 +46,7 @@ def draw_game(
     screen.blit(scene, (0, 0), display_box)
     add_hud(screen)
     logging.debug(f"Frametime: {clock.tick(FPS)}")
-    pg.display.flip()
+    pg.display.update()
 
 
 def get_interpolated_position(entity, travel_progress: float) -> Point:
@@ -72,7 +73,7 @@ def animate_step(
     animation_stage = [0, 2, 3][(pg.time.get_ticks() // PASSIVE_ANIMATION_SPEED) % 3]
     # TODO: Stay DRY by creating a common helper function with draw_game
     start_time = pg.time.get_ticks()
-    while pg.time.get_ticks() - start_time < ANIMATION_LENGTH:
+    while (progress := (pg.time.get_ticks() - start_time) / ANIMATION_LENGTH) < 1:
         display_box = None
         scene = copy(basemap)
         for entity in entities:
@@ -85,12 +86,34 @@ def animate_step(
             position = get_interpolated_position(
                 entity, (pg.time.get_ticks() - start_time) / ANIMATION_LENGTH
             )
-            scene.blit(sprite, coords_to_pixels(position))
             # Magic String >:(
             if entity.name == "Player":
                 display_box = get_disp(*position)
+            position = coords_to_pixels(position)
+            if "hops" in entity.tags:
+                position, sprite = apply_hop(entity, position, sprite, progress)
+            scene.blit(sprite, position)
         assert display_box, "Where player gone? :("
         screen.blit(scene, (0, 0), display_box)
         add_hud(screen)
         logging.debug(f"Frametime: {clock.tick(FPS)}")
-        pg.display.flip()
+        pg.display.update()
+
+
+def apply_hop(entity, position, sprite, progress):
+    """Enlarge sprite and correct position for hop frame.
+
+    Returns position and sprite for progress% of the way through the hop animation"""
+    scale = 1 + (math.sin(progress * math.pi)) / 3
+    # The stretch factor will elongate the sprite in the direction of movement.
+    stretchx = 1 if entity.direction % 2 == 0 else 1.2
+    stretchy = 1 if entity.direction % 2 != 0 else 1.2
+
+    sprite = pg.transform.scale(
+        sprite, (sprite.get_width() * scale * stretchx, sprite.get_height() * scale * stretchy)
+    )
+    # Correct position so entity is still centered on tile after transformation.
+    position = position[0] - 25 / 2 * (scale * stretchx - 1), position[1] - 25 / 2 * (
+        scale * stretchy - 1
+    )
+    return position, sprite

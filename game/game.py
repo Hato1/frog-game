@@ -1,6 +1,7 @@
 """Module for game logic"""
 from pathlib import Path
 
+from game.entity import Tags
 from game.helper import Point
 from game.map import Map
 
@@ -31,7 +32,7 @@ class Game:
         if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
             return False
         for obj in self.map[new_pos]:
-            if obj.solid:
+            if Tags.solid in obj.tags:
                 return False
 
         # Set the player's next move

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Callable, Iterator, Optional, Union, overload
 
 from game.collision_behaviours import get_highest_priorityfn
-from game.entity import Entity
+from game.entity import Entity, Tags
 from game.helper import Point
 
 # from multimethod import multimethod
@@ -195,24 +195,34 @@ class Map:
     def _new_entity_from_char(self, entity: str, point: Point):
         match entity:
             case "P":
-                self.player = Entity("Player", "Player", position=point)
+                self.player = Entity(
+                    "Player", "Player", position=point, tags=[Tags.hops, Tags.solid]
+                )
                 self.entities.append(self.player)
             case "F":
-                self.entities.append(Entity("FrogR", "NormalNorman", position=point))
+                self.entities.append(
+                    Entity("FrogR", "NormalNorman", position=point, tags=[Tags.hops])
+                )
             case "G":
-                self.entities.append(Entity("FrogR", "NormalNorman", position=point))
+                self.entities.append(
+                    Entity("FrogR", "NormalNorman", position=point, tags=[Tags.hops])
+                )
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
                 self.entities[-1].strategy.state = 3
             case "B":
                 self.entities.append(Entity("Barrel", "BarrelingBarrel", position=point))
             case "W":
-                self.entities.append(Entity("rockwall", solid=True, position=point))
+                self.entities.append(Entity("rockwall", position=point, tags=[Tags.solid]))
             case "O":
-                self.entities.append(Entity("Stone", solid=True, position=point))
+                self.entities.append(Entity("Stone", position=point, tags=[Tags.solid]))
             case "S":
-                self.entities.append(Entity("FrogY", "SpiralingStacy", position=point))
+                self.entities.append(
+                    Entity("FrogY", "SpiralingStacy", position=point, tags=[Tags.hops])
+                )
             case "T":
-                self.entities.append(Entity("FrogP", "TrickyTrent", position=point))
+                self.entities.append(
+                    Entity("FrogP", "TrickyTrent", position=point, tags=[Tags.hops])
+                )
             case "L":
                 self.entities.append(Entity("SlidingStone", "SlidingStone", position=point))
 

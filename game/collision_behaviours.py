@@ -31,7 +31,6 @@ Notes:
     TODO: should really make "pair" a named tuple to avoid indexing shenanigans
 """
 import logging
-from typing import Union
 
 from game.entity import Entity
 
@@ -110,7 +109,7 @@ def get_highest_priorityfn(pairs: list):
 
 # Generic functions:
 def check_get_pair(
-    pairs: list, special_names0: Union[tuple, str], special_names1: Union[tuple, str]
+    pairs: list, special_names0: tuple | str, special_names1: tuple | str
 ):  # -> Union[tuple, []]
     """
     Checks entity names in pair against reference lists
@@ -137,7 +136,7 @@ def check_state(pair: tuple, which: str) -> int:
     return pair[get_ind(pair, which)].get_state()
 
 
-def push(pusher: Entity, pushee: Entity, entity_list: list) -> Union[Point, bool]:
+def push(pusher: Entity, pushee: Entity, entity_list: list) -> Point | bool:
     """pusher pushes pushee, returns direction of push"""
     push_direction = pusher.position - pusher.position_history[-1]
     if push_direction == Point(0, 0):
@@ -179,9 +178,7 @@ def remove_from_collisions(pairs: list, target_entity: Entity):
 # temp_fn(pair: tuple, pairs: list of tuples, entities_on_space: list) -> list
 
 
-def no_conflict(
-    _pair: tuple, _pairs: list, _entities_on_space: list, _entity_list: list
-) -> list:
+def no_conflict(_pair: tuple, _pairs: list, _entities_on_space: list, _entity_list: list) -> list:
     return []
 
 
@@ -194,9 +191,7 @@ def no_conflict_warning(
     return []
 
 
-def kill_player(
-    pair: tuple, _pairs: list, _entities_on_space: list, _entity_list: list
-) -> list:
+def kill_player(pair: tuple, _pairs: list, _entities_on_space: list, _entity_list: list) -> list:
     p = pair[get_ind(pair, "Player")]
     p.alive = False
     return []
@@ -209,9 +204,7 @@ def normalnorman_normalnorman(
     return []
 
 
-def pusher_boringbarrel(
-    pair: tuple, pairs: list, _entities_on_space: list, entity_list
-) -> list:
+def pusher_boringbarrel(pair: tuple, pairs: list, _entities_on_space: list, entity_list) -> list:
     # still/up/down/left/right in state (0/1/2/3/4)
     # TODO: remove barrel from pairs
     barrel_ind = get_ind(pair, "BarrelingBarrel")
@@ -220,9 +213,7 @@ def pusher_boringbarrel(
         return []
 
     # WET line incoming:
-    next_state = [
-        i for i, d in enumerate([IDLE, UP, DOWN, LEFT, RIGHT]) if d == push_dir
-    ]
+    next_state = [i for i, d in enumerate([IDLE, UP, DOWN, LEFT, RIGHT]) if d == push_dir]
     # ^^ duplicate of facing from helper.py
     if not next_state:
         remove_from_collisions(pairs, pair[barrel_ind])
@@ -232,9 +223,7 @@ def pusher_boringbarrel(
     return [pair[barrel_ind]]
 
 
-def slidingstone_any(
-    pair: tuple, pairs: list, _entities_on_space: list, entity_list: list
-) -> list:
+def slidingstone_any(pair: tuple, pairs: list, _entities_on_space: list, entity_list: list) -> list:
     """Sliding Stone gets pushed around"""
     ss_ind = get_ind(pair, "SlidingStone")
     move = push(pair[not ss_ind], pair[ss_ind], entity_list)

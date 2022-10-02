@@ -1,7 +1,7 @@
 """Module for animate objects"""
+from enum import Enum
 from typing import Optional
 
-from game import map
 from game.ai import (
     BarrelingBarrel,
     DeadDoug,
@@ -12,6 +12,10 @@ from game.ai import (
     TrickyTrent,
 )
 from game.helper import Point, get_facing_direction, is_in_map
+
+# Delete me :(
+MAP_WIDTH = 28
+MAP_HEIGHT = 23
 
 # TODO: Rename DeadDoug to InanimateIvan
 AI_DICT = {
@@ -24,12 +28,19 @@ AI_DICT = {
     "SlidingStone": SlidingStone,
 }
 
+
+class Tags(str, Enum):
+    solid = "solid"
+    hops = "hops"
+    player = "player"
+
+
 # Entity facing direction constants to index in gui.py
 UP, RIGHT, DOWN, LEFT = range(4)
 
 
 def solid_entity_at(point, entity_list):
-    return any(entity.solid for entity in entity_list if entity.position == point)
+    return any(Tags.solid in entity.tags for entity in entity_list if entity.position == point)
 
 
 def entity_at(point, entity_list):
@@ -48,33 +59,32 @@ class Entity:
         strategy: str = "DeadDoug",
         direction: int = UP,
         position: Point = default_point,
-        solid: bool = False,
+        tags: list[str] = None,
     ) -> None:
         self.alive = True
         """
         Args:
             name: A human friendly name
             strategy: name of creature AI, decides the creatures movement pattern
-            solid: Whether other objects can move onto this object's space.
             direction: which way the creature is initially facing
         """
-        # Entities do not have states. Entity.strategys have states
+        # Entities do not have states. Entity.strategies have states
         self.strategy_name = strategy
         self.strategy = AI_DICT[strategy]()
         # Used to force creatures next move, ignoring their strategy.
-        # Is this neccesary, or is force_move sufficient?
+        # Is this necessary, or is force_move sufficient?
         # TODO: Make this a list of points, FIFO.
         self.next_move: Optional[Point] = None
 
         self.id = Entity.next_id
         Entity.next_id += 1
         self.name = name
-        self.solid = solid
         self.direction = direction
         self.position = position
         self.alive = True
         # TODO: also needs other properties, eg state
         self.position_history: list[Point] = []
+        self.tags = tags or []
 
     def __str__(self) -> str:
         return self.name
@@ -90,7 +100,7 @@ class Entity:
                 check_tile += move
                 if solid_entity_at(check_tile, entity_list):
                     return False
-                elif not is_in_map(check_tile, Point(map.MAP_WIDTH, map.MAP_HEIGHT)):
+                elif not is_in_map(check_tile, Point(MAP_WIDTH, MAP_HEIGHT)):
                     return False
                 # Temp, stops entities from being force pushed onto something
                 elif not entity_at(check_tile, entity_list):
@@ -108,9 +118,7 @@ class Entity:
         """Default move behaviour"""
         # TODO: Ensure position history is sensible when force_move is used
         self.position_history.append(self.position)
-        self.position, self.direction = self.get_next_move(
-            self.position, entity_list, dims
-        )
+        self.position, self.direction = self.get_next_move(self.position, entity_list, dims)
         # assert self.in_map(new_pos), f"{entity.name} Cheated!"
 
     def get_next_move(
@@ -127,9 +135,7 @@ class Entity:
         assert (
             type(next_position) == Point
         ), f"{self.name} returned invalid move: {type(next_position)}."
-        assert (
-            len(next_position) == 2
-        ), f"{self.name} requests invalid move: {next_position}"
+        assert len(next_position) == 2, f"{self.name} requests invalid move: {next_position}"
         assert is_in_map(
             next_position, dims
         ), f"{self} tried to leave the play area at {next_position}!"
