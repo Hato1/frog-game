@@ -14,6 +14,10 @@ class Tags(str, Enum):
     solid = "solid"
     hops = "hops"
     player = "player"
+    pushable = "pushable"
+    pusher = "pusher"
+    kills_player = "kills_player"
+    barrel = "barrel"
 
 
 # Entity facing direction constants to index in gui.py

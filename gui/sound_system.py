@@ -100,7 +100,7 @@ class SoundSystem:
 
         sound.play()
 
-    def toggle_mute(self):
+    def toggle_mute(self) -> None:
         """toggles volume between 0 and 1"""
         if self.muted:
             for sound in self._sounds_dict:

@@ -10,6 +10,10 @@ from game.helper import (
 )
 
 
+class InvalidState(Exception):
+    pass
+
+
 class Ai:
     def __init__(self, state: int = 0):
         self.state: int = state
@@ -39,8 +43,12 @@ class Player(Ai):
         return IDLE, 0
 
 
-class InvalidState(Exception):
-    pass
+class IdleIvan(Ai):
+    """Default idle animation"""
+
+    # DeadDougDied
+    def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
+        return IDLE, 0
 
 
 class NormalNorman(Ai):
@@ -127,8 +135,8 @@ class BarrelingBarrel(Ai):
         dest = position + direction
         if not is_in_map(dest, dims):
             return IDLE, 0
-        if any(entity for entity in entity_list if entity.position == dest):
-            return IDLE, 0
+        # if any(entity for entity in entity_list if entity.position == dest):
+        #    return IDLE, 0
 
         return direction, new_state
 
@@ -138,10 +146,3 @@ class DirtyDan(Ai):
 
     def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
         raise NotImplementedError
-
-
-class SlidingStone(Ai):
-    """DeadDoug, but pushable"""
-
-    def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
-        return IDLE, 0

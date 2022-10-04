@@ -17,9 +17,6 @@
 
 ### Bugs:
 
-Collision with barrels (entities) crashes
-
-
 
 ### Before Beta:
 

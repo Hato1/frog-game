@@ -26,14 +26,9 @@ class Game:
         pos = self.get_player_pos()
         new_pos = pos + direction
 
-        # Check valid movement
-        if new_pos[0] < 0 or new_pos[1] < 0:
+        # Check move is valid
+        if self._is_move_invalid(new_pos):
             return False
-        if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
-            return False
-        for obj in self.map[new_pos]:
-            if Tags.solid in obj.tags:
-                return False
 
         # Set the player's next move
         self.map.player.next_move = direction
@@ -42,6 +37,21 @@ class Game:
         self.map.update_creatures()
 
         return True
+
+    def _is_move_invalid(self, new_pos: Point) -> bool:
+        """Check various conditions"""
+        # Move is out of bounds:
+        if new_pos[0] < 0 or new_pos[1] < 0:
+            return True
+        if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
+            return True
+        # Entity specific conditions:
+        for obj in self.map[new_pos]:
+            if Tags.solid in obj.tags:
+                return True
+        return False
+        # Move pushes rock invalidly:
+        #     if obj.tags:
 
     def _update_game(self) -> None:
         # Update player pos

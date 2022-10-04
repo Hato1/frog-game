@@ -4,10 +4,10 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
-from typing import Callable, Iterator, Optional, Union, overload
+from typing import Callable, Iterator, Optional, overload
 
 from game import ai
-from game.collision_behaviours import get_highest_priorityfn
+from game.collision_behaviours import get_highest_priority_fn
 from game.entity import Entity, Tags
 from game.helper import Point
 
@@ -18,7 +18,7 @@ MAP_HEIGHT = 0
 
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
-        self.steps_left = 25
+        self.steps_left = 50
         self.entities: list[Entity] = []
         # TODO: Collision map?
         if map_file:
@@ -54,9 +54,7 @@ class Map:
 
         # Initialise a number of collisions resolved, to throw an error if it loops
         num_collisions_resolved = 0
-        # May want to initialise a second instance of map and collision positions for iterative resolutions:
-        # new_map_nplus1 = new_map.copy()
-        # collision_positions_nplus1 = []
+
         while collision_points:
             current_collision_position = collision_points.pop(0)
 
@@ -69,7 +67,10 @@ class Map:
             collision_points.extend(positions_to_recheck)
 
     def _resolve_space(
-        self, position: Point, num_collisions_resolved: int, verbose=False
+        self,
+        position: Point,
+        num_collisions_resolved: int,
+        verbose: bool = False,
     ) -> tuple[list[Point], int]:
         """Resolves all collisions on a single point.
 
@@ -78,13 +79,19 @@ class Map:
         pairs = self._make_pairs(entities_on_space)
         moved_entities = []
         while pairs:
-            temp_fn, pair = get_highest_priorityfn(pairs)
+            highest_priority_fn, pair = get_highest_priority_fn(pairs)
             pairs.remove(pair)
             # We pass pairs to remove objects from it that leave the space.
-            moved_entities.extend(temp_fn(pair, pairs, entities_on_space, self.entities))
+            bits = {
+                "pair": pair,
+                "pairs": pairs,
+                "entities_on_space": entities_on_space,
+                "entity_list": self.entities,
+            }
+            moved_entities.extend(highest_priority_fn(bits))
             num_collisions_resolved += 1
             if verbose:
-                self.log_collision_resolution(temp_fn, pair)
+                self.log_collision_resolution(highest_priority_fn, pair)
         return [e.position for e in moved_entities], num_collisions_resolved
 
     def _collision_detector(self) -> list[Point]:
@@ -160,10 +167,10 @@ class Map:
         ...
 
     @overload
-    def __getitem__(self, index: Union[tuple, Point]) -> list:
+    def __getitem__(self, index: tuple | Point) -> list:
         ...
 
-    def __getitem__(self, index: Union[int, tuple]) -> Union[list, list[list]]:
+    def __getitem__(self, index: int | tuple) -> list | list[list]:
         """Retrieve elements of the map at the given row or (row, col) pair"""
         if isinstance(index, int):
             return [entity for entity in self.entities if entity.position.x == index]
@@ -197,35 +204,72 @@ class Map:
         match entity:
             case "P":
                 self.player = Entity(
-                    "Player", ai.Player(), position=point, tags=[Tags.hops, Tags.solid]
+                    "Player",
+                    ai.IdleIvan(),
+                    position=point,
+                    tags=[Tags.hops, Tags.solid, Tags.pusher, Tags.player],
                 )
                 self.entities.append(self.player)
             case "F":
                 self.entities.append(
-                    Entity("FrogR", ai.NormalNorman(), position=point, tags=[Tags.hops])
+                    Entity(
+                        "FrogR",
+                        ai.NormalNorman(),
+                        position=point,
+                        tags=[Tags.hops, Tags.kills_player, Tags.pusher],
+                    )
                 )
             case "G":
                 self.entities.append(
-                    Entity("FrogR", ai.NormalNorman(), position=point, tags=[Tags.hops])
+                    Entity(
+                        "FrogR",
+                        ai.NormalNorman(),
+                        position=point,
+                        tags=[Tags.hops, Tags.kills_player, Tags.pusher],
+                    )
                 )
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
                 self.entities[-1].strategy.state = 3
             case "B":
-                self.entities.append(Entity("Barrel", ai.BarrelingBarrel(), position=point))
+                self.entities.append(
+                    Entity(
+                        "Barrel",
+                        ai.BarrelingBarrel(),
+                        position=point,
+                        tags=[Tags.pushable, Tags.barrel],
+                    )
+                )
             case "W":
                 self.entities.append(Entity("rockwall", position=point, tags=[Tags.solid]))
             case "O":
                 self.entities.append(Entity("Stone", position=point, tags=[Tags.solid]))
             case "S":
                 self.entities.append(
-                    Entity("FrogY", ai.SpiralingStacy(), position=point, tags=[Tags.hops])
+                    Entity(
+                        "FrogY",
+                        ai.SpiralingStacy(),
+                        position=point,
+                        tags=[Tags.hops, Tags.kills_player, Tags.pusher],
+                    )
                 )
             case "T":
                 self.entities.append(
-                    Entity("FrogP", ai.TrickyTrent(), position=point, tags=[Tags.hops])
+                    Entity(
+                        "FrogP",
+                        ai.TrickyTrent(),
+                        position=point,
+                        tags=[Tags.hops, Tags.kills_player, Tags.pusher],
+                    )
                 )
             case "L":
-                self.entities.append(Entity("SlidingStone", ai.SlidingStone(), position=point))
+                self.entities.append(
+                    Entity(
+                        "SlidingStone",
+                        ai.IdleIvan(),
+                        position=point,
+                        tags=[Tags.pushable, Tags.pusher],
+                    )
+                )
 
     def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
         """Read entities from a map file and insert them into the entity list"""
