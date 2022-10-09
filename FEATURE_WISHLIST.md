@@ -4,7 +4,7 @@
 
 ###### Assigned:
 
-1. Jacob: Complete refactor of gui.py
+1. Jacob: 
 2. Liam: Collision resolver
 3. Jeremy: Map Editor
 4. Jeremy: Move step counter
@@ -23,10 +23,10 @@
 1. Sound
    1. Music
    2. Sound Effects
-2. Colission
+2. Collision
    1. Resolver
 3. More Entities
-   1. Barelling Barrel
+   1. Barrelling Barrel
       1. Push Barrel
    2. Conveyor Belt
       1. Pushes objects in facing direction
