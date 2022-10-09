@@ -18,6 +18,7 @@ class Tags(str, Enum):
     pusher = "pusher"
     kills_player = "kills_player"
     barrel = "barrel"
+    no_animation = "no_animation"
 
 
 # Entity facing direction constants to index in gui.py
@@ -133,7 +134,7 @@ class Entity:
         return self.strategy.state
 
     def animates(self):
-        return self.name not in ["Stone", "rockwall"]
+        return Tags.no_animation not in self.tags
 
     def randomises(self):
         return self.name in ["Stone"]

@@ -1,11 +1,13 @@
 # mypy: ignore-errors
 """Map Builder Tool"""
 
-
+import contextlib
 import itertools
 import pickle
+from copy import deepcopy
 from json import load
 from math import ceil, floor
+from random import randint
 from time import perf_counter, sleep, time
 from typing import List
 from warnings import warn
@@ -13,18 +15,19 @@ from warnings import warn
 import pygame as pg
 
 # from scripts.entity import Creature, Entity
+from gui.asset_loader import get_spritesheet_dims
 
 Config = {
     "Width": 16,  # number of tiles wide the screen is (make adjustable in the future)
-    "Height": 9,  # number of high wide the screen is (make adjustable in the future)
+    "Height": 8,  # number of high wide the screen is (make adjustable in the future)
     "WindowScale": 3,  # zoom to calculate window size at (would be better to make adjustable)
     "Zoom": 2,  # default zoom level of the screen
     "CamPos": [0, 0],  # staring (top left) camera position
     "SpriteRes": 25,  # resolution single tile sprites (1x1)
     "Debounce": 1000,
     "Fps": 15,  # set refresh rate cap
-    "SaveDelay": 1,  # Save wait time (in secodns)
-    "SelectedTile": "Dirt",  # inital selected tile
+    "SaveDelay": 0.5,  # Save wait time (in seconds)
+    "SelectedTile": "Dirt",  # initial selected tile
 }
 
 # Declare Global variables
@@ -35,44 +38,71 @@ SaveCounter = SaveCycles + 1
 MouseDown = False
 SelectedTile = Config["SelectedTile"]
 ClickDown = 0, 0
-ScreenSurf = pg.Surface((0, 0))
+ScreenSurf = [pg.Surface((0, 0)), pg.Surface((0, 0))]
 Redraw = False
 CamPos = Config["CamPos"]
 Zoom = Config["Zoom"]
 debounce = Config["Debounce"]
-Background_Data = []
-Foreground_Data = []
 
 # select which map to edit
 FileName = "map1"
 
 
-def resize_map_data(data: [list], dimentions: [int], default_object: any) -> list:
-    """take a list of lists and expand to match dimentions while including default_object."""
-    diff_col = dimentions[1] - len(data)
+class Asset:
+    def __init__(self, name: str, num_sprites: list[int], sprite_row: int):
+        self.name = name
+        self.sprite_row = sprite_row
+        self.num_sprites = num_sprites
+        self.sprite_col = 0
+
+
+class Tile(Asset):
+    def __init__(self, name: str, num_sprites: list[int], sprite_col: int, level: int):
+        super().__init__(name, num_sprites, 0)
+        self.sprite_row = randint(0, num_sprites[sprite_col] - 1)
+        self.sprite_col = sprite_col
+        self.num_sprites = num_sprites
+        self.level = level
+
+    def randomise_tile(self):
+        """re-randomise the sprite row"""
+        self.sprite_row = randint(0, self.num_sprites[self.sprite_col] - 1)
+
+
+class Entity(Asset):
+    pass
+
+
+Background_Data = [[[]]]
+Foreground_Data = [[[]]]
+
+
+def resize_map_data(list_list: list[list], dimensions: [int], default_object: Asset) -> list:
+    """take a list of lists and expand to match dimensions while including default_object."""
+    diff_col = dimensions[1] - len(list_list)
     if diff_col < 0:
-        data = data[:diff_col]
+        list_list = list_list[:diff_col]
     if diff_col > 0:
         for _ in range(diff_col):
-            data.append([])
+            list_list.append([])
 
-    for row in data:
-        diff_row = dimentions[0] - len(row)
+    for row in list_list:
+        diff_row = dimensions[0] - len(row)
         if diff_row < 0:
-            row = row[:diff_row]
+            del row[dimensions[0] :]
         if diff_row > 0:
             for _ in range(diff_row):
                 row.extend([[default_object]])
-    return data
+    return list_list
 
 
 def conv_list_dict(list_of_dicts: [dict], name_key: str) -> dict:
-    """takes a list of dictionarys and returns a dicitionary of dicitonaries"""
+    """takes a list of dictionary's and returns a dictionary of dictionaries"""
     return {dictionary[name_key]: dictionary for dictionary in list_of_dicts}
 
 
 def add_dict_surf(encyclopedia: dict, file_key: str, path: str) -> dict:
-    """Adds a surface to each dict in the encyclopedia based on the file refernced in the same dictionary."""
+    """Adds a surface to each dict in the encyclopedia based on the file referenced in the same dictionary."""
     for dic in encyclopedia:
         encyclopedia[dic]["Surface"] = amend_transparent(
             pg.image.load(path + encyclopedia[dic][file_key])
@@ -80,46 +110,56 @@ def add_dict_surf(encyclopedia: dict, file_key: str, path: str) -> dict:
     return encyclopedia
 
 
-def add_dict_str(encyclopedia: dict, string: any, key: str) -> dict:
+def add_dict_obj(encyclopedia: dict, any_object: any, key: str) -> dict:
     """Adds an entry to each dict in an encyclopedia."""
     for dic in encyclopedia:
-        encyclopedia[dic][key] = string
+        encyclopedia[dic][key] = any_object
     return encyclopedia
 
 
-def load_dicts(meta_data_file, tiles_key: str, ents_key: str) -> dict:
-    tile_dictionarys = conv_list_dict(meta_data_file[tiles_key], "level")
-    ent_dictionarys = conv_list_dict(meta_data_file[ents_key], "Name")
+def add_surface_dims(encyclopedia: dict) -> dict:
+    """take the surfaces in the encyclopedia and returns the encyclopedia with a dimensions entry"""
+    # surface_dict = {dic: encyclopedia[dic]["Surface"] for dic in encyclopedia}
+    image_dims = get_spritesheet_dims()  # surface_dict)
+    for dic in encyclopedia:
+        encyclopedia[dic]["dims"] = image_dims[dic]
+    return encyclopedia
 
-    tile_dictionarys = add_dict_surf(tile_dictionarys, "FileName", "../assets/")
-    ent_dictionarys = add_dict_surf(ent_dictionarys, "FileName", "../assets/")
 
-    tile_dictionarys = add_dict_str(tile_dictionarys, "Tile", "Type")
-    ent_dictionarys = add_dict_str(ent_dictionarys, "Ent", "Type")
+def load_dicts(meta_data_file, list_key: str, name_key: str, tile_type: str) -> dict:
+    """take a list of dicts do thing to make format correct for the loops."""
+    encyclopedia = conv_list_dict(meta_data_file[list_key], name_key)
 
-    tile_dictionarys.update(ent_dictionarys)
+    encyclopedia = add_dict_surf(encyclopedia, "FileName", "assets/")
 
-    return tile_dictionarys
+    encyclopedia = add_dict_obj(encyclopedia, tile_type, "Type")
+
+    encyclopedia = add_surface_dims(encyclopedia)
+
+    return encyclopedia
 
 
 def amend_transparent(surf: pg.Surface) -> pg.Surface:
-    """if a tile is tranparent replace it with a red cross."""
+    """if a tile is transparent replace it with a red cross."""
     alpha = pg.transform.average_color(surf.convert_alpha())
     if alpha[-1] == 0:
-        surf = pg.image.load("../assets/TransparentME.png")
+        surf = pg.image.load("assets/TransparentME.png")
     return surf
 
 
-def cellinterp(encyclopedia: dict, cell: list, key: str) -> list:
+def cell_interpreter(cell: list[Asset], encyclopedia: dict) -> list:
     """given a cell, returns list of sprites to blit."""
-    return [encyclopedia[obj][key] for obj in cell]
+    return [encyclopedia[obj.name]["Surface"] for obj in cell]
 
 
-def drawscreen(
-    screen: pg.Surface, window: pg.surface.Surface, encyclopedia: dict
+def draw_screen(
+    back_screen: pg.Surface,
+    fore_screen: pg.Surface,
+    window: pg.surface.Surface,
+    encyclopedia: dict,
 ) -> None:
-    """draw all screen objects on screen."""
-    # Draw a grey rectangle over all screen to blank
+    """blit all elements on screen."""
+    # Draw a grey rectangle over the screen to blank
     pg.draw.rect(
         window,
         (20, 20, 20),
@@ -132,9 +172,10 @@ def drawscreen(
     )
 
     # loop over every tile on display in the map and blit sprite
-    window.blit(screen, (0, 0))
+    window.blit(back_screen, (0, 0))
+    window.blit(fore_screen, (0, 0))
 
-    # Draw a black rectange for sprite options to sit on
+    # Draw a black rectangle for options to sit on
     pg.draw.rect(
         window,
         (0, 0, 0),
@@ -146,7 +187,7 @@ def drawscreen(
         ),
     )
 
-    # Draw a white rectange for the currently selected sprite
+    # Draw a white rectangle for the currently selected sprite
     index = list(encyclopedia).index(SelectedTile)
     pg.draw.rect(
         window,
@@ -159,119 +200,176 @@ def drawscreen(
         ),
     )
 
-    drawselectables(encyclopedia, window)
+    draw_buttons(encyclopedia, window)
 
 
-def flip_display(encyclopedia: dict, window: pg.surface.Surface) -> pg.surface.Surface:
-    """take background data and drawer it to the display"""
-    backgroundmap = [
-        [cellinterp(encyclopedia, cell, "Surface") for cell in row1]
-        for row1 in Background_Data
+def flip_display(encyclopedia: dict, window: pg.surface.Surface) -> List[pg.surface.Surface]:
+    """take data and draw it to the display"""
+    background_map = [
+        [cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Background_Data
     ]
-    screensurf = createmapsurf(backgroundmap, CamPos[1], CamPos[0], Zoom)
-    drawscreen(screensurf, window, encyclopedia)
+    foreground_map = [
+        [cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Foreground_Data
+    ]
+    back_surface = create_map_surface(
+        background_map, Background_Data, CamPos, Zoom
+    )  # [1] = top, [0] = left
+    fore_surface = create_map_surface(foreground_map, Foreground_Data, CamPos, Zoom)
+
+    draw_screen(back_surface, fore_surface, window, encyclopedia)
+
     pg.display.flip()
-    return screensurf
+    return [back_surface, fore_surface]
 
 
-def drawselectables(encyclopedia: dict, window: pg.surface.Surface) -> None:
+def draw_buttons(encyclopedia: dict, window: pg.surface.Surface) -> None:
     """Place selectable options for each entry in the encyclopedia."""
-    for surfnum, surf in enumerate(encyclopedia):
+    for surface_index, surf in enumerate(encyclopedia):
         window.blit(
             encyclopedia[surf]["Surface"],
             (
-                (surfnum * 1.09) * Config["SpriteRes"] + Config["SpriteRes"],
+                (surface_index * 1.09) * Config["SpriteRes"] + Config["SpriteRes"],
                 NewRes * Config["Height"] + Config["SpriteRes"],
             ),
             (0, 0, Config["SpriteRes"], Config["SpriteRes"]),
         )
 
 
-def createmapsurf(maplist: list, top: int, left: int, zoom: int) -> pg.Surface:
+def blit_assets(
+    map_surf: pg.Surface,
+    surfs_at_point: list[pg.Surface],
+    assets_at_point: list[Asset],
+    point: tuple,
+    zoom: int,
+) -> pg.Surface:
+    for ind, surf in enumerate(surfs_at_point):
+        w, h = surf.get_size()
+        map_surf.blit(
+            pg.transform.scale(surf, (zoom * w, zoom * h)),
+            (
+                point[0] * Config["SpriteRes"] * zoom,
+                point[1] * Config["SpriteRes"] * zoom,
+            ),
+            (
+                assets_at_point[ind].sprite_col * Config["SpriteRes"] * zoom,
+                assets_at_point[ind].sprite_row * Config["SpriteRes"] * zoom,
+                Config["SpriteRes"] * zoom,
+                Config["SpriteRes"] * zoom,
+            ),
+        )
+    return map_surf
+
+
+def draw_grid(map_surf: pg.Surface, point: tuple, zoom: int):
+    pg.draw.rect(
+        map_surf,
+        (0, 0, 0),
+        pg.Rect(
+            point[0] * Config["SpriteRes"] * zoom,
+            point[1] * Config["SpriteRes"] * zoom,
+            Config["SpriteRes"] * zoom,
+            Config["SpriteRes"] * zoom,
+        ),
+        1,
+    )
+    return map_surf
+
+
+def create_map_surface(
+    map_list: list, tile_list: list, display_origin: [int], zoom: int
+) -> pg.Surface:
     """loop over every tile on display and create a surface of the map."""
-    mapsurf = pg.Surface((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes))
-    for i2 in range(ceil(Config["Width"] * (Config["WindowScale"] / zoom))):
-        if -1 < i2 + left < len(maplist[1]):  # only run if in range
-            for j in range(
-                (1 + Config["WindowScale"] - Zoom)
-                + ceil(Config["Height"] * (Config["WindowScale"] / zoom))
-            ):
-                if -1 < j + top < len(maplist):  # only run if in range
-                    tile1 = maplist[(j + top) % len(maplist)][
-                        (i2 + left) % len(maplist[1])
-                    ]
-                    for surf in tile1:
-                        w, h = surf.get_size()
-                        mapsurf.blit(
-                            pg.transform.scale(surf, (zoom * w, zoom * h)),
-                            (
-                                i2 * Config["SpriteRes"] * zoom,
-                                j * Config["SpriteRes"] * zoom,
-                            ),
-                            (
-                                0,
-                                0,
-                                Config["SpriteRes"] * zoom,
-                                Config["SpriteRes"] * zoom,
-                            ),
-                        )
-    return mapsurf
+
+    # define map surface size and transparency settings
+    map_surf = pg.Surface(
+        (Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes), pg.SRCALPHA
+    )
+
+    # figure out what tiles to evaluate
+    num_rows_on_display = ceil(Config["Width"] * (Config["WindowScale"] / zoom))
+    num_cols_on_display = ceil(1 + Config["WindowScale"] - Zoom) + ceil(
+        Config["Height"] * (Config["WindowScale"] / zoom)
+    )
+
+    last_valid_row_on_display = min(num_rows_on_display, len(map_list[0]) - display_origin[0])
+    last_valid_col_on_display = min(num_cols_on_display, len(map_list) - display_origin[1])
+
+    first_valid_row_on_display = max(0, 0 - display_origin[0])
+    first_valid_col_on_display = max(0, 0 - display_origin[1])
+
+    rows_to_evaluate = range(first_valid_row_on_display, last_valid_row_on_display)
+    cols_to_evaluate = range(first_valid_col_on_display, last_valid_col_on_display)
+
+    # for each row column to evaluate blit sprite
+    for row, col in itertools.product(rows_to_evaluate, cols_to_evaluate):
+
+        surfs_at_point: List[pg.Surface] = map_list[(col + display_origin[1])][
+            (row + display_origin[0])
+        ]
+        assets_at_point: List[Asset] = tile_list[(col + display_origin[1])][
+            (row + display_origin[0])
+        ]
+
+        map_surf: pg.Surface = blit_assets(
+            map_surf, surfs_at_point, assets_at_point, (row, col), zoom
+        )
+
+        map_surf = draw_grid(map_surf, (row, col), zoom)
+
+    return map_surf
 
 
-def selecttile(click: tuple[int, int], dictionary) -> str:
-    """retuns the key of the clicked selectable."""
+def select_tile(click: tuple[int, int], dictionary) -> str:
+    """returns the key of the clicked selectable."""
     index = floor(click[0] / (Config["SpriteRes"] + 2) - 1)
     return list(dictionary)[index]
 
 
-def clickedindex(click: tuple, campos: list, meta_data: dict) -> tuple:
+def clicked_index(click: tuple, campos: list, meta_data: dict) -> tuple:
     """return the row and column of the clicked tile."""
     index = [
-        (floor(coord / (Config["SpriteRes"] * Zoom)) + campos[i])
-        % meta_data["MapSize"][i]
+        (floor(coord / (Config["SpriteRes"] * Zoom)) + campos[i]) % meta_data["MapSize"][i]
         for i, coord in enumerate(click)
     ]
 
     return tuple(index)
 
 
-def writemappickle(dat: list) -> None:
+def write_map_pickle(dat: list) -> None:
     """Save the map file to a pickle."""
-    with open("../maps/map1.map", "wb") as file:
+    with open("maps/map1.map", "wb") as file:
         pickle.dump(dat, file)
 
 
-def applytile(maplist: list, tile: str, tiletype: int) -> list:
+def apply_selected(cell_list: list, tile: Asset, tile_type: str) -> list:
     """Take the current selected tile object and paint to map."""
-    match tiletype:
+    match tile_type:
         case "Tile":
-            liststr = list(maplist)
-            liststr[0] = tile
-            maplist = liststr
+            cell_list = [tile]
         case "Ent":
             tile = tile
-            maplist.append(tile)
+            cell_list.append(tile)
         case _:
             warn("Tile type not expected")
 
-    return maplist
+    return cell_list
 
 
 def drawbox(window: pg.surface.Surface, encyclopedia: dict) -> None:
-    """drawer the selection box when draggiong."""
+    """drawer the selection box when dragging."""
     global ScreenSurf
     global ClickDown
 
-    mousepos = pg.mouse.get_pos()
-    drawscreen(ScreenSurf, window, encyclopedia)
+    mouse_position = pg.mouse.get_pos()
+    draw_screen(ScreenSurf[0], ScreenSurf[1], window, encyclopedia)
     pg.draw.rect(
         window,
         (255, 255, 255),
         pg.Rect(
-            min(ClickDown[0], mousepos[0]),
-            min(ClickDown[1], mousepos[1]),
-            abs(mousepos[0] - ClickDown[0]),
-            abs(mousepos[1] - ClickDown[1]),
+            min(ClickDown[0], mouse_position[0]),
+            min(ClickDown[1], mouse_position[1]),
+            abs(mouse_position[0] - ClickDown[0]),
+            abs(mouse_position[1] - ClickDown[1]),
         ),
         2,
     )
@@ -287,7 +385,270 @@ def fps_limiter(start: float) -> None:
     sleep((1 / Config["Fps"]) - runtime)
 
 
-# TODO Break up function
+def move_camera(event_key: pg.event.Event) -> None:
+    """Change camera position index when passed a keypress"""
+    global CamPos
+    match event_key:
+        case pg.K_UP:
+            CamPos[1] = CamPos[1] - 1
+        case pg.K_DOWN:
+            CamPos[1] = CamPos[1] + 1
+        case pg.K_LEFT:
+            CamPos[0] = CamPos[0] - 1
+        case pg.K_RIGHT:
+            CamPos[0] = CamPos[0] + 1
+
+
+def apply_paired_ent(encyclopedia: dict, row: int, col: int):
+    """when placing tiles place an entity on the same location as the tile, otherwise remove all entities"""
+    tile: Tile = Background_Data[row][col][0]
+    Foreground_Data[row][col] = []
+    paired_ent = encyclopedia[tile.name]["PairedEntity"]
+    if paired_ent != 0:
+        apply_selected(
+            Foreground_Data[row][col],
+            Entity(encyclopedia[paired_ent]["Name"], encyclopedia[paired_ent]["dims"], 0),
+            "Ent",
+        )
+
+
+def are_match(tile_level: int, corners: (), sides: ()) -> tuple[list[bool], list[bool]]:
+    """checks if sides and corners are of the same or greater level then the current tile"""
+    corner_match = [False, False, False, False]
+    side_match = [False, False, False, False]
+
+    for index, corner in enumerate(corners):
+        if corner >= tile_level:
+            corner_match[index] = True
+
+    for index, side in enumerate(sides):
+        if side >= tile_level:
+            side_match[index] = True
+
+    return corner_match, side_match
+
+
+def determine_edge_case(corner_matches: [bool], side_matches: [bool]) -> tuple[int, int]:
+    """determine based on the surrounding tiles levels what sprite column a tile it should be"""
+    """first number is the index of the tile second number is where to get the underpeice from"""
+
+    # location key:
+    # 1 2 3
+    # 4   5
+    # 6 7 8
+
+    matches = sum(corner_matches + side_matches)
+    match matches:
+        case 3:
+            match corner_matches:
+                case True, False, False, False:
+                    return 9, 6  # bottom left
+                case False, True, False, False:
+                    return 11, 1  # top left
+                case False, False, True, False:
+                    return 12, 3  # top right
+                case False, False, False, True:
+                    return 10, 8  # bottom right
+
+        case 4:
+            match side_matches:
+                case True, True, False, False:
+                    return 11, 1  # top left
+                case False, True, True, False:
+                    return 9, 6  # bottom left
+                case False, False, True, True:
+                    return 10, 8  # bottom right
+                case True, False, False, True:
+                    return 12, 3  # top right
+
+        case 5:
+            match corner_matches:
+                case True, True, False, False:
+                    return 1, 4  # left
+                case False, True, True, False:
+                    return 4, 2  # top
+                case False, False, True, True:
+                    return 2, 5  # right
+                case True, False, False, True:
+                    return 3, 7  # bottom
+
+            match side_matches:
+                case True, True, False, False:
+                    return 11, 1  # top left
+                case False, True, True, False:
+                    return 9, 6  # bottom left
+                case False, False, True, True:
+                    return 10, 8  # bottom right
+                case True, False, False, True:
+                    return 12, 3  # top right
+
+        case 6:
+            match side_matches:
+                case True, True, True, False:
+                    return 1, 4  # left
+                case False, True, True, True:
+                    return 3, 7  # bottom
+                case True, False, True, True:
+                    return 2, 5  # right
+                case True, True, False, True:
+                    return 4, 2  # top
+
+        case 7:
+            match corner_matches:
+                case True, True, True, False:
+                    return 7, 1  # inset top left
+                case False, True, True, True:
+                    return 8, 3  # inset top right
+                case True, False, True, True:
+                    return 6, 8  # inset bottom right
+                case True, True, False, True:
+                    return 5, 6  # inset bottom left
+
+            match side_matches:
+                case True, True, True, False:
+                    return 1, 4  # left
+                case False, True, True, True:
+                    return 3, 7  # bottom
+                case True, False, True, True:
+                    return 2, 5  # right
+                case True, True, False, True:
+                    return 4, 2  # top
+
+    return 0, 0
+
+
+def add_outer_ring(tile_map: list[list[list]]) -> list[list[list]]:
+    """creates a new tile map witgh extra row of level 3 tiles on all sides"""
+    temp_map = deepcopy(tile_map)
+
+    for row in temp_map:
+        row.insert(0, [Tile("TEMP", [1], 0, 3)])
+        row.append([Tile("TEMP", [1], 0, 3)])
+    temp_map.insert(0, list(itertools.repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
+    temp_map.append(list(itertools.repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
+
+    return temp_map
+
+
+def determine_background_type(location: int, row: int, col: int) -> str:
+
+    # location key:
+    # 1 2 3
+    # 4   5
+    # 6 7 8
+
+    match location:
+        case 1:
+            return Background_Data[row - 1][col - 1][-1].name
+        case 2:
+            return Background_Data[row - 1][col][-1].name
+        case 3:
+            return Background_Data[row - 1][col + 1][-1].name
+        case 4:
+            return Background_Data[row][col - 1][-1].name
+        case 5:
+            return Background_Data[row][col + 1][-1].name
+        case 6:
+            return Background_Data[row + 1][col - 1][-1].name
+        case 7:
+            return Background_Data[row + 1][col][-1].name
+        case 8:
+            return Background_Data[row + 1][col + 1][-1].name
+    return "Grass"
+
+
+def apply_edges(row: int, col: int) -> None:
+    """given row and col change the sprite column"""
+    current_tile = Background_Data[row][col][-1]
+    tile_type = current_tile.level
+
+    temp_map = add_outer_ring(Background_Data)
+
+    row += 1
+    col += 1
+
+    corners = (
+        temp_map[row - 1][col + 1][-1].level,
+        temp_map[row + 1][col + 1][-1].level,
+        temp_map[row + 1][col - 1][-1].level,
+        temp_map[row - 1][col - 1][-1].level,
+    )  # clockwise starting top left
+    sides = (
+        temp_map[row + 1][col][-1].level,
+        temp_map[row][col + 1][-1].level,
+        temp_map[row - 1][col][-1].level,
+        temp_map[row][col - 1][-1].level,
+    )  # clockwise starting top
+
+    row -= 1
+    col -= 1
+
+    corner_match, side_match = are_match(tile_type, corners, sides)
+    index = determine_edge_case(corner_match, side_match)
+
+    Background_Data[row][col][-1] = Tile(
+        current_tile.name, current_tile.num_sprites, index[0], current_tile.level
+    )
+
+    tile_name = determine_background_type(index[1], row, col)
+
+    Background_Data[row][col] = [Tile(tile_name, current_tile.num_sprites, 0, 1)] + [
+        Background_Data[row][col][-1]
+    ]
+
+
+def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
+    """add the selected Asset to the Map"""
+    index_down = clicked_index(ClickDown, CamPos, meta)
+    index_up = clicked_index(click_up, CamPos, meta)
+
+    rows = index_up[1] - index_down[1]
+    cols = index_up[0] - index_down[0]
+
+    row_sign = -1 if rows < 0 else 1
+    rows = abs(rows) + 1
+    col_sign = -1 if cols < 0 else 1
+    cols = abs(cols) + 1
+
+    for row, col in itertools.product(range(rows), range(cols)):
+        match encyclopedia[SelectedTile]["Type"]:
+            case "Tile":
+                selected_asset = Tile(
+                    encyclopedia[SelectedTile]["Name"],
+                    encyclopedia[SelectedTile]["dims"],
+                    0,
+                    encyclopedia[SelectedTile]["level"],
+                )
+            case "Ent":
+                selected_asset = Entity(
+                    encyclopedia[SelectedTile]["Name"],
+                    encyclopedia[SelectedTile]["dims"],
+                    0,
+                )
+            case _:
+                warn("No asset type found")
+                selected_asset = []
+
+        the_map = apply_selected(
+            Background_Data[index_down[1] + row * row_sign][index_down[0] + col * col_sign],
+            selected_asset,
+            encyclopedia[SelectedTile]["Type"],
+        )
+
+        Background_Data[index_down[1] + row * row_sign][index_down[0] + col * col_sign] = the_map
+
+        apply_paired_ent(
+            encyclopedia, index_down[1] + row * row_sign, index_down[0] + col * col_sign
+        )
+
+    for row, col in itertools.product(range(rows + 2), range(cols + 2)):
+        with contextlib.suppress(IndexError):
+            apply_edges(
+                index_down[1] - row_sign + row * row_sign,
+                index_down[0] - col_sign + col * col_sign,
+            )
+
+
 def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) -> None:
     """takes pygame event and calls actions."""
     global Zoom, SelectedTile, ClickDown
@@ -302,23 +663,14 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
             exit(0)
 
         match event.type:
-
-            # use arrow keys to navigate the map
             case pg.KEYDOWN:
                 Redraw = True
-                if event.key == pg.K_UP:
-                    CamPos[1] = CamPos[1] - 1
-                if event.key == pg.K_DOWN:
-                    CamPos[1] = CamPos[1] + 1
-                if event.key == pg.K_LEFT:
-                    CamPos[0] = CamPos[0] - 1
-                if event.key == pg.K_RIGHT:
-                    CamPos[0] = CamPos[0] + 1
+                move_camera(event.key)
 
             case pg.MOUSEBUTTONDOWN:
-                MouseDown = True
                 # on left click
                 if event.button == pg.BUTTON_LEFT:
+                    MouseDown = True
                     Redraw = True
                     ClickDown = pg.mouse.get_pos()
 
@@ -329,10 +681,14 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                     ):
                         ActionFlag = False  # reset the save timer
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
-                        ind = clickedindex(ClickDown, CamPos, meta)
-                        Background_Data[ind[1]][ind[0]] = applytile(
-                            Background_Data[ind[1]][ind[0]],
-                            SelectedTile,
+                        ind = clicked_index(ClickDown, CamPos, meta)
+                        Foreground_Data[ind[1]][ind[0]] = apply_selected(
+                            Foreground_Data[ind[1]][ind[0]],
+                            Entity(
+                                encyclopedia[SelectedTile]["Name"],
+                                encyclopedia[SelectedTile]["dims"],
+                                0,
+                            ),
                             encyclopedia[SelectedTile]["Type"],
                         )
 
@@ -342,61 +698,32 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                         < ClickDown[1]
                         < Config["Height"] * NewRes + (2 * Config["SpriteRes"])
                     ):
-                        SelectedTile = selecttile(ClickDown, encyclopedia)
+                        SelectedTile = select_tile(ClickDown, encyclopedia)
 
-                # on right click delet top entity
+                # on right click delete top entity
                 if event.button == pg.BUTTON_RIGHT:
                     ClickDown = pg.mouse.get_pos()
 
                     # Remove top entity if it exists
                     if ClickDown[1] < Config["Height"] * NewRes:
-                        ind = clickedindex(ClickDown, CamPos, meta)
-                        if len(Background_Data[ind[1]][ind[0]]) > 1:
-                            ActionFlag = False  # reset the save timer
-                            Redraw = True
-                            pg.display.set_caption(
-                                f"Frog game editor{FileName} (Unsaved)"
-                            )
-                            Background_Data[ind[1]][ind[0]] = Background_Data[ind[1]][
-                                ind[0]
-                            ][:-1]
+                        ind = clicked_index(ClickDown, CamPos, meta)
+
+                        ActionFlag = False  # reset the save timer
+                        Redraw = True
+                        pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
+                        Foreground_Data[ind[1]][ind[0]] = Foreground_Data[ind[1]][ind[0]][:-1]
 
             # if clickup with background tile type selected do a drag
             case pg.MOUSEBUTTONUP:
                 MouseDown = False
-                if (
-                    encyclopedia[SelectedTile]["Type"] == "Tile"
-                    and event.button == pg.BUTTON_LEFT
-                ):
+                if encyclopedia[SelectedTile]["Type"] == "Tile" and event.button == pg.BUTTON_LEFT:
                     click_up = pg.mouse.get_pos()
                     if click_up[1] < Config["Height"] * NewRes > ClickDown[1]:
                         Redraw = True
                         ActionFlag = False  # reset the save timer
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
 
-                        index_down = clickedindex(ClickDown, CamPos, meta)
-                        index_up = clickedindex(click_up, CamPos, meta)
-
-                        rows = index_up[1] - index_down[1]
-                        cols = index_up[0] - index_down[0]
-
-                        rs = -1 if rows < 0 else 1
-                        rows = abs(rows) + 1
-
-                        cs = -1 if cols < 0 else 1
-                        cols = abs(cols) + 1
-
-                        for r, c in itertools.product(range(rows), range(cols)):
-                            themap = applytile(
-                                Background_Data[index_down[1] + (r * rs)][
-                                    index_down[0] + (c * cs)
-                                ],
-                                SelectedTile,
-                                encyclopedia[SelectedTile]["Type"],
-                            )
-                            Background_Data[index_down[1] + (r * rs)][
-                                index_down[0] + (c * cs)
-                            ] = themap
+                        apply_tile(meta, click_up, encyclopedia)
 
             # on scroll zoom
             case pg.MOUSEWHEEL:
@@ -405,11 +732,9 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                     debounce = int(round(time() * Config["Debounce"])) + 150
                     Zoom = Zoom + event.y
                     Zoom = max(Zoom, 1)
-                    Zoom = (
-                        Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
-                    )
+                    Zoom = Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
 
-        # redarw map now button has been released
+        # redraw map now button has been released
         if Redraw is True:
             ScreenSurf = flip_display(encyclopedia, window)
             Redraw = False
@@ -427,14 +752,23 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
 
     # Once save delay is met save the file
     if SaveCounter == SaveCycles:
-        writemappickle([Background_Data, Foreground_Data])
+        write_map_pickle([Background_Data, Foreground_Data])
         pg.display.set_caption(f"Frog game editor{FileName} (Saved)")
 
 
-def load_save(meta_data) -> tuple[list, list]:
+def randomise_tiles(background: [[[Tile]]]):
+    """run through all tiles on the map and randomise their sprite index"""
+    for row in background:
+        for col in row:
+            for tile in col:
+                tile.randomise_tile()
+    return background
+
+
+def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
     """load map pickle and resize to match config file"""
     try:
-        with open(f"../maps/{FileName}.map", "rb") as MapFile:
+        with open(f"maps/{FileName}.map", "rb") as MapFile:
             data: List[list] = pickle.load(MapFile)
             background = data[0]
             foreground = data[1]
@@ -442,34 +776,43 @@ def load_save(meta_data) -> tuple[list, list]:
         background = []
         foreground = []
 
-    # import map dimentions from metadata file
-    mapdims: List[int] = meta_data["MapSize"]
+    # import map dimensions from metadata file
+    map_dimensions: List[int] = meta_data["MapSize"]
 
-    background = resize_map_data(background, mapdims, "Stone")
-    foreground = resize_map_data(foreground, mapdims, "InvisWall")
-
+    background = resize_map_data(
+        background,
+        map_dimensions,
+        Tile("Stone", encyclopedia["Stone"]["dims"], 0, encyclopedia["Stone"]["level"]),
+    )
+    background = randomise_tiles(background)
+    foreground = resize_map_data(
+        foreground,
+        map_dimensions,
+        Entity("InvisWall", encyclopedia["InvisWall"]["dims"], 0),
+    )
     return background, foreground
 
 
 def main() -> None:
-    global Background_Data, Foreground_Data
-    with open(f"../maps/{FileName}.json") as mfile:
-        metadata = load(mfile)
-
-    Background_Data, Foreground_Data = load_save(metadata)
+    global Background_Data, Foreground_Data, ScreenSurf
+    with open(f"maps/{FileName}.json") as metadata_file:
+        metadata = load(metadata_file)
 
     window = pg.display.set_mode(
         (Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes)
     )  # set display size
 
     # load in dicts
-    encyclopedia = load_dicts(
-        metadata, "Tiles", "Entities"
-    )  # TODO use a class for tiles and ents
+    encyclopedia = load_dicts(metadata, "Tiles", "Name", "Tile")
+    encyclopedia.update(load_dicts(metadata, "Entities", "Name", "Ent"))
+
+    Background_Data, Foreground_Data = load_save(metadata, encyclopedia)
+
+    Background_Data = randomise_tiles(Background_Data)
 
     pg.display.set_caption(f"Frog game editor{FileName}")
 
-    flip_display(encyclopedia, window)
+    ScreenSurf = flip_display(encyclopedia, window)
 
     # loop that runs eventhandler at specific rate
     while True:

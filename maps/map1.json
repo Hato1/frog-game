@@ -2,34 +2,25 @@
   "MapSize": [17,10],
   "Tiles": [
     {
-      "Name": "Tileset",
-      "FileName": "Tileset.png",
-      "HueAdjust": "0",
-      "PairedEntity": 0
-    },
-    {
-      "Name": "rockwall",
-      "FileName": "rockwall.png",
-      "HueAdjust": "0",
-      "PairedEntity": 0
-    },
-    {
       "Name": "Dirt",
       "FileName": "dirt.png",
       "HueAdjust": "0",
-      "PairedEntity": 0
+      "PairedEntity": 0,
+      "level": 0
     },
     {
       "Name": "Grass",
       "FileName": "Grass.png",
       "HueAdjust": "0",
-      "PairedEntity": 0
+      "PairedEntity": 0,
+      "level": 1
     },
     {
       "Name": "Stone",
       "FileName": "Stone.png",
       "HueAdjust": "0",
-      "PairedEntity": "InvisWall"
+      "PairedEntity": "InvisWall",
+      "level": 2
     }
   ],
   "Entities": [
