@@ -240,9 +240,13 @@ class Map:
                     )
                 )
             case "W":
-                self.entities.append(Entity("rockwall", position=point, tags=[Tags.solid]))
+                self.entities.append(
+                    Entity("rockwall", position=point, tags=[Tags.solid, Tags.no_animation])
+                )
             case "O":
-                self.entities.append(Entity("Stone", position=point, tags=[Tags.solid]))
+                self.entities.append(
+                    Entity("Stone", position=point, tags=[Tags.solid, Tags.no_animation])
+                )
             case "S":
                 self.entities.append(
                     Entity(
@@ -267,7 +271,7 @@ class Map:
                         "SlidingStone",
                         ai.IdleIvan(),
                         position=point,
-                        tags=[Tags.pushable, Tags.pusher],
+                        tags=[Tags.pushable, Tags.pusher, Tags.no_animation],
                     )
                 )
 

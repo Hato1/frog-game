@@ -119,7 +119,7 @@ def add_dict_obj(encyclopedia: dict, any_object: any, key: str) -> dict:
 
 def add_surface_dims(encyclopedia: dict) -> dict:
     """take the surfaces in the encyclopedia and returns the encyclopedia with a dimensions entry"""
-    surface_dict = {dic: encyclopedia[dic]["Surface"] for dic in encyclopedia}
+    # surface_dict = {dic: encyclopedia[dic]["Surface"] for dic in encyclopedia}
     image_dims = get_spritesheet_dims()  # surface_dict)
     for dic in encyclopedia:
         encyclopedia[dic]["dims"] = image_dims[dic]
@@ -441,77 +441,77 @@ def determine_edge_case(corner_matches: [bool], side_matches: [bool]) -> tuple[i
     match matches:
         case 3:
             match corner_matches:
-                case (True, False, False, False):
+                case True, False, False, False:
                     return 9, 6  # bottom left
-                case (False, True, False, False):
+                case False, True, False, False:
                     return 11, 1  # top left
-                case (False, False, True, False):
+                case False, False, True, False:
                     return 12, 3  # top right
-                case (False, False, False, True):
+                case False, False, False, True:
                     return 10, 8  # bottom right
 
         case 4:
             match side_matches:
-                case (True, True, False, False):
+                case True, True, False, False:
                     return 11, 1  # top left
-                case (False, True, True, False):
+                case False, True, True, False:
                     return 9, 6  # bottom left
-                case (False, False, True, True):
+                case False, False, True, True:
                     return 10, 8  # bottom right
-                case (True, False, False, True):
+                case True, False, False, True:
                     return 12, 3  # top right
 
         case 5:
             match corner_matches:
-                case (True, True, False, False):
+                case True, True, False, False:
                     return 1, 4  # left
-                case (False, True, True, False):
+                case False, True, True, False:
                     return 4, 2  # top
-                case (False, False, True, True):
+                case False, False, True, True:
                     return 2, 5  # right
-                case (True, False, False, True):
+                case True, False, False, True:
                     return 3, 7  # bottom
 
             match side_matches:
-                case (True, True, False, False):
+                case True, True, False, False:
                     return 11, 1  # top left
-                case (False, True, True, False):
+                case False, True, True, False:
                     return 9, 6  # bottom left
-                case (False, False, True, True):
+                case False, False, True, True:
                     return 10, 8  # bottom right
-                case (True, False, False, True):
+                case True, False, False, True:
                     return 12, 3  # top right
 
         case 6:
             match side_matches:
-                case (True, True, True, False):
+                case True, True, True, False:
                     return 1, 4  # left
-                case (False, True, True, True):
+                case False, True, True, True:
                     return 3, 7  # bottom
-                case (True, False, True, True):
+                case True, False, True, True:
                     return 2, 5  # right
-                case (True, True, False, True):
+                case True, True, False, True:
                     return 4, 2  # top
 
         case 7:
             match corner_matches:
-                case (True, True, True, False):
+                case True, True, True, False:
                     return 7, 1  # inset top left
-                case (False, True, True, True):
+                case False, True, True, True:
                     return 8, 3  # inset top right
-                case (True, False, True, True):
+                case True, False, True, True:
                     return 6, 8  # inset bottom right
-                case (True, True, False, True):
+                case True, True, False, True:
                     return 5, 6  # inset bottom left
 
             match side_matches:
-                case (True, True, True, False):
+                case True, True, True, False:
                     return 1, 4  # left
-                case (False, True, True, True):
+                case False, True, True, True:
                     return 3, 7  # bottom
-                case (True, False, True, True):
+                case True, False, True, True:
                     return 2, 5  # right
-                case (True, True, False, True):
+                case True, True, False, True:
                     return 4, 2  # top
 
     return 0, 0
