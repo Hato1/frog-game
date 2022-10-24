@@ -36,13 +36,6 @@ class Ai:
         return Point._make(position + move), direction
 
 
-class Player(Ai):
-    """This is a hacky solution used for conflict resolution"""
-
-    def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
-        return IDLE, 0
-
-
 class IdleIvan(Ai):
     """Default idle animation"""
 

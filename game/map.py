@@ -210,7 +210,7 @@ class Map:
                     "Player",
                     ai.IdleIvan(),
                     position=point,
-                    tags=[Tags.hops, Tags.solid, Tags.pusher, Tags.player],
+                    tags=[Tags.hops, Tags.pusher, Tags.player],
                 )
                 self.entities.append(self.player)
             case "F":

@@ -44,7 +44,6 @@ def get_highest_priority_fn(pairs: list[EntityPair]) -> tuple[Callable, EntityPa
     TODO: Think about the case of equal priority interactions
     TODO: Think about whether using "case:" would make sense
     """
-
     # Kill player
     if pair := check_get_pair(pairs, (Tags.player, Tags.kills_player)):
         # Perhaps make a new fn which also removes non-interacting creatures from collisions_here
@@ -114,7 +113,7 @@ def check_get_pair(
 
 def check_for_tag(entities: Iterable, tag: Tags) -> bool:
     """checks if any entity in entities has given tag"""
-    tag_set = set(tag for entity in entities for tag in entity.tags)
+    tag_set = {tag for entity in entities for tag in entity.tags}
     return tag in tag_set
 
 
@@ -134,11 +133,12 @@ def push(pusher: Entity, pushee: Entity, entity_list: list) -> Point | bool:
         return False
 
 
-def block(_blocker: Entity, blockee: Entity, entity_list: list) -> Point:
+def block(_blocker: Entity, blockee: Entity, entity_list: list) -> None:
     """blocks blockee"""
-    push_direction = blockee.position_history[-1] - blockee.position
-    blockee.force_move([push_direction], entity_list)
-    return push_direction
+    if not blockee.position_history:
+        blockee.position_history = [blockee.position]
+    blockee.position = blockee.position_history[-1]
+    blockee.position_history[-1] = blockee.position
 
 
 def get_ind(pair: tuple, tag: Tags) -> bool:
@@ -231,11 +231,11 @@ def simple_block(bits: dict) -> list:
     """tag solid pushes back other entity"""
     pair, pairs, entity_list = bits["pair"], bits["pairs"], bits["entity_list"]
     solid_ind = get_ind(pair, Tags.solid)
-    move = block(pair[solid_ind], pair[not solid_ind], entity_list)
+    block(pair[solid_ind], pair[not solid_ind], entity_list)
     # TODO: ensure move actually occurs (not pushed into a solid entity or off map)
     # if move:
     remove_from_collisions(pairs, pair[not solid_ind])
-    return [pair[not solid_ind]] if move else []
+    return [pair[not solid_ind]]
 
 
 def blocked_barrel(bits: dict) -> list:
