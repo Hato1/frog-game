@@ -2,9 +2,9 @@
 """Map Builder Tool"""
 
 import contextlib
-import itertools
 import pickle
 from copy import deepcopy
+from itertools import product, repeat
 from json import load
 from math import ceil, floor
 from random import randint
@@ -54,15 +54,25 @@ class Asset:
         self.sprite_row = sprite_row
         self.num_sprites = num_sprites
         self.sprite_col = 0
+        self.hueadjust = 0
 
 
 class Tile(Asset):
-    def __init__(self, name: str, num_sprites: list[int], sprite_col: int, level: int):
+    def __init__(
+        self,
+        name: str,
+        num_sprites: list[int],
+        sprite_col: int,
+        level: int,
+        sprite_row=None,
+        hueadjust=None,
+    ):
         super().__init__(name, num_sprites, 0)
-        self.sprite_row = randint(0, num_sprites[sprite_col] - 1)
+        self.sprite_row = sprite_row or randint(0, num_sprites[sprite_col] - 1)
         self.sprite_col = sprite_col
         self.num_sprites = num_sprites
         self.level = level
+        self.hueadjust = hueadjust
 
     def randomise_tile(self):
         """re-randomise the sprite row"""
@@ -70,7 +80,24 @@ class Tile(Asset):
 
 
 class Entity(Asset):
-    pass
+    def __init__(
+        self,
+        name: str,
+        num_sprites: list[int],
+        tags: [str],
+        sprite_names: [[str]],
+        direction=None,
+        sprite_row=None,
+        sprite_col=None,
+        hueadjust=None,
+    ):
+        super().__init__(name, num_sprites, 0)
+        self.direction = direction or ["Up", "Left", "Right", "Down"][0]
+        self.tags = tags
+        self.sprite_names = sprite_names
+        self.hueadjust = hueadjust
+
+    # sprites = loop over sprite names and make (x, y, 25, 25)
 
 
 Background_Data = [[[]]]
@@ -301,8 +328,7 @@ def create_map_surface(
     cols_to_evaluate = range(first_valid_col_on_display, last_valid_col_on_display)
 
     # for each row column to evaluate blit sprite
-    for row, col in itertools.product(rows_to_evaluate, cols_to_evaluate):
-
+    for row, col in product(rows_to_evaluate, cols_to_evaluate):
         surfs_at_point: List[pg.Surface] = map_list[(col + display_origin[1])][
             (row + display_origin[0])
         ]
@@ -407,7 +433,12 @@ def apply_paired_ent(encyclopedia: dict, row: int, col: int):
     if paired_ent != 0:
         apply_selected(
             Foreground_Data[row][col],
-            Entity(encyclopedia[paired_ent]["Name"], encyclopedia[paired_ent]["dims"], 0),
+            Entity(
+                encyclopedia[paired_ent]["Name"],
+                encyclopedia[paired_ent]["dims"],
+                encyclopedia[paired_ent]["Tags"],
+                encyclopedia[paired_ent]["SpriteNames"],
+            ),
             "Ent",
         )
 
@@ -524,14 +555,13 @@ def add_outer_ring(tile_map: list[list[list]]) -> list[list[list]]:
     for row in temp_map:
         row.insert(0, [Tile("TEMP", [1], 0, 3)])
         row.append([Tile("TEMP", [1], 0, 3)])
-    temp_map.insert(0, list(itertools.repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
-    temp_map.append(list(itertools.repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
+    temp_map.insert(0, list(repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
+    temp_map.append(list(repeat([Tile("TEMP", [1], 0, 3)], len(temp_map[0]))))
 
     return temp_map
 
 
 def determine_background_type(location: int, row: int, col: int) -> str:
-
     # location key:
     # 1 2 3
     # 4   5
@@ -610,7 +640,7 @@ def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
     col_sign = -1 if cols < 0 else 1
     cols = abs(cols) + 1
 
-    for row, col in itertools.product(range(rows), range(cols)):
+    for row, col in product(range(rows), range(cols)):
         match encyclopedia[SelectedTile]["Type"]:
             case "Tile":
                 selected_asset = Tile(
@@ -623,7 +653,8 @@ def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
                 selected_asset = Entity(
                     encyclopedia[SelectedTile]["Name"],
                     encyclopedia[SelectedTile]["dims"],
-                    0,
+                    encyclopedia[SelectedTile]["Tags"],
+                    encyclopedia[SelectedTile]["SpriteNames"],
                 )
             case _:
                 warn("No asset type found")
@@ -641,12 +672,27 @@ def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
             encyclopedia, index_down[1] + row * row_sign, index_down[0] + col * col_sign
         )
 
-    for row, col in itertools.product(range(rows + 2), range(cols + 2)):
+    for row, col in product(range(rows + 2), range(cols + 2)):
         with contextlib.suppress(IndexError):
             apply_edges(
                 index_down[1] - row_sign + row * row_sign,
                 index_down[0] - col_sign + col * col_sign,
             )
+
+
+def convert_classes_to_dicts(background: [[Tile]], foreground: [[Entity]]) -> []:
+    """takes the maps and coverts class objects to dicts to be saved"""
+    for i, row in enumerate(background):
+        for j, col in enumerate(row):
+            for k, item in enumerate(col):
+                background[i][j][k] = item.__dict__
+
+    for i, row in enumerate(foreground):
+        for j, col in enumerate(row):
+            for k, item in enumerate(col):
+                foreground[i][j][k] = item.__dict__
+
+    return [background, foreground]
 
 
 def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) -> None:
@@ -687,7 +733,8 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                             Entity(
                                 encyclopedia[SelectedTile]["Name"],
                                 encyclopedia[SelectedTile]["dims"],
-                                0,
+                                encyclopedia[SelectedTile]["Tags"],
+                                encyclopedia[SelectedTile]["SpriteNames"],
                             ),
                             encyclopedia[SelectedTile]["Type"],
                         )
@@ -752,7 +799,8 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
 
     # Once save delay is met save the file
     if SaveCounter == SaveCycles:
-        write_map_pickle([Background_Data, Foreground_Data])
+        converted = convert_classes_to_dicts(deepcopy(Background_Data), deepcopy(Foreground_Data))
+        write_map_pickle(converted)
         pg.display.set_caption(f"Frog game editor{FileName} (Saved)")
 
 
@@ -763,6 +811,21 @@ def randomise_tiles(background: [[[Tile]]]):
             for tile in col:
                 tile.randomise_tile()
     return background
+
+
+def convert_dicts_to_classes(background: [[[{}]]], foreground: [[[{}]]]):
+    """takes the maps and coverts dict objects to classes to be used"""
+    for i, row in enumerate(background):
+        for j, col in enumerate(row):
+            for k, item in enumerate(col):
+                background[i][j][k] = Tile(**item)
+
+    for i, row in enumerate(foreground):
+        for j, col in enumerate(row):
+            for k, item in enumerate(col):
+                foreground[i][j][k] = Entity(**item)
+
+    return background, foreground
 
 
 def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
@@ -776,6 +839,8 @@ def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
         background = []
         foreground = []
 
+    background, foreground = convert_dicts_to_classes(background, foreground)
+
     # import map dimensions from metadata file
     map_dimensions: List[int] = meta_data["MapSize"]
 
@@ -788,7 +853,12 @@ def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
     foreground = resize_map_data(
         foreground,
         map_dimensions,
-        Entity("InvisWall", encyclopedia["InvisWall"]["dims"], 0),
+        Entity(
+            "InvisWall",
+            encyclopedia["InvisWall"]["dims"],
+            encyclopedia["InvisWall"]["Tags"],
+            encyclopedia["InvisWall"]["SpriteNames"],
+        ),
     )
     return background, foreground
 
