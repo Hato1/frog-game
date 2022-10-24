@@ -4,7 +4,7 @@
 
 ###### Assigned:
 
-1. Jacob: 
+1. Jacob:
 2. Liam: Collision resolver
 3. Jeremy: Map Editor
 4. Jeremy: Move step counter
@@ -16,7 +16,8 @@
 
 
 ### Bugs:
-
+1. pushing rock into barrel does not change barrel state
+2. pushing barrel into rock is bad
 
 ### Before Beta:
 
@@ -39,3 +40,4 @@
 1. After death, let the world slowly 'continue' making steps.
 2. Make the stepcounter change colour and get bigger/shake, maybe vignette the screen
 3. Make all communication non-language
+4. make invalid moves play a blocked animation

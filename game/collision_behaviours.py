@@ -26,15 +26,20 @@ Notes:
 Question: would it make more sense to refactor this all into entity.get_move()?
 """
 import logging
+from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
 from game.entity import Entity, Tags
 
+if TYPE_CHECKING:
+    from game.map import Map
 # from collections import namedtuple
 # from .entity import AI_DICT
 from game.helper import DOWN, IDLE, LEFT, RIGHT, UP, Point
 
+EntityPair = tuple[Entity, Entity]
 
-def get_highest_priority_fn(pairs: list):
+
+def get_highest_priority_fn(pairs: list[EntityPair]) -> tuple[Callable, EntityPair]:
     """Returns the function that resolves the highest priority interaction, and the pair involved.
     TODO: Think about the case of equal priority interactions
     TODO: Think about whether using "case:" would make sense
@@ -79,9 +84,9 @@ def get_highest_priority_fn(pairs: list):
 
 # Generic functions:
 def check_get_pair(
-    pairs: list,
+    pairs: list[EntityPair],
     tags: tuple[Tags, Tags] | Tags,
-):  # -> tuple | False:
+) -> EntityPair | Literal[False]:
     """
     Checks tags against tags in pairs
     also checks reverse order
@@ -101,17 +106,16 @@ def check_get_pair(
                 and tags[0] in pair[1].tags
             ]:
                 return pair[0]
-        case Tags():
+        case Tags():  # Single tag
             if pair := [pair for pair in pairs if tags in pair[0].tags or tags in pair[1].tags]:
                 return pair[0]
     return False
 
 
-def check_for_tag(pair: tuple, tag: Tags) -> bool:
-    """checks if a given tag is in tags from either entity"""
-    # TODO: ask @jacob if there is as more elegent way to do this
-    # Tags.barrel in [entity.tags for entity in pair] is a list of lists s:
-    return tag in pair[0].tags or tag in pair[1].tags
+def check_for_tag(entities: Iterable, tag: Tags) -> bool:
+    """checks if any entity in entities has given tag"""
+    tag_set = set(tag for entity in entities for tag in entity.tags)
+    return tag in tag_set
 
 
 def get_state(pair: tuple, tag: Tags) -> int:
@@ -143,16 +147,37 @@ def get_ind(pair: tuple, tag: Tags) -> bool:
     return tag in pair[1].tags
 
 
-def remove_from_collisions(pairs: list, target_entity: Entity) -> None:
+def remove_from_collisions(pairs: list[EntityPair], target_entity: Entity) -> None:
     for pair in pairs:
         if target_entity in pair:
             pairs.remove(pair)
 
 
+def check_push(the_map: "Map", current_point: Point, push_direction: Point) -> list:
+    """
+    recursively checks all spaces in front of a push
+    either returns a list of entities to force move (empty if invalid push)
+    we check "Can current pushable move?", denoted by list or false
+    """
+    pushable_entities_here = [
+        entity for entity in the_map[current_point] if Tags.pushable in entity.tags
+    ]
+    if check_for_tag(the_map[current_point + push_direction], Tags.solid):
+        return []
+    # This might be able to be made more efficient
+    elif not check_for_tag(the_map[current_point + push_direction], Tags.pushable):
+        return pushable_entities_here
+    else:
+        if entities_ahead := check_push(the_map, current_point + push_direction, push_direction):
+            entities_ahead += pushable_entities_here
+        return entities_ahead
+
+
 # ======================================================================================================================
 # From here down are the functions which resolve specific interactions
 # These take the form of:
-# temp_fn(bits{pair: tuple, pairs: list of tuples, entities_on_space: list, entity_list: list}) -> list
+# temp_fn(bits{pair: tuple, pairs: list of tuples, entities_on_space: list, entity_list: list})
+# -> list of entities whose positions need to be re-checked
 # ======================================================================================================================
 
 
@@ -176,13 +201,30 @@ def kill_player(bits: dict) -> list:
 
 def simple_push(bits: dict) -> list:
     """tag pushee gets pushed"""
+    # More like "simple" push ammirite?? haha.. =(
+
     # TODO: add forcemoved spaces to collision list
-    pair, pairs, entity_list = bits["pair"], bits["pairs"], bits["entity_list"]
-    ss_ind = get_ind(pair, Tags.pushable)
-    move = push(pair[not ss_ind], pair[ss_ind], entity_list)
-    if move != IDLE:
-        remove_from_collisions(pairs, pair[ss_ind])
-    return [pair[ss_ind]] if move else []
+    pair, pairs, entity_list, the_map = (
+        bits["pair"],
+        bits["pairs"],
+        bits["entity_list"],
+        bits["the_map"],
+    )
+    # Get push direction, and which is pushing
+    pusher_ind = get_ind(pair, Tags.pusher)
+    push_direction = pair[pusher_ind].position - pair[pusher_ind].position_history[-1]
+    current_point = pair[0].position
+
+    if entities_to_push := check_push(the_map, current_point, push_direction):
+        # Valid move, move all pushees, remove from current push
+        assert all(
+            entity.force_move([push_direction], entity_list) for entity in entities_to_push
+        ), "I have no idea how you got here"
+        remove_from_collisions(pairs, pair[not pusher_ind])
+    else:
+        block(pair[not pusher_ind], pair[pusher_ind], entity_list)
+        entities_to_push = [pair[pusher_ind]]
+    return entities_to_push
 
 
 def simple_block(bits: dict) -> list:

@@ -1,6 +1,7 @@
 """Module for game logic"""
 from pathlib import Path
 
+from game.collision_behaviours import check_for_tag, check_push
 from game.entity import Tags
 from game.helper import Point
 from game.map import Map
@@ -27,7 +28,7 @@ class Game:
         new_pos = pos + direction
 
         # Check move is valid
-        if self._is_move_invalid(new_pos):
+        if self._is_move_invalid(new_pos, direction):
             return False
 
         # Set the player's next move
@@ -38,20 +39,22 @@ class Game:
 
         return True
 
-    def _is_move_invalid(self, new_pos: Point) -> bool:
+    def _is_move_invalid(self, new_pos: Point, direction: Point) -> bool:
         """Check various conditions"""
         # Move is out of bounds:
         if new_pos[0] < 0 or new_pos[1] < 0:
             return True
         if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
             return True
-        # Entity specific conditions:
+        # Move is onto a solid object:
         for obj in self.map[new_pos]:
             if Tags.solid in obj.tags:
                 return True
+        # Move pushes a pushable into a solid onject
+        if check_for_tag(self.map[new_pos], Tags.pushable):
+            if not check_push(self.map, new_pos, direction):
+                return True
         return False
-        # Move pushes rock invalidly:
-        #     if obj.tags:
 
     def _update_game(self) -> None:
         # Update player pos

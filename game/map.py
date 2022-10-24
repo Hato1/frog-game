@@ -64,6 +64,7 @@ class Map:
                 verbose=num_collisions_resolved > 1000,
             )
             assert num_collisions_resolved < 1015, "Infinite loop in collision resolution!"
+            # TODO: make sure there aren't duplicate points causing trouble
             collision_points.extend(positions_to_recheck)
 
     def _resolve_space(
@@ -74,7 +75,8 @@ class Map:
     ) -> tuple[list[Point], int]:
         """Resolves all collisions on a single point.
 
-        makes list of entity pairs (make_pairs), resolves pairs in priority order per get_highest_priorityfn"""
+        makes list of entity pairs (make_pairs), resolves pairs in priority order per get_highest_priorityfn
+        returns (points_to_recheck, num_resolved_cols)"""
         entities_on_space = [e for e in self.entities if e.position == position]
         pairs = self._make_pairs(entities_on_space)
         moved_entities = []
@@ -87,6 +89,7 @@ class Map:
                 "pairs": pairs,
                 "entities_on_space": entities_on_space,
                 "entity_list": self.entities,
+                "the_map": self,
             }
             moved_entities.extend(highest_priority_fn(bits))
             num_collisions_resolved += 1
@@ -115,7 +118,7 @@ class Map:
         ]
 
     @staticmethod
-    def log_collision_resolution(temp_fn: Callable, pair: list) -> None:
+    def log_collision_resolution(temp_fn: Callable, pair: tuple) -> None:
         """if infinite loop, prints an error with a few useful diagnostics"""
         logging.error(
             f"Traceback: Used resolution function '{temp_fn.__qualname__}' at {pair[0].position} on {[e.get_strategy_name() for e in pair]}"
@@ -271,7 +274,7 @@ class Map:
                         "SlidingStone",
                         ai.IdleIvan(),
                         position=point,
-                        tags=[Tags.pushable, Tags.pusher, Tags.no_animation],
+                        tags=[Tags.pushable, Tags.no_animation],
                     )
                 )
 
