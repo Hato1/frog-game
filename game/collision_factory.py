@@ -5,7 +5,7 @@ import itertools
 import logging
 import random
 from collections import Counter
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from .entity import Entity, Tags
 from .helper import Point
@@ -16,16 +16,16 @@ class CollisionRegistryBase(type):
 
     COLLISION_REGISTRY: dict[str, Any] = {}
 
-    def __new__(cls: Type[CollisionRegistryBase], name: str, bases: tuple, attrs: dict):
+    def __new__(mcs, name: str, bases: tuple, attrs: dict):
         # instantiate a new type corresponding to the type of class being defined
         # this is currently RegisterBase but in child classes will be the child class
-        new_cls = type.__new__(cls, name, bases, attrs)
-        cls.COLLISION_REGISTRY[new_cls.__name__] = new_cls
+        new_cls = type.__new__(mcs, name, bases, attrs)
+        mcs.COLLISION_REGISTRY[new_cls.__name__] = new_cls
         return new_cls
 
     @classmethod
-    def get_registry(cls):
-        return dict(cls.COLLISION_REGISTRY)
+    def get_registry(mcs):
+        return dict(mcs.COLLISION_REGISTRY)
 
 
 class BaseRegisteredCollisionClass(metaclass=CollisionRegistryBase):
