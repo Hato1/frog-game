@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 def draw_game(
     basemap: pg.Surface,
-    screen: pg.surface,
+    screen: pg.Surface,
     clock: pg.time.Clock,
     entities: list,
     center: Point,

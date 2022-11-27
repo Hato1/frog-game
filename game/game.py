@@ -59,14 +59,6 @@ class Game:
                 return True
         return False
 
-    def _update_game(self) -> None:
-        # Update player pos
-        pass
-
-    def get_position(self) -> tuple:
-        # returns position
-        pass
-
     def get_map(self) -> Map:
         # return full map
         return self.map

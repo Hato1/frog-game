@@ -42,10 +42,10 @@ class Entity:
     def __init__(
         self,
         name: str,
-        strategy: Ai = None,
+        strategy: Optional[Ai] = None,
         direction: int = UP,
         position: Point = default_point,
-        tags: list[str] = None,
+        tags: Optional[list[str]] = None,
     ) -> None:
         self.alive = True
         """

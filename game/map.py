@@ -1,10 +1,9 @@
 """Module for reading and manipulating the game board"""
 from __future__ import annotations
 
-import copy
 import logging
 from pathlib import Path
-from typing import Callable, Iterator, Optional, overload
+from typing import Callable, Iterator, overload
 
 from game import ai
 from game.collision_behaviours import get_highest_priority_fn
@@ -20,7 +19,7 @@ current_map: str = WORLD_NAME
 
 
 class Map:
-    def __init__(self, map_file: Optional[Path]) -> None:
+    def __init__(self, map_file: Path) -> None:
         self.map_file = map_file
         self.steps_left = 0
         self.entities: list[Entity] = []
@@ -138,11 +137,11 @@ class Map:
                 return entity.position
         raise ValueError
 
-    def copy(self) -> Map:
-        new_map = Map(None)
-        # TODO: Do we really need to deep copy?
-        new_map.entities = copy.deepcopy(self.entities)
-        return new_map
+    # def copy(self) -> Map:
+    #     new_map = Map(None)
+    #     # TODO: Do we really need to deep copy?
+    #     new_map.entities = copy.deepcopy(self.entities)
+    #     return new_map
 
     def in_map(self, pos: tuple) -> bool:
         raise NotImplementedError

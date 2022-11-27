@@ -16,11 +16,11 @@ from gui.user_input import process_user_input
 pg.init()
 
 
-def play_game_loop(screen: pg.surface.Surface, clock: pg.time.Clock) -> None:
+def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
     game = Game()
     basemap = make_basemap(*game.get_map_dims())
     hud.update_step_counter(game.get_steps_left())
-    drawing_stuff = (basemap, screen, clock)
+    drawing_stuff: tuple[pg.Surface, pg.Surface, pg.Clock] = (basemap, screen, clock)
     map_changed = False
     entities = game.get_entities()
 
