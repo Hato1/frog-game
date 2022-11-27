@@ -12,23 +12,18 @@ from .helper import Point
 from .map import current_map, maps
 
 
-class CollisionRegistryBase(type):
-
+class CollisionRegistryBase:
     COLLISION_REGISTRY: dict[str, Any] = {}
 
-    def __new__(mcs, name: str, bases: tuple, attrs: dict):
-        # instantiate a new type corresponding to the type of class being defined
-        # this is currently RegisterBase but in child classes will be the child class
-        new_cls = type.__new__(mcs, name, bases, attrs)
-        mcs.COLLISION_REGISTRY[new_cls.__name__] = new_cls
-        return new_cls
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.COLLISION_REGISTRY[cls.__name__] = cls  # Add class to registry.
 
     @classmethod
-    def get_registry(mcs):
-        return dict(mcs.COLLISION_REGISTRY)
+    def get_registry(cls):
+        return dict(cls.COLLISION_REGISTRY)
 
-
-class BaseRegisteredCollisionClass(metaclass=CollisionRegistryBase):
     def get_priority(self, *args, **kwargs) -> int:
         """Get the priority of this collision rule in context.
 
@@ -41,15 +36,15 @@ class BaseRegisteredCollisionClass(metaclass=CollisionRegistryBase):
         raise NotImplementedError()
 
 
-class KillCollision(BaseRegisteredCollisionClass):
+class KillCollision(CollisionRegistryBase):
     @classmethod
     def get_priority(cls, tags1, tags2, **kwargs):
         priority = -1
         if Tags.player in tags1 and Tags.kills_player in tags2:
             priority = 10
-        if Tags.player in tags2 and Tags.kills_player in tags1:
+        elif Tags.player in tags2 and Tags.kills_player in tags1:
             priority = 10
-        if Tags.hops in tags1 and Tags.hops in tags2:
+        elif Tags.hops in tags1 and Tags.hops in tags2:
             priority = 5
         return priority
 
@@ -58,13 +53,13 @@ class KillCollision(BaseRegisteredCollisionClass):
         tags1, tags2 = entity1.tags, entity2.tags
         if Tags.player in tags1 and Tags.kills_player in tags2:
             entity1.alive = False
-        if Tags.player in tags2 and Tags.kills_player in tags1:
+        elif Tags.player in tags2 and Tags.kills_player in tags1:
             entity2.alive = False
-        if Tags.hops in tags1 and Tags.hops in tags2:
+        elif Tags.hops in tags1 and Tags.hops in tags2:
             random.choice([entity1, entity2]).alive = False
 
 
-class PushCollision(BaseRegisteredCollisionClass):
+class PushCollision(CollisionRegistryBase):
     @classmethod
     def get_priority(cls, tags1, tags2, **kwargs):
         priority = -1
