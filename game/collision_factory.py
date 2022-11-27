@@ -5,7 +5,7 @@ import itertools
 import logging
 import random
 from collections import Counter
-from typing import Any, Optional
+from typing import Optional, Type
 
 from .entity import Entity, Tags
 from .helper import Point
@@ -13,7 +13,7 @@ from .map import current_map, maps
 
 
 class CollisionRegistryBase:
-    COLLISION_REGISTRY: dict[str, Any] = {}
+    COLLISION_REGISTRY: dict[str, Type[CollisionRegistryBase]] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
