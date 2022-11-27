@@ -22,16 +22,16 @@ class CollisionRegistryBase:
 
     @classmethod
     def get_registry(cls):
-        return dict(cls.COLLISION_REGISTRY)
+        return cls.COLLISION_REGISTRY
 
     def get_priority(self, *args, **kwargs) -> int:
         """Get the priority of this collision rule in context.
 
-        A priority of 0 means this collision rule isn't applicable.
+        A priority of -1 means this collision rule isn't applicable.
         """
         raise NotImplementedError()
 
-    def resolve_collision(self, *args, **kwargs):
+    def resolve_collision(self, *args, **kwargs) -> None:
         """Applies the collision rule"""
         raise NotImplementedError()
 
