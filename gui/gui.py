@@ -20,13 +20,15 @@ def play_game_loop(screen: pg.surface.Surface, clock: pg.time.Clock) -> None:
     game = Game()
     basemap = make_basemap(*game.get_map_dims())
     hud.update_step_counter(game.get_steps_left())
-    drawing_stuff = (basemap, screen, clock, game.get_entities())
+    drawing_stuff = (basemap, screen, clock)
     map_changed = False
+    entities = game.get_entities()
 
     while True:
         if ANIMATIONS and map_changed:
-            animate_step(*drawing_stuff)
-        draw_game(*drawing_stuff, draw_player=game.player_alive())
+            animate_step(*drawing_stuff, entities)
+        entities = game.get_entities()
+        draw_game(*drawing_stuff, entities, center=game.get_player_pos())
 
         if not game.player_alive():
             return

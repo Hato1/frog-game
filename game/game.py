@@ -4,12 +4,13 @@ from game.collision_behaviours import check_for_tag, check_push
 from game.collision_factory import collision_resolver
 from game.entity import Tags
 from game.helper import Point
-from game.map import Map, current_map, maps
+from game.map import Map, current_map, maps, reset_maps
 
 
 class Game:
     def __init__(self) -> None:
         """Initialises the game with the first map"""
+        self.reset_game()
         self.map = maps[current_map]
         # ToDo: Load a player save file for any persistent items/preferences
 
@@ -37,6 +38,7 @@ class Game:
         # Update all creatures (including player!)
         self.map.update_creatures()
         collision_resolver.resolve_collisions()
+        self.map.cull_entities()
 
         return True
 
@@ -90,3 +92,7 @@ class Game:
 
     def get_steps_left(self):
         return self.map.get_steps_left()
+
+    @staticmethod
+    def reset_game():
+        reset_maps()

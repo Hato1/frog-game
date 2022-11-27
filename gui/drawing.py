@@ -21,14 +21,13 @@ def draw_game(
     screen: pg.surface,
     clock: pg.time.Clock,
     entities: list,
-    draw_player: bool,
+    center: Point,
 ):
     """Draws entities on basemap"""
 
     # TODO: Improve sprite animation stage transitions.
     animation_stage = [0, 2, 3][(pg.time.get_ticks() // PASSIVE_ANIMATION_SPEED) % 3]
 
-    display_box = None
     scene = copy(basemap)
     for entity in entities:
         if entity.animates():
@@ -37,12 +36,8 @@ def draw_game(
             sprite = get_random_sprite(entity)
         else:
             sprite = get_default_sprite(entity)
-        if entity.name == "Player":
-            display_box = get_disp(*entity.position)
-            if not draw_player:
-                continue
         scene.blit(sprite, coords_to_pixels(entity.position))
-    assert display_box, "Where player gone? :("
+    display_box = get_disp(*center)
     screen.blit(scene, (0, 0), display_box)
     add_hud(screen)
     logging.debug(f"Frametime: {clock.tick(FPS)}")

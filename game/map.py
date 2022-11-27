@@ -15,20 +15,16 @@ from GAME_CONSTANTS import WORLD_NAME
 # from multimethod import multimethod
 MAP_WIDTH = 0
 MAP_HEIGHT = 0
-maps = {}
+maps: dict[str, Map] = {}
 current_map: str = WORLD_NAME
 
 
 class Map:
     def __init__(self, map_file: Optional[Path]) -> None:
-        self.steps_left = 50
+        self.map_file = map_file
+        self.steps_left = 0
         self.entities: list[Entity] = []
-        # TODO: Collision map?
-        if map_file:
-            global MAP_WIDTH
-            global MAP_HEIGHT
-            MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(map_file)
-            maps[map_file.stem] = self
+        self.reset()
 
     def update_creatures(self) -> None:
         """
@@ -45,6 +41,9 @@ class Map:
             self.player.alive = False
 
         logging.info(self)
+
+    def cull_entities(self):
+        self.entities = [e for e in self.entities if e.alive]
 
     def _collision_handler(self) -> None:
         """Resolves all collisions.
@@ -174,10 +173,10 @@ class Map:
         ...
 
     @overload
-    def __getitem__(self, index: tuple | Point) -> list:
+    def __getitem__(self, index: tuple | Point) -> list[Entity]:
         ...
 
-    def __getitem__(self, index: int | tuple) -> list | list[list]:
+    def __getitem__(self, index: int | tuple) -> list[Entity] | list[list]:
         """Retrieve elements of the map at the given row or (row, col) pair"""
         if isinstance(index, int):
             return [entity for entity in self.entities if entity.position.x == index]
@@ -303,6 +302,21 @@ class Map:
 
     def get_entities(self):
         return self.entities
+
+    def reset(self):
+        self.steps_left = 50
+        self.entities = []
+        # TODO: Collision map?
+        global MAP_WIDTH
+        global MAP_HEIGHT
+        MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(self.map_file)
+        maps[self.map_file.stem] = self
+
+
+def reset_maps():
+    global maps
+    for _map in maps.values():
+        _map.reset()
 
 
 Map(Path(f"maps/{WORLD_NAME}"))

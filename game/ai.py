@@ -1,3 +1,5 @@
+from enum import Enum
+
 from game.helper import (
     DOWN,
     IDLE,
@@ -10,8 +12,23 @@ from game.helper import (
 )
 
 
+class Tags(str, Enum):
+    solid = "solid"
+    hops = "hops"
+    player = "player"
+    pushable = "pushable"
+    pusher = "pusher"
+    kills_player = "kills_player"
+    barrel = "barrel"
+    no_animation = "no_animation"
+
+
 class InvalidState(Exception):
     pass
+
+
+def solid_entity_at(point, entity_list):
+    return any(Tags.solid in entity.tags for entity in entity_list if entity.position == point)
 
 
 class Ai:
@@ -25,6 +42,10 @@ class Ai:
         """Get the next position object wants to move in, and the resulting state"""
         return IDLE, 0
 
+    @staticmethod
+    def is_move_blocked_by_solid_object():
+        return True
+
     def make_move(
         self, position: Point, direction: int, entity_list: list, dims: tuple[int, int]
     ) -> tuple[Point, int]:
@@ -33,6 +54,10 @@ class Ai:
         direction = get_facing_direction(move, direction)
 
         self.state = new_state
+
+        new_position = position + move
+        if solid_entity_at(new_position, entity_list) and self.is_move_blocked_by_solid_object():
+            return Point._make(position), direction
         return Point._make(position + move), direction
 
 
