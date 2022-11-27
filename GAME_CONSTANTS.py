@@ -27,3 +27,5 @@ PASSIVE_ANIMATION_SPEED_SECONDS = 1  # Speed at which sprites change without pla
 PASSIVE_ANIMATION_SPEED = int(PASSIVE_ANIMATION_SPEED_SECONDS * 1000)
 ANIMATION_LENGTH_SECONDS = 0.15  # Speed of a 'step' involving sprites moving between tiles
 ANIMATION_LENGTH = int(ANIMATION_LENGTH_SECONDS * 1000)
+
+WORLD_NAME = "map3"

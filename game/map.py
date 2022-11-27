@@ -10,10 +10,13 @@ from game import ai
 from game.collision_behaviours import get_highest_priority_fn
 from game.entity import Entity, Tags
 from game.helper import Point
+from GAME_CONSTANTS import WORLD_NAME
 
 # from multimethod import multimethod
 MAP_WIDTH = 0
 MAP_HEIGHT = 0
+maps = {}
+current_map: str = WORLD_NAME
 
 
 class Map:
@@ -25,6 +28,7 @@ class Map:
             global MAP_WIDTH
             global MAP_HEIGHT
             MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(map_file)
+            maps[map_file.stem] = self
 
     def update_creatures(self) -> None:
         """
@@ -34,7 +38,7 @@ class Map:
         for entity in self.entities:
             entity.make_move(self.entities, Point(MAP_WIDTH, MAP_HEIGHT))
 
-        self._collision_handler()
+        # self._collision_handler()
 
         self.steps_left -= 1
         if not self.steps_left:
@@ -299,3 +303,6 @@ class Map:
 
     def get_entities(self):
         return self.entities
+
+
+Map(Path(f"maps/{WORLD_NAME}"))

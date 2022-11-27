@@ -3,8 +3,8 @@ import itertools
 import logging
 from collections import Counter
 
-from .map import Map
-from .world import world
+from .entity import Tags
+from .map import Map, current_map, maps
 
 
 class CollisionRegistryBase(type):
@@ -24,7 +24,7 @@ class CollisionRegistryBase(type):
 
 
 class BaseRegisteredCollisionClass(metaclass=CollisionRegistryBase):
-    def get_priority(self, *args, **kwargs):
+    def get_priority(self, *args, **kwargs) -> int:
         """Get the priority of this collision rule in context.
 
         A priority of 0 means this collision rule isn't applicable.
@@ -40,12 +40,32 @@ class BaseRegisteredCollisionClass(metaclass=CollisionRegistryBase):
 
 class KillCollision(BaseRegisteredCollisionClass):
     @classmethod
-    def get_priority(cls, *args, **kwargs):
-        ...
+    def get_priority(cls, tags1, tags2, **kwargs):
+        priority = -1
+        if Tags.player in tags1 and Tags.kills_player in tags2:
+            priority = 10
+        if Tags.player in tags2 and Tags.kills_player in tags1:
+            priority = 10
+        return priority
 
     @classmethod
     def resolve_collision(cls, *args, **kwargs):
-        ...
+        raise NotImplementedError()
+
+
+class PushCollision(BaseRegisteredCollisionClass):
+    @classmethod
+    def get_priority(cls, tags1, tags2, **kwargs):
+        priority = -1
+        if Tags.pushable in tags1 and Tags.pusher in tags2:
+            priority = 10
+        if Tags.pushable in tags2 and Tags.pusher in tags1:
+            priority = 10
+        return priority
+
+    @classmethod
+    def resolve_collision(cls, *args, **kwargs):
+        raise NotImplementedError()
 
 
 class CollisionFinder(object):
@@ -64,7 +84,10 @@ class CollisionFinder(object):
             collision_class = CollisionRegistryBase.COLLISION_REGISTRY[collision_name]
 
             # Call the class method get_priority on the collision class
-            priority = collision_class.get_priority(*tags)
+            try:
+                priority = collision_class.get_priority(*tags)
+            except NotImplementedError:
+                continue
             if priority > highest_priority:
                 highest_priority_collision = collision_name
                 highest_priority = priority
@@ -73,14 +96,14 @@ class CollisionFinder(object):
             # collision_instance = collision_class()
             # collision_instance.add_update_delete(*args, **kwargs)
 
-        assert highest_priority, "No applicable collision for pair"
+        assert highest_priority, f"No applicable collision for pair: {entity1} and {entity2}"
         return highest_priority_collision, highest_priority
 
     def get_highest_priority_collision_for_tile(self, point):
         """Get the highest priority collision type for a point in the world"""
 
         # Form a list containing all unique pairs of entities
-        pairs = itertools.combinations(world[point], 2)
+        pairs = itertools.combinations(maps[current_map][point], 2)
 
         highest_priority_collision = ""
         highest_priority_pair: list["Map"] = []
@@ -104,15 +127,18 @@ class CollisionResolver(object):
     def resolve_highest_priority_collision(self, point):
         collision, pair = self.collision_finder.find_collision(point)
         collision_class = CollisionRegistryBase.COLLISION_REGISTRY[collision]
-        collision_class.resolve_collision(pair)
+        try:
+            collision_class.resolve_collision(pair)
+        except NotImplementedError:
+            logging.warning(f"Collision type '{collision}' not implemented.")
 
     @staticmethod
     def get_points_to_check_for_collisions():
-        points = [entity.position for entity in world.entities]
+        points = [entity.position for entity in maps[current_map].entities]
         counts = Counter(points)
         # No need to check collisions on a point with just one entity.
         # Convert to set to remove duplicates.
-        points = {pos for pos in points if counts[id] > 1}
+        points = {p for p in points if counts[p] > 1}
         return sorted(list(points))
 
     def resolve_highest_priority_collisions(self):

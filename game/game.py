@@ -1,16 +1,16 @@
 """Module for game logic"""
-from pathlib import Path
 
 from game.collision_behaviours import check_for_tag, check_push
+from game.collision_factory import collision_resolver
 from game.entity import Tags
 from game.helper import Point
-from game.map import Map
+from game.map import Map, current_map, maps
 
 
 class Game:
     def __init__(self) -> None:
         """Initialises the game with the first map"""
-        self.map = Map(Path("maps/map3"))
+        self.map = maps[current_map]
         # ToDo: Load a player save file for any persistent items/preferences
 
     def move(self, direction: Point) -> bool:
@@ -36,6 +36,7 @@ class Game:
 
         # Update all creatures (including player!)
         self.map.update_creatures()
+        collision_resolver.resolve_collisions()
 
         return True
 
@@ -50,7 +51,7 @@ class Game:
         for obj in self.map[new_pos]:
             if Tags.solid in obj.tags:
                 return True
-        # Move pushes a pushable into a solid onject
+        # Move pushes a pushable into a solid object
         if check_for_tag(self.map[new_pos], Tags.pushable):
             if not check_push(self.map, new_pos, direction):
                 return True
