@@ -1,8 +1,7 @@
 """Module for game logic"""
-
-from game.collision_behaviours import check_for_tag, check_push
-from game.collision_factory import collision_resolver
-from game.entity import Tags
+from game import collision_factory
+from game.collision_resolver import collision_resolver
+from game.entity import Entity, Tags
 from game.helper import Point
 from game.map import Map, current_map, maps, reset_maps
 
@@ -54,9 +53,16 @@ class Game:
             if Tags.solid in obj.tags:
                 return True
         # Move pushes a pushable into a solid object
-        if check_for_tag(self.map[new_pos], Tags.pushable):
-            if not check_push(self.map, new_pos, direction):
+
+        in_line: list[Entity] = []
+        if blocked := collision_factory.PushCollision.get_pushable_line(
+            self.map.player, direction, in_line
+        ):
+            if blocked.position != new_pos or Tags.solid in blocked.tags:
                 return True
+        # if check_for_tag(self.map[new_pos], Tags.pushable):
+        #     if not check_push(self.map, new_pos, direction):
+        #         return True
         return False
 
     def get_map(self) -> Map:

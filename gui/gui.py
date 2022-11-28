@@ -38,6 +38,7 @@ def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
 
 
 def main() -> None:
+    # Screen is of type pg.surface.Surface when it should be pg.Surface. Fixed in Pygame 2.1.3
     screen = pg.display.set_mode(
         (WINDOW_TILE_WIDTH * TSIZE, WINDOW_TILE_HEIGHT * TSIZE),
         pg.SCALED | pg.RESIZABLE,

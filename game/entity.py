@@ -1,9 +1,10 @@
 """Module for animate objects"""
+import random
 from enum import Enum
 from typing import Optional
 
 from game.ai import Ai
-from game.helper import Point, get_facing_direction, is_in_map
+from game.helper import Point, c, get_facing_direction, is_in_map
 
 # Delete me :(
 MAP_WIDTH = 28
@@ -72,8 +73,14 @@ class Entity:
         self.position_history: list[Point] = []
         self.tags = tags or []
 
-    def __str__(self) -> str:
-        return self.name
+    def __repr__(self) -> str:
+        try:
+            random.seed(self.name)
+            return c(self.name, fg=random.choice("krgybmcw"))
+        finally:
+            random.seed()
+
+    __str__ = __repr__
 
     def force_move(self, forced_moves: list[Point], entity_list):
         """Handles moves forced by collisions"""

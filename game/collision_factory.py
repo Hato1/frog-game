@@ -1,14 +1,10 @@
 """Item factory for matching a pair of entities to their collision resolution function"""
 from __future__ import annotations
 
-import itertools
-import logging
 import random
-from collections import Counter
-from typing import Optional, Type
+from typing import Type
 
-from .entity import Entity, Tags
-from .helper import Point
+from .entity import Tags
 from .map import current_map, maps
 
 
@@ -41,9 +37,9 @@ class KillCollision(CollisionRegistryBase):
     def get_priority(cls, tags1, tags2, **kwargs):
         priority = -1
         if Tags.player in tags1 and Tags.kills_player in tags2:
-            priority = 10
+            priority = 1
         elif Tags.player in tags2 and Tags.kills_player in tags1:
-            priority = 10
+            priority = 1
         elif Tags.hops in tags1 and Tags.hops in tags2:
             priority = 5
         return priority
@@ -57,6 +53,7 @@ class KillCollision(CollisionRegistryBase):
             entity2.alive = False
         elif Tags.hops in tags1 and Tags.hops in tags2:
             random.choice([entity1, entity2]).alive = False
+        maps[current_map].cull_entities()
 
 
 class PushCollision(CollisionRegistryBase):
@@ -70,104 +67,45 @@ class PushCollision(CollisionRegistryBase):
         return priority
 
     @classmethod
-    def resolve_collision(cls, *args, **kwargs):
-        raise NotImplementedError()
+    def get_pushable_line(cls, pushable, direction, pushables):
+        recurse = False
+        new_pos = pushable.position + direction
+        # There may be multiple things to push on this tile
+        pushables = pushables or []
+        for entity in maps[current_map][new_pos]:
+            if Tags.solid in entity.tags or Tags.pusher in entity.tags:
+                return entity
+            elif Tags.pushable in entity.tags:
+                recurse = True
+                pushables.append(entity)
+        if recurse:
+            return cls.get_pushable_line(pushables[-1], direction, pushables)
+        return False
 
+    @classmethod
+    def push(cls, pushable, direction):
+        pushables = [pushable]
+        blocked = cls.get_pushable_line(pushables[-1], direction, pushables)
+        if not blocked:
+            for pushable in pushables:
+                pushable.position_history.append(pushable.position)
+                pushable.position += direction
+                # TODO: Barrel state change using enum or pushable.trigger(cls.__name__)
+        return not blocked
 
-class CollisionFinder(object):
-    @staticmethod
-    def get_highest_priority_collision_for_pair(entity1, entity2):
-        """Get the highest priority collision type for an entity pair"""
-        tags = entity1.tags, entity2.tags
+    @classmethod
+    def resolve_collision(cls, entity1, entity2, **kwargs):
+        tags1, tags2 = entity1.tags, entity2.tags
+        pusher = None
+        pushable = None
+        if Tags.pusher in tags1 and Tags.pushable in tags2:
+            pusher, pushable = entity1, entity2
+        if Tags.pusher in tags2 and Tags.pushable in tags1:
+            if pusher:
+                raise NotImplementedError("Both objects are Pushers and Pushable")
+            pusher, pushable = entity2, entity1
+        direction = pusher.position - pusher.position_history[-1]
 
-        highest_priority_collision = ""
-        highest_priority = 0
-
-        # Iterate over every collision type
-        for collision_name in CollisionRegistryBase.COLLISION_REGISTRY:
-
-            # Get a handle to the collision class
-            collision_class = CollisionRegistryBase.COLLISION_REGISTRY[collision_name]
-
-            # Call the class method get_priority on the collision class
-            try:
-                priority = collision_class.get_priority(*tags)
-            except NotImplementedError:
-                continue
-            if priority > highest_priority:
-                highest_priority_collision = collision_name
-                highest_priority = priority
-
-            # Note: if we need to create an instance first
-            # collision_instance = collision_class()
-            # collision_instance.add_update_delete(*args, **kwargs)
-
-        assert highest_priority, f"No applicable collision for pair: {entity1} and {entity2}"
-        return highest_priority_collision, highest_priority
-
-    def get_highest_priority_collision_for_tile(self, point: Point):
-        """Get the highest priority collision type for a point in the world"""
-
-        # Form a list containing all unique pairs of entities
-        entities_here = maps[current_map][point]
-        pairs = itertools.combinations(entities_here, 2)
-
-        highest_priority_collision = ""
-        highest_priority_pair: Optional[tuple[Entity, Entity]] = None
-        highest_priority = 0
-
-        for pair in pairs:
-            collision_name, priority = self.get_highest_priority_collision_for_pair(*pair)
-            if priority > highest_priority:
-                highest_priority_collision = collision_name
-                highest_priority_pair = pair
-                highest_priority = priority
-
-        assert highest_priority, "No applicable collision for point"
-        return highest_priority_collision, highest_priority_pair
-
-    find_collision = get_highest_priority_collision_for_tile
-
-
-class CollisionResolver(object):
-    collision_finder = CollisionFinder()
-
-    def resolve_highest_priority_collision(self, point):
-        collision, pair = self.collision_finder.find_collision(point)
-        collision_class = CollisionRegistryBase.COLLISION_REGISTRY[collision]
-        try:
-            collision_class.resolve_collision(*pair)
-        except NotImplementedError:
-            logging.warning(f"Collision type '{collision}' not implemented.")
-
-    @staticmethod
-    def get_points_to_check_for_collisions():
-        points = [entity.position for entity in maps[current_map].entities if entity.alive]
-        counts = Counter(points)
-        # No need to check collisions on a point with just one entity.
-        # Convert to set to remove duplicates.
-        points = {p for p in points if counts[p] > 1}
-        return sorted(list(points))
-
-    def resolve_highest_priority_collisions(self):
-        """Resolve the highest priority collision at each point.
-
-        Returns True if something happened"""
-        points_to_check = self.get_points_to_check_for_collisions()
-        if not points_to_check:
-            return False
-        for point in points_to_check:
-            self.resolve_highest_priority_collision(point)
-        return True
-
-    def resolve_collisions(self):
-        collisions_settled = False
-        for _ in range(10):
-            collisions_settled |= self.resolve_highest_priority_collisions()
-
-        if not collisions_settled:
-            # TODO: Resolve collisions more with logging.
-            logging.error("Collisions didn't finish settling!")
-
-
-collision_resolver = CollisionResolver()
+        success = cls.push(pushable, direction)
+        if not success:
+            pusher.position = pusher.position_history[-1]
