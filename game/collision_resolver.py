@@ -115,7 +115,7 @@ class CollisionResolver(object):
 
     def resolve_collisions(self):
         collisions_settled = False
-        log = IndentedLogging(logging.info)
+        log = IndentedLogging(logging.debug)
         for _ in range(10):
             collisions_settled |= self.resolve_highest_priority_collisions(log)
             if collisions_settled:
