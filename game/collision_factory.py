@@ -4,12 +4,16 @@ from __future__ import annotations
 import random
 from typing import Type
 
-from .entity import Tags
+from .entity import Entity, Tags
+from .helper import DOWN, LEFT, RIGHT, UP
 from .map import current_map, maps
 
 
 class CollisionRegistryBase:
     COLLISION_REGISTRY: dict[str, Type[CollisionRegistryBase]] = {}
+
+    def __init__(self, entity1: Entity, entity2: Entity):
+        self.entities = entity1, entity2
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -21,10 +25,7 @@ class CollisionRegistryBase:
         return cls.COLLISION_REGISTRY
 
     def get_priority(self, *args, **kwargs) -> int:
-        """Get the priority of this collision rule in context.
-
-        A priority of -1 means this collision rule isn't applicable.
-        """
+        """Get the priority of this collision rule. Returns 0 if not applicable."""
         raise NotImplementedError()
 
     def resolve_collision(self, *args, **kwargs) -> None:
@@ -33,38 +34,48 @@ class CollisionRegistryBase:
 
 
 class KillCollision(CollisionRegistryBase):
-    @classmethod
-    def get_priority(cls, tags1, tags2, **kwargs):
-        priority = -1
-        if Tags.player in tags1 and Tags.kills_player in tags2:
-            priority = 1
-        elif Tags.player in tags2 and Tags.kills_player in tags1:
-            priority = 1
-        elif Tags.hops in tags1 and Tags.hops in tags2:
-            priority = 5
-        return priority
+    def __init__(self, a, b):
+        super().__init__(a, b)
 
-    @classmethod
-    def resolve_collision(cls, entity1, entity2, **kwargs):
-        tags1, tags2 = entity1.tags, entity2.tags
-        if Tags.player in tags1 and Tags.kills_player in tags2:
-            entity1.alive = False
-        elif Tags.player in tags2 and Tags.kills_player in tags1:
-            entity2.alive = False
-        elif Tags.hops in tags1 and Tags.hops in tags2:
-            random.choice([entity1, entity2]).alive = False
+        p = 0
+        if Tags.player in a and Tags.kills_player in b:
+            self.marked_frog = a
+            p = 1
+        elif Tags.player in b and Tags.kills_player in a:
+            self.marked_frog = b
+            p = 1
+        elif Tags.hops in b and Tags.hops in a:
+            self.marked_frog = random.choice(self.entities)
+            p = 5
+        self.priority = p
+
+    def get_priority(self, **kwargs):
+        return self.priority
+
+    def resolve_collision(self, **kwargs):
+        self.marked_frog.alive = False
         maps[current_map].cull_entities()
 
 
 class PushCollision(CollisionRegistryBase):
-    @classmethod
-    def get_priority(cls, tags1, tags2, **kwargs):
-        priority = -1
-        if Tags.pushable in tags1 and Tags.pusher in tags2:
-            priority = 10
-        if Tags.pushable in tags2 and Tags.pusher in tags1:
-            priority = 10
-        return priority
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+        p = 0
+        if Tags.pushable in a and Tags.pusher in b:
+            self.pusher = b
+            self.pushable = a
+            p = 10
+        if Tags.pushable in b and Tags.pusher in a:
+            self.pusher = a
+            self.pushable = b
+            p = 10
+        if Tags.pusher in a and Tags.pusher in b and Tags.pushable in a and Tags.pushable in b:
+            raise NotImplementedError("Both objects are Pushers and Pushable")
+        self.priority = p
+
+    def get_priority(self, **kwargs):
+        return self.priority
 
     @classmethod
     def get_pushable_line(cls, pushable, direction, pushables):
@@ -83,29 +94,23 @@ class PushCollision(CollisionRegistryBase):
         return False
 
     @classmethod
-    def push(cls, pushable, direction):
-        pushables = [pushable]
+    def push(cls, pushable: Entity, direction):
+        pushables: list[Entity] = [pushable]
         blocked = cls.get_pushable_line(pushables[-1], direction, pushables)
         if not blocked:
             for pushable in pushables:
                 pushable.position_history.append(pushable.position)
                 pushable.position += direction
                 # TODO: Barrel state change using enum or pushable.trigger(cls.__name__)
+                if pushable.name == "Barrel":
+                    next_state = [UP, DOWN, LEFT, RIGHT].index(direction) + 1
+                    pushable.force_state(next_state)
+                    pushable.force_facing(direction)
         return not blocked
 
-    @classmethod
-    def resolve_collision(cls, entity1, entity2, **kwargs):
-        tags1, tags2 = entity1.tags, entity2.tags
-        pusher = None
-        pushable = None
-        if Tags.pusher in tags1 and Tags.pushable in tags2:
-            pusher, pushable = entity1, entity2
-        if Tags.pusher in tags2 and Tags.pushable in tags1:
-            if pusher:
-                raise NotImplementedError("Both objects are Pushers and Pushable")
-            pusher, pushable = entity2, entity1
-        direction = pusher.position - pusher.position_history[-1]
+    def resolve_collision(self, **kwargs):
+        direction = self.pusher.position - self.pusher.position_history[-1]
 
-        success = cls.push(pushable, direction)
+        success = self.push(self.pushable, direction)
         if not success:
-            pusher.position = pusher.position_history[-1]
+            self.pusher.position = self.pusher.position_history[-1]

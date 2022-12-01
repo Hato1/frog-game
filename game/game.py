@@ -1,6 +1,6 @@
 """Module for game logic"""
 from game import collision_factory
-from game.collision_resolver import collision_resolver
+from game.collision_resolver import resolve_collisions
 from game.entity import Entity, Tags
 from game.helper import Point
 from game.map import Map, current_map, maps, reset_maps
@@ -36,7 +36,7 @@ class Game:
 
         # Update all creatures (including player!)
         self.map.update_creatures()
-        collision_resolver.resolve_collisions()
+        resolve_collisions()
         self.map.cull_entities()
 
         return True
@@ -55,9 +55,7 @@ class Game:
         # Move pushes a pushable into a solid object
 
         in_line: list[Entity] = []
-        if blocked := collision_factory.PushCollision.get_pushable_line(
-            self.map.player, direction, in_line
-        ):
+        if blocked := collision_factory.PushCollision.get_pushable_line(self.map.player, direction, in_line):
             if blocked.position != new_pos or Tags.solid in blocked.tags:
                 return True
         # if check_for_tag(self.map[new_pos], Tags.pushable):

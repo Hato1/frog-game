@@ -82,6 +82,9 @@ class Entity:
 
     __str__ = __repr__
 
+    def __contains__(self, tag):
+        return tag in self.tags
+
     def force_move(self, forced_moves: list[Point], entity_list):
         """Handles moves forced by collisions"""
         # Perhaps change facing direction here?
@@ -114,24 +117,16 @@ class Entity:
         self.position, self.direction = self.get_next_move(self.position, entity_list, dims)
         # assert self.in_map(new_pos), f"{entity.name} Cheated!"
 
-    def get_next_move(
-        self, position: Point, entity_list: list, dims: tuple[int, int]
-    ) -> tuple[Point, int]:
+    def get_next_move(self, position: Point, entity_list: list, dims: tuple[int, int]) -> tuple[Point, int]:
         if self.next_move:
             next_position = position + self.next_move
             direction = get_facing_direction(self.next_move, self.direction)
             self.next_move = None
         else:
-            next_position, direction = self.strategy.make_move(
-                position, self.direction, entity_list, dims
-            )
-        assert (
-            type(next_position) == Point
-        ), f"{self.name} returned invalid move: {type(next_position)}."
+            next_position, direction = self.strategy.make_move(position, self.direction, entity_list, dims)
+        assert type(next_position) == Point, f"{self.name} returned invalid move: {type(next_position)}."
         assert len(next_position) == 2, f"{self.name} requests invalid move: {next_position}"
-        assert is_in_map(
-            next_position, dims
-        ), f"{self} tried to leave the play area at {next_position}!"
+        assert is_in_map(next_position, dims), f"{self} tried to leave the play area at {next_position}!"
         return next_position, direction
 
     def get_strategy_name(self) -> str:
