@@ -1,5 +1,5 @@
 """Module for game logic"""
-from game import collision_factory
+from game import collision_registry
 from game.collision_resolver import resolve_collisions
 from game.entity import Entity, Tags
 from game.helper import Point
@@ -55,7 +55,7 @@ class Game:
         # Move pushes a pushable into a solid object
 
         in_line: list[Entity] = []
-        if blocked := collision_factory.PushCollision.get_pushable_line(self.map.player, direction, in_line):
+        if blocked := collision_registry.PushCollision.get_pushable_line(self.map.player, direction, in_line):
             if blocked.position != new_pos or Tags.solid in blocked.tags:
                 return True
         # if check_for_tag(self.map[new_pos], Tags.pushable):

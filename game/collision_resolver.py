@@ -1,9 +1,13 @@
+"""
+Find collisions in the world and resolve them with the registered collision types in collision registry.
+The only function that should be needed elsewhere is resolve_collisions.
+"""
 import itertools
 import logging
 from collections import Counter
 from typing import Iterable, Optional, Type
 
-from game.collision_factory import CollisionRegistryBase
+from game.collision_registry import CollisionRegistryBase
 
 from .entity import Entity
 from .helper import IndentedLogging, Point, c
@@ -83,6 +87,12 @@ def resolve_highest_priority_collisions(log):
 
 
 def resolve_collisions():
+    """Resolve all collisions in the current world. Gives up after 13 iterations.
+
+    An iteration involves a registered collision resolution taken at every coordinate containing at-least two entities.
+    To prevent infinite loops and to assist debugging, this function logs with errors after 10 iterations before
+    giving up entirely at 13 iterations.
+    """
     collisions_settled = False
     log = IndentedLogging(logging.info)
     log("Settling collisions")

@@ -1,11 +1,14 @@
-"""Item factory for matching a pair of entities to their collision resolution function"""
+"""Registry of collision objects for resolving collision pairs.
+
+To add a new collision type, simply create a new collision object that subclasses
+CollisionRegistryBase and it'll be added to the registry automatically."""
 from __future__ import annotations
 
 import random
 from typing import Type
 
 from .entity import Entity, Tags
-from .helper import DOWN, LEFT, RIGHT, UP
+from .helper import DOWN, LEFT, RIGHT, UP, Point
 from .map import current_map, maps
 
 
@@ -94,7 +97,7 @@ class PushCollision(CollisionRegistryBase):
         return False
 
     @classmethod
-    def push(cls, pushable: Entity, direction):
+    def push(cls, pushable: Entity, direction: Point):
         pushables: list[Entity] = [pushable]
         blocked = cls.get_pushable_line(pushables[-1], direction, pushables)
         if not blocked:
