@@ -8,7 +8,7 @@ import random
 from typing import Type
 
 from .entity import Entity, Tags
-from .helper import DOWN, LEFT, RIGHT, UP, Point
+from .helper import DOWN, LEFT, RIGHT, UP, Point, get_facing_direction
 from .map import current_map, maps
 
 
@@ -107,8 +107,10 @@ class PushCollision(CollisionRegistryBase):
                 # TODO: Barrel state change using enum or pushable.trigger(cls.__name__)
                 if pushable.name == "Barrel":
                     next_state = [UP, DOWN, LEFT, RIGHT].index(direction) + 1
-                    pushable.force_state(next_state)
-                    pushable.force_facing(direction)
+                    # TODO: Make this cleaner, with a middleman property in Entity, perhaps?
+                    pushable.strategy.state = next_state
+                    # TODO: Get facing direction should be part of setter for entity.
+                    pushable.facing = get_facing_direction(direction, pushable.facing)
         return not blocked
 
     def resolve_collision(self, **kwargs):

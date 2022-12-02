@@ -1,3 +1,7 @@
+"""Ai registry.
+ToDo: Make this a registry?
+ToDo: Have world be global, there's no need to pass it as a parameter everywhere.
+"""
 from enum import Enum
 
 from game.helper import (
@@ -21,6 +25,7 @@ class Tags(str, Enum):
     kills_player = "kills_player"
     barrel = "barrel"
     no_animation = "no_animation"
+    random_sprite = "random_sprite"
 
 
 class InvalidState(Exception):
@@ -35,9 +40,6 @@ class Ai:
     def __init__(self, state: int = 0):
         self.state: int = state
 
-    def get_name(self):
-        return self.__class__.__name__
-
     def _get_move(self, position: Point, entity_list: list, dims) -> tuple[Point, int]:
         """Get the next position object wants to move in, and the resulting state"""
         return IDLE, 0
@@ -46,9 +48,7 @@ class Ai:
     def is_move_blocked_by_solid_object():
         return True
 
-    def make_move(
-        self, position: Point, direction: int, entity_list: list, dims: tuple[int, int]
-    ) -> tuple[Point, int]:
+    def make_move(self, position: Point, direction: int, entity_list: list, dims: tuple[int, int]) -> tuple[Point, int]:
         """Get next position and update state"""
         move, new_state = self._get_move(position, entity_list, dims)
         direction = get_facing_direction(move, direction)
@@ -57,6 +57,7 @@ class Ai:
 
         new_position = position + move
         if solid_entity_at(new_position, entity_list) and self.is_move_blocked_by_solid_object():
+            self.state = 0
             return Point._make(position), direction
         return Point._make(position + move), direction
 

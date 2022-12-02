@@ -8,6 +8,8 @@ from typing import NamedTuple, Optional
 
 
 class Point(NamedTuple):
+    """Used for storing vectors and adding them together."""
+
     x: int
     y: int
 
@@ -29,6 +31,7 @@ class Point(NamedTuple):
         return f"({self.x}, {self.y})"
 
 
+# TODO: Make this an Enum.
 UP, LEFT, DOWN, RIGHT, IDLE = (
     Point(0, -1),
     Point(-1, 0),
@@ -46,18 +49,16 @@ class Facing(Enum):
 
 
 def get_facing_direction(move: Point, original_direction: int) -> int:
-    """Get the cardinal direction an entity should be facing after making a move."""
+    """Get the cardinal direction an entity should be facing after making a move.
+
+    TODO: change this to be getter property of entity. return get_facing_direction(pos - poslist[-1], self.facing)
+    """
     if move == Point(0, 0):
         return original_direction
     # Adding a cheeky +1 to degrees so 45 and -45 don't both equate to the same direction.
     degrees = math.atan2(*move) / math.pi * 180 + 1
     compass_lookup = round(degrees / 90) % 360
     return [2, 3, 0, 1][compass_lookup % 4]
-    # if sum(move) < 0:
-    #     return 1 if min(move) == move[0] else 0
-    # elif sum(move) > 0:
-    #     return 3 if max(move) == move[0] else 2
-    # return original_direction
 
 
 def is_in_map(point: Point, dims: tuple[int, int]) -> bool:
@@ -91,7 +92,9 @@ EFFECTS = {
 
 
 def c(fmt, fg=None, bg=None, style: Optional[list[str]] = None):
-    """Colour a string"""
+    """Colour a string. Colour begins at the start, then colour resets at the end.
+    Due to this, colour can be overridden mid-string.
+    """
     # properties
     props: list[int] = []
     if style:
@@ -100,8 +103,6 @@ def c(fmt, fg=None, bg=None, style: Optional[list[str]] = None):
         props.append(0)
     if isinstance(fg, str):
         props.append(30 + COLORS[fg])
-    # else:
-    #     props.append(20)
     if isinstance(bg, str):
         props.append(40 + COLORS[bg])
 
@@ -111,12 +112,16 @@ def c(fmt, fg=None, bg=None, style: Optional[list[str]] = None):
 
 
 class IndentedLogging:
+    """Logging object that indents logs based on how many functions it is deep relative to the instantiation time."""
+
     def __init__(self, level):
         self.level = level
         self.base_indent = len(traceback.extract_stack())
+        self.maximum_indent = 2
         self.fg = None
 
     def __call__(self, msg: str):
+        """Log."""
         stack_delta = len(traceback.extract_stack()) - self.base_indent
-        prefix = "    " * min(stack_delta, 2)
+        prefix = "    " * min(stack_delta, self.maximum_indent)
         self.level(c(prefix + msg, fg=self.fg))

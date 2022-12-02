@@ -10,6 +10,7 @@ from game.entity import Entity, Tags
 from game.helper import Point
 from GAME_CONSTANTS import WORLD_NAME
 
+# TODO: Insert these as per instance variable with class method getter which Pulls from current_map's dims
 MAP_WIDTH = 0
 MAP_HEIGHT = 0
 maps: dict[str, Map] = {}
@@ -19,15 +20,27 @@ current_map: str = WORLD_NAME
 class Map:
     def __init__(self, map_file: Path) -> None:
         self.map_file = map_file
+        # TODO: Move max_steps & steps_left into the Entity/AI.
+        self.max_steps = 50
         self.steps_left = 0
         self.entities: list[Entity] = []
         self.reset()
+
+    def reset(self):
+        self.steps_left = self.max_steps
+        self.entities = []
+        # TODO: Collision map?
+        global MAP_WIDTH
+        global MAP_HEIGHT
+        MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(self.map_file)
+        maps[self.map_file.stem] = self
 
     def update_creatures(self) -> None:
         """Update all Creatures using move_object"""
         for entity in self.entities:
             entity.make_move(self.entities, Point(MAP_WIDTH, MAP_HEIGHT))
 
+        # Todo: Move steps left into Entity
         self.steps_left -= 1
         if not self.steps_left:
             self.player.alive = False
@@ -35,70 +48,19 @@ class Map:
         logging.info(self)
 
     def cull_entities(self):
+        # This should be in entities getter? less efficient, more readable?
         self.entities = [e for e in self.entities if e.alive]
-
-    def find_object(self, obj_name: str) -> tuple:
-        """Get the coordinates of an object"""
-        for entity in self.entities:
-            if str(entity) == obj_name:
-                return entity.position
-        raise ValueError
 
     @staticmethod
     def get_height() -> int:
         """Get the number of rows"""
+        # TODO: Could this be a getter/setter property?
         return MAP_HEIGHT
 
     @staticmethod
     def get_width() -> int:
         """Get the number of cols"""
         return MAP_WIDTH
-
-    def get_steps_left(self) -> int:
-        """Get the number of remaining steps"""
-        # Todo: Decide whether to insert into entity?
-        return self.steps_left
-
-    def is_player_alive(self) -> bool:
-        return self.player.alive
-
-    @overload
-    def __getitem__(self, index: int) -> list:
-        ...
-
-    @overload
-    def __getitem__(self, index: tuple | Point) -> list[Entity]:
-        ...
-
-    def __getitem__(self, index: int | tuple) -> list[Entity] | list[list]:
-        """Retrieve elements of the map at the given row or (row, col) pair"""
-        if isinstance(index, int):
-            return [entity for entity in self.entities if entity.position.x == index]
-        elif isinstance(index, (tuple, Point)):
-            index = Point(*index)
-            return [entity for entity in self.entities if entity.position == index]
-        raise ValueError
-
-    def __iter__(self) -> Iterator:
-        self.entities.sort(key=lambda x: x.position)
-        yield from self.entities
-
-    def __str__(self) -> str:
-        """Get a human friendly representation of the map"""
-        _map = [[" "] * self.get_width() for _col in range(self.get_height())]
-        for entity in self.entities:
-            pos = entity.position
-            _map[pos.y][pos.x] = entity.name[0]
-
-        _map = ["".join(row) for row in _map]
-        _map = "│" + "│\n│".join(_map) + "│"
-
-        _map = "\n┌" + "─" * self.get_width() + "┐\n" + _map
-        _map = _map + "\n└" + "─" * self.get_width() + "┘"
-        return _map
-
-    def __len__(self) -> int:
-        raise NotImplementedError
 
     def _new_entity_from_char(self, entity: str, point: Point):
         match entity:
@@ -190,17 +152,43 @@ class Map:
                 y += 1
         return max_x, y
 
-    def get_entities(self):
-        return self.entities
+    @overload
+    def __getitem__(self, index: int) -> list:
+        ...
 
-    def reset(self):
-        self.steps_left = 50
-        self.entities = []
-        # TODO: Collision map?
-        global MAP_WIDTH
-        global MAP_HEIGHT
-        MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(self.map_file)
-        maps[self.map_file.stem] = self
+    @overload
+    def __getitem__(self, index: tuple | Point) -> list[Entity]:
+        ...
+
+    def __getitem__(self, index: int | tuple) -> list[Entity] | list[list]:
+        """Retrieve elements of the map at the given row or (row, col) pair"""
+        if isinstance(index, int):
+            return [entity for entity in self.entities if entity.position.x == index]
+        elif isinstance(index, (tuple, Point)):
+            index = Point(*index)
+            return [entity for entity in self.entities if entity.position == index]
+        raise ValueError
+
+    def __iter__(self) -> Iterator:
+        self.entities.sort(key=lambda x: x.position)
+        yield from self.entities
+
+    def __str__(self) -> str:
+        """Get a human friendly representation of the map"""
+        _map = [[" "] * self.get_width() for _col in range(self.get_height())]
+        for entity in self.entities:
+            pos = entity.position
+            _map[pos.y][pos.x] = entity.name[0]
+
+        _map = ["".join(row) for row in _map]
+        _map = "│" + "│\n│".join(_map) + "│"
+
+        _map = "\n┌" + "─" * self.get_width() + "┐\n" + _map
+        _map = _map + "\n└" + "─" * self.get_width() + "┘"
+        return _map
+
+    def __len__(self) -> int:
+        raise NotImplementedError
 
 
 def reset_maps():

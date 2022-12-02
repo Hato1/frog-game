@@ -142,7 +142,7 @@ class SoundSystem:
     def adjust_step_volume(game: Game):
         # ToDo: implement max step amount instead of hard coding 25
         if not sound_system.muted:
-            volume = 1 - (game.get_steps_remaining() / 25)
+            volume = 1 - (game.get_steps_left() / game.get_max_steps())
             sound_system.set_sound_volume("step", volume)
 
 

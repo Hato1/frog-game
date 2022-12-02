@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
+from game.ai import Tags
 from GAME_CONSTANTS import ANIMATION_LENGTH, FPS, PASSIVE_ANIMATION_SPEED
 from gui.asset_loader import get_creature_sprite, get_default_sprite, get_random_sprite
 from gui.helper import coords_to_pixels, get_disp
@@ -30,9 +31,9 @@ def draw_game(
 
     scene = copy(basemap)
     for entity in entities:
-        if entity.animates():
+        if Tags.no_animation not in entity:
             sprite = get_creature_sprite(entity, animation_stage)
-        elif entity.randomises():
+        elif Tags.random_sprite in entity:
             sprite = get_random_sprite(entity)
         else:
             sprite = get_default_sprite(entity)
@@ -72,15 +73,13 @@ def animate_step(
         display_box = None
         scene = copy(basemap)
         for entity in entities:
-            if entity.animates():
+            if Tags.no_animation not in entity:
                 sprite = get_creature_sprite(entity, animation_stage)
-            elif entity.randomises():
+            elif Tags.random_sprite in entity:
                 sprite = get_random_sprite(entity)
             else:
                 sprite = get_default_sprite(entity)
-            position = get_interpolated_position(
-                entity, (pg.time.get_ticks() - start_time) / ANIMATION_LENGTH
-            )
+            position = get_interpolated_position(entity, (pg.time.get_ticks() - start_time) / ANIMATION_LENGTH)
             # Magic String >:(
             if entity.name == "Player":
                 display_box = get_disp(*position)
@@ -101,14 +100,10 @@ def apply_hop(entity, position, sprite, progress):
     Returns position and sprite for progress% of the way through the hop animation"""
     scale = 1 + (math.sin(progress * math.pi)) / 3
     # The stretch factor will elongate the sprite in the direction of movement.
-    stretchx = 1 if entity.direction % 2 == 0 else 1.2
-    stretchy = 1 if entity.direction % 2 != 0 else 1.2
+    stretchx = 1 if entity.facing % 2 == 0 else 1.2
+    stretchy = 1 if entity.facing % 2 != 0 else 1.2
 
-    sprite = pg.transform.scale(
-        sprite, (sprite.get_width() * scale * stretchx, sprite.get_height() * scale * stretchy)
-    )
+    sprite = pg.transform.scale(sprite, (sprite.get_width() * scale * stretchx, sprite.get_height() * scale * stretchy))
     # Correct position so entity is still centered on tile after transformation.
-    position = position[0] - 25 / 2 * (scale * stretchx - 1), position[1] - 25 / 2 * (
-        scale * stretchy - 1
-    )
+    position = position[0] - 25 / 2 * (scale * stretchx - 1), position[1] - 25 / 2 * (scale * stretchy - 1)
     return position, sprite

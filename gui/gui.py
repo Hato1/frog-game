@@ -22,12 +22,12 @@ def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
     hud.update_step_counter(game.get_steps_left())
     drawing_stuff: tuple[pg.Surface, pg.Surface, pg.Clock] = (basemap, screen, clock)
     map_changed = False
-    entities = game.get_entities()
+    entities = game.entities
 
     while True:
         if ANIMATIONS and map_changed:
             animate_step(*drawing_stuff, entities)
-        entities = game.get_entities()
+        entities = game.entities
         draw_game(*drawing_stuff, entities, center=game.get_player_pos())
 
         if not game.player_alive():

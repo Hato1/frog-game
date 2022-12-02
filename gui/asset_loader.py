@@ -59,9 +59,7 @@ def get_spritesheet_dims() -> dict:
             empty_spots = 0
             for row in range(nrows):
                 # TODO: A simpler way of checking for an empty spritesheet slot
-                sprite_surface = (
-                    images[img].subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE).convert_alpha()
-                )
+                sprite_surface = images[img].subsurface(col * TSIZE, row * TSIZE, TSIZE, TSIZE).convert_alpha()
                 surface_alpha = pg.transform.average_color(sprite_surface)[-1]
                 if surface_alpha == 0:
                     empty_spots = empty_spots + 1
@@ -82,7 +80,7 @@ def get_creature_sprite(entity, animation_stage: int) -> pg.Surface:
     creature_sprite.fill((255, 255, 255))
     creature_sprite.set_colorkey("white")
     creature_sprite.blit(sprite, (0, 0), get_sprite_box(*sprite_index))
-    creature_sprite = pg.transform.rotate(creature_sprite, 90 * entity.direction)
+    creature_sprite = pg.transform.rotate(creature_sprite, 90 * entity.facing)
     return creature_sprite
 
 
