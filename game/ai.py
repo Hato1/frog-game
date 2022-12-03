@@ -57,7 +57,8 @@ class Ai:
 
         new_position = position + move
         if solid_entity_at(new_position, entity_list) and self.is_move_blocked_by_solid_object():
-            self.state = 0
+            if type(self).__name__ == "BarellingBarrel":
+                self.state = 0
             return Point._make(position), direction
         return Point._make(position + move), direction
 
