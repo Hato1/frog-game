@@ -20,7 +20,6 @@ class CollisionRegistryBase:
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
         cls.COLLISION_REGISTRY[cls.__name__] = cls  # Add class to registry.
 
     @classmethod

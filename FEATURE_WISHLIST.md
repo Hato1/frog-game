@@ -4,10 +4,10 @@
 
 ###### Assigned:
 
-1. Jacob:
-2. Liam: Collision resolver
-3. Jeremy: Map Editor
-4. Jeremy: Move step counter
+1. Jacob: Map switching, find and replace "Map" with "World" (Stage?,  Zone?, List?)
+2. Liam: Map parsing
+3. Jeremy: Map editor
+4. Jeremy: move step counter
 
 ###### Unassigned:
 
@@ -21,19 +21,19 @@
 
 ### Before Beta:
 
-1. Sound
-   1. Music
-   2. Sound Effects
-2. Collision
-   1. Resolver
-3. More Entities
-   1. Barrelling Barrel
-      1. Push Barrel
-   2. Conveyor Belt
-      1. Pushes objects in facing direction
-4. Move animation
-
-
+* Map switching
+* Map designing x7
+  * Intro
+  * Hub
+  * 4x themes puzzles (mechanic intro?)
+  * The Ultimate Challenge behind a door
+* Door
+  * Sprite
+  * Collision/Tag etc
+  * Cutscene
+* Pond (refresh step count)
+  * Drying out animation?
+* Map builder maps integration
 
 ### Cool Features:
 
@@ -41,3 +41,8 @@
 2. Make the stepcounter change colour and get bigger/shake, maybe vignette the screen
 3. Make all communication non-language
 4. make invalid moves play a blocked animation
+5. Sound
+   1. Music
+   2. Sound Effects
+6. Conveyor Belt
+   1. Pushes objects in facing direction
