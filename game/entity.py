@@ -137,6 +137,8 @@ class Player(Entity):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.move_queue: list[Point] = []
+        self.max_steps: int = 50
+        self.steps_left: int = self.max_steps
 
     @property
     def facing(self) -> Facing:
@@ -151,6 +153,9 @@ class Player(Entity):
         return self._facing
 
     def _get_move(self, **kwargs):
+        if not self.steps_left:
+            self.alive = False
+        self.steps_left -= 1
         if not self.move_queue:
             return IDLE, 0
         return self.move_queue.pop(0), 0

@@ -22,14 +22,20 @@ class Game:
     def entities(self):
         return self.map.entities
 
-    def kill_player(self) -> None:
-        self.map.player.alive = False
+    @property
+    def player(self):
+        return self.map.player
+
+    def kill_all(self) -> None:
+        for e in self.entities:
+            e.alive = False
 
     def player_alive(self) -> bool:
-        return self.map.player.alive
+        # TODO: Does this work?
+        return self.player.alive
 
     def get_player_pos(self) -> Point:
-        return self.map.player.position
+        return self.player.position
 
     def get_map_dims(self, world=None):
         if world:
@@ -38,11 +44,11 @@ class Game:
 
     def get_steps_left(self):
         """returns number of steps remaining"""
-        return self.map.steps_left
+        return self.player.steps_left
 
     def get_max_steps(self):
         """returns number of steps remaining"""
-        return self.map.max_steps
+        return self.player.max_steps
 
     @staticmethod
     def reset_game():
@@ -56,7 +62,7 @@ class Game:
 
         Returns True if the move was valid, False otherwise.
         """
-        if not self.map.player.alive:
+        if not self.player.alive:
             return False
 
         pos = self.get_player_pos()
@@ -67,7 +73,7 @@ class Game:
             return False
 
         # Set the player's next move
-        self.map.player.move_queue = [direction]
+        self.player.move_queue = [direction]
 
         # Update all creatures (including player!)
         self.map.update_creatures()
@@ -87,7 +93,7 @@ class Game:
         # Check for solid object blocking path by re-using the logic for if player can be 'pushed' in this direction.
         # TODO: What about when pushing an object into a spot where another object is due to appear?
         in_line: list[Entity] = []
-        if blocked := collision_registry.PushCollision.get_pushable_line(self.map.player, direction, in_line):
+        if blocked := collision_registry.PushCollision.get_pushable_line(self.player, direction, in_line):
             if blocked.position != new_pos or Tags.solid in blocked.tags:
                 return True
         return False

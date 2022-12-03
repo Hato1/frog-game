@@ -25,7 +25,7 @@ def process_event(event: pg.event.Event, game: Game) -> bool:
     elif event.type == pg.KEYDOWN:
         match event.key:
             case pg.K_r:
-                game.kill_player()
+                game.kill_all()
 
             case pg.K_w | pg.K_UP:
                 return game.move(UP)
