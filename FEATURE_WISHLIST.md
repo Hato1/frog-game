@@ -8,7 +8,8 @@
 2. Liam: Map parsing
 3. Jeremy: Map editor
 4. Jeremy: move step counter
-
+5. Jeremy: Make the json file only used by map builder (add everything needed by pickle interpreter to the map pikcle (things to add: "file_name"))
+5. JEREMY WHY ARE KEYS CAPITALISED IN THE ******* JSON?
 ###### Unassigned:
 
 1. Optimisation. Investigate multiprocessing?
