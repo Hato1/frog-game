@@ -34,7 +34,7 @@ class Game:
     def get_map_dims(self, world=None):
         if world:
             raise NotImplementedError
-        return self.map.get_width(), self.map.get_height()
+        return self.map.width, self.map.height
 
     def get_steps_left(self):
         """returns number of steps remaining"""
@@ -67,7 +67,7 @@ class Game:
             return False
 
         # Set the player's next move
-        self.map.player.next_move = direction
+        self.map.player.move_queue = [direction]
 
         # Update all creatures (including player!)
         self.map.update_creatures()
@@ -81,7 +81,7 @@ class Game:
         # TODO: Surround map with rocks instead of padding, removing need to do this.
         if new_pos[0] < 0 or new_pos[1] < 0:
             return True
-        if self.map.get_width() - 1 < new_pos[0] or self.map.get_height() - 1 < new_pos[1]:
+        if self.map.width - 1 < new_pos[0] or self.map.height - 1 < new_pos[1]:
             return True
 
         # Check for solid object blocking path by re-using the logic for if player can be 'pushed' in this direction.

@@ -5,24 +5,22 @@ import logging
 from pathlib import Path
 from typing import Iterator, overload
 
-from game import ai
-from game.entity import Entity, Tags
+from game.entity import *
 from game.helper import Point
 from GAME_CONSTANTS import WORLD_NAME
 
 # TODO: Insert these as per instance variable with class method getter which Pulls from current_map's dims
-MAP_WIDTH = 0
-MAP_HEIGHT = 0
 maps: dict[str, Map] = {}
 current_map: str = WORLD_NAME
 
 
 class Map:
     def __init__(self, map_file: Path) -> None:
-        self.map_file = map_file
+        self.map_file: Path = map_file
         # TODO: Move max_steps & steps_left into the Entity/AI.
-        self.max_steps = 50
-        self.steps_left = 0
+        self.max_steps: int = 50
+        self.steps_left: int = 0
+        self.dims: Point = Point(0, 0)
         self.entities: list[Entity] = []
         self.reset()
 
@@ -30,15 +28,14 @@ class Map:
         self.steps_left = self.max_steps
         self.entities = []
         # TODO: Collision map?
-        global MAP_WIDTH
-        global MAP_HEIGHT
-        MAP_WIDTH, MAP_HEIGHT = self._populate_entity_list(self.map_file)
+        self.dims = self._populate_entity_list(self.map_file)
         maps[self.map_file.stem] = self
 
     def update_creatures(self) -> None:
         """Update all Creatures using move_object"""
         for entity in self.entities:
-            entity.make_move(self.entities, Point(MAP_WIDTH, MAP_HEIGHT))
+            # TODO: Remove need to send through entity list with some global access to worlds.
+            entity.do_move(self.entities, Point(*self.dims))
 
         # Todo: Move steps left into Entity
         self.steps_left -= 1
@@ -51,89 +48,81 @@ class Map:
         # This should be in entities getter? less efficient, more readable?
         self.entities = [e for e in self.entities if e.alive]
 
-    @staticmethod
-    def get_height() -> int:
+    @property
+    def height(self) -> int:
         """Get the number of rows"""
-        # TODO: Could this be a getter/setter property?
-        return MAP_HEIGHT
+        return self.dims.y
 
-    @staticmethod
-    def get_width() -> int:
+    @property
+    def width(self) -> int:
         """Get the number of cols"""
-        return MAP_WIDTH
+        return self.dims.x
 
     def _new_entity_from_char(self, entity: str, point: Point):
         match entity:
             case "P":
-                self.player = Entity(
+                self.player = Player(
                     "Player",
-                    ai.IdleIvan(),
                     position=point,
                     tags=[Tags.hops, Tags.pusher, Tags.player],
                 )
                 self.entities.append(self.player)
             case "F":
                 self.entities.append(
-                    Entity(
+                    NormalNorman(
                         "FrogR",
-                        ai.NormalNorman(),
                         position=point,
                         tags=[Tags.hops, Tags.kills_player, Tags.pusher],
                     )
                 )
             case "G":
                 self.entities.append(
-                    Entity(
+                    NormalNorman(
                         "FrogR",
-                        ai.NormalNorman(),
                         position=point,
                         tags=[Tags.hops, Tags.kills_player, Tags.pusher],
                     )
                 )
                 # TODO: Make this less ugly. Create AI object here instead of in entity?
-                self.entities[-1].strategy.state = 3
+                self.entities[-1].state = 3
             case "B":
                 self.entities.append(
-                    Entity(
+                    BarrelingBarrel(
                         "Barrel",
-                        ai.BarrelingBarrel(),
                         position=point,
                         tags=[Tags.pushable, Tags.barrel],
                     )
                 )
             case "W":
-                self.entities.append(Entity("rockwall", position=point, tags=[Tags.solid, Tags.no_animation]))
+                self.entities.append(Wall("rockwall", position=point, tags=[Tags.solid, Tags.no_animation]))
             case "O":
-                self.entities.append(Entity("Stone", position=point, tags=[Tags.solid, Tags.no_animation]))
+                self.entities.append(Stone("Stone", position=point, tags=[Tags.solid, Tags.no_animation]))
             case "S":
                 self.entities.append(
-                    Entity(
+                    SpiralingStacy(
                         "FrogY",
-                        ai.SpiralingStacy(),
                         position=point,
                         tags=[Tags.hops, Tags.kills_player, Tags.pusher],
                     )
                 )
             case "T":
                 self.entities.append(
-                    Entity(
+                    TrickyTrent(
                         "FrogP",
-                        ai.TrickyTrent(),
                         position=point,
                         tags=[Tags.hops, Tags.kills_player, Tags.pusher],
                     )
                 )
             case "L":
                 self.entities.append(
-                    Entity(
+                    SlidingStone(
                         "SlidingStone",
-                        ai.IdleIvan(),
                         position=point,
                         tags=[Tags.pushable, Tags.no_animation],
                     )
                 )
 
-    def _populate_entity_list(self, map_file: Path) -> tuple[int, int]:
+    def _populate_entity_list(self, map_file: Path) -> Point:
         """Read entities from a map file and insert them into the entity list"""
         with open(map_file) as file:
             y = 0
@@ -150,7 +139,7 @@ class Map:
                     x += 1
                     max_x = max(x, max_x)
                 y += 1
-        return max_x, y
+        return Point(max_x, y)
 
     @overload
     def __getitem__(self, index: int) -> list:
@@ -175,7 +164,7 @@ class Map:
 
     def __str__(self) -> str:
         """Get a human friendly representation of the map"""
-        _map = [[" "] * self.get_width() for _col in range(self.get_height())]
+        _map = [[" "] * self.width for _col in range(self.height)]
         for entity in self.entities:
             pos = entity.position
             _map[pos.y][pos.x] = entity.name[0]
@@ -183,8 +172,8 @@ class Map:
         _map = ["".join(row) for row in _map]
         _map = "│" + "│\n│".join(_map) + "│"
 
-        _map = "\n┌" + "─" * self.get_width() + "┐\n" + _map
-        _map = _map + "\n└" + "─" * self.get_width() + "┘"
+        _map = "\n┌" + "─" * self.width + "┐\n" + _map
+        _map = _map + "\n└" + "─" * self.width + "┘"
         return _map
 
     def __len__(self) -> int:

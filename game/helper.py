@@ -1,9 +1,7 @@
 """Various helper functions"""
 from __future__ import annotations
 
-import math
 import traceback
-from enum import Enum
 from typing import NamedTuple, Optional
 
 
@@ -31,7 +29,7 @@ class Point(NamedTuple):
         return f"({self.x}, {self.y})"
 
 
-# TODO: Make this an Enum.
+# Movement vectors
 UP, LEFT, DOWN, RIGHT, IDLE = (
     Point(0, -1),
     Point(-1, 0),
@@ -39,26 +37,6 @@ UP, LEFT, DOWN, RIGHT, IDLE = (
     Point(1, 0),
     Point(0, 0),
 )
-
-
-class Facing(Enum):
-    UP = 0
-    RIGHT = 1
-    DOWN = 2
-    LEFT = 3
-
-
-def get_facing_direction(move: Point, original_direction: int) -> int:
-    """Get the cardinal direction an entity should be facing after making a move.
-
-    TODO: change this to be getter property of entity. return get_facing_direction(pos - poslist[-1], self.facing)
-    """
-    if move == Point(0, 0):
-        return original_direction
-    # Adding a cheeky +1 to degrees so 45 and -45 don't both equate to the same direction.
-    degrees = math.atan2(*move) / math.pi * 180 + 1
-    compass_lookup = round(degrees / 90) % 360
-    return [2, 3, 0, 1][compass_lookup % 4]
 
 
 def is_in_map(point: Point, dims: tuple[int, int]) -> bool:

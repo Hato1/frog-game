@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import pygame as pg
 
-from game.ai import Tags
+from game.entity import Tags
 from GAME_CONSTANTS import ANIMATION_LENGTH, FPS, PASSIVE_ANIMATION_SPEED
 from gui.asset_loader import get_creature_sprite, get_default_sprite, get_random_sprite
 from gui.helper import coords_to_pixels, get_disp

@@ -1,15 +1,15 @@
 """Registry of collision objects for resolving collision pairs.
 
 To add a new collision type, simply create a new collision object that subclasses
-CollisionRegistryBase and it'll be added to the registry automatically."""
+CollisionRegistryBase, and it'll be added to the registry automatically."""
 from __future__ import annotations
 
 import random
 from typing import Type
 
-from .entity import Entity, Tags
-from .helper import DOWN, LEFT, RIGHT, UP, Point, get_facing_direction
-from .map import current_map, maps
+from game.entity import Entity, Tags
+from game.helper import DOWN, LEFT, RIGHT, UP, Point
+from game.map import current_map, maps
 
 
 class CollisionRegistryBase:
@@ -107,9 +107,8 @@ class PushCollision(CollisionRegistryBase):
                 if pushable.name == "Barrel":
                     next_state = [UP, DOWN, LEFT, RIGHT].index(direction) + 1
                     # TODO: Make this cleaner, with a middleman property in Entity, perhaps?
-                    pushable.strategy.state = next_state
+                    pushable.state = next_state
                     # TODO: Get facing direction should be part of setter for entity.
-                    pushable.facing = get_facing_direction(direction, pushable.facing)
         return not blocked
 
     def resolve_collision(self, **kwargs):

@@ -8,10 +8,9 @@ from collections import Counter
 from typing import Iterable, Optional, Type
 
 from game.collision_registry import CollisionRegistryBase
-
-from .entity import Entity
-from .helper import IndentedLogging, Point, c
-from .map import current_map, maps
+from game.entity import Entity
+from game.helper import IndentedLogging, Point, c
+from game.map import current_map, maps
 
 
 def get_collision_for_pair(log, pair) -> CollisionRegistryBase:
