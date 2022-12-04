@@ -19,6 +19,10 @@ class Game:
         return db.world
 
     @property
+    def worlds(self):
+        return db.worlds
+
+    @property
     def entities(self):
         return self.map.entities
 

@@ -18,17 +18,18 @@ pg.init()
 
 def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
     game = Game()
-    basemap = make_basemap(*game.get_map_dims())
+    basemaps = {}
+    for world in game.worlds.values():
+        basemaps[world.map_file] = make_basemap(*world.dims)
     hud.update_step_counter(game.get_steps_left())
-    drawing_stuff: tuple[pg.Surface, pg.Surface, pg.Clock] = (basemap, screen, clock)
     map_changed = False
     entities = game.entities
 
     while True:
         if ANIMATIONS and map_changed:
-            animate_step(*drawing_stuff, entities)
+            animate_step(basemaps[game.map.map_file], screen, clock, entities)
         entities = game.entities
-        draw_game(*drawing_stuff, entities, center=game.get_player_pos())
+        draw_game(basemaps[game.map.map_file], screen, clock, entities, center=game.get_player_pos())
 
         if not game.player_alive():
             return
