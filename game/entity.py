@@ -2,12 +2,16 @@
 ToDo: Make this a registry?
 ToDo: Have world be global, there's no need to pass it as a parameter everywhere.
 """
+from __future__ import annotations
+
 import math
 import random
 from enum import Enum
-from typing import Optional
+from typing import Optional, Type
 
 from game.helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, c, is_in_map
+
+SPECIES: dict[str, Type[Entity]] = {}
 
 
 class Tags(str, Enum):
@@ -40,11 +44,13 @@ def solid_entity_at(point, entity_list):
 class Entity:
     """Thing on the map that is not part of the background"""
 
+    default_tags: list[Tags] = []
+
     def __init__(
         self,
-        name=Optional[str],
-        position=Optional[Point],
-        tags=Optional[list],
+        name: Optional[str] = None,
+        position: Optional[Point] = None,
+        tags: Optional[list[Tags]] = None,
         state: int = 0,
         facing: Facing = Facing.UP,
     ):
@@ -57,6 +63,7 @@ class Entity:
         self.name: str = name or type(self).__name__
         self.position: Point = position or Point(-1, -1)
         self.tags: list[Tags] = tags or []
+        self.tags.extend(self.default_tags)
         self.state: int = state
         self._facing: Facing = facing
         self.alive: bool = True
@@ -111,6 +118,10 @@ class Entity:
 
     __str__ = __repr__
 
+    @classmethod
+    def __init_subclass__(cls, *args, **kwargs):
+        SPECIES[cls.__name__] = cls
+
 
 class IdleIvan(Entity):
     """Default idle animation. #DeadDougDied"""
@@ -133,6 +144,8 @@ class SlidingStone(IdleIvan):
 
 class Player(Entity):
     """Player"""
+
+    default_tags = [Tags.player]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -257,3 +270,30 @@ class DirtyDan(Entity):
 
     def _get_move(self, **kwargs) -> tuple[Point, int]:
         raise NotImplementedError
+
+
+# TODO: add species names to map builder, remove the need for these poorly named creatures
+
+
+class FrogY(SpiralingStacy):
+    pass
+
+
+class FrogR(NormalNorman):
+    pass
+
+
+class FrogP(TrickyTrent):
+    pass
+
+
+class Barrel(BarrelingBarrel):
+    pass
+
+
+class RockWall(Wall):
+    pass
+
+
+class InvisWall(Wall):
+    pass
