@@ -8,11 +8,11 @@ if TYPE_CHECKING:
     from game.map import Map
 
 worlds: dict[str, "Map"] = {}
-current_world: Optional[str] = WORLD_NAME
+current_world_name: Optional[str] = WORLD_NAME
 player: Optional["Player"] = None
 
 
 def __getattr__(name):
     if name == "world":
-        return worlds[current_world]
+        return worlds[current_world_name]
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

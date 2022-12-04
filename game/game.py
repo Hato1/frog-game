@@ -30,6 +30,11 @@ class Game:
         for e in self.entities:
             e.alive = False
 
+    @staticmethod
+    def force_change_world(world: str):
+        db.current_world_name = world
+        db.world.reset()
+
     def player_alive(self) -> bool:
         return self.player.alive
 

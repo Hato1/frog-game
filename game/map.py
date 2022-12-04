@@ -9,7 +9,6 @@ from game import db
 from game.entity import Entity, Player
 from game.helper import Point
 from game.load_map import populate_entity_list
-from GAME_CONSTANTS import WORLD_NAME
 
 
 class Map:
@@ -90,4 +89,5 @@ def reset_maps():
         _map.reset()
 
 
-Map(Path(f"maps/{WORLD_NAME}"))
+for i in range(1, 6):
+    Map(Path(f"maps/map{i}"))
