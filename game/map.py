@@ -3,16 +3,13 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Iterator, overload
+from typing import Iterator, Optional, overload
 
-from game.entity import *
+from game import db
+from game.entity import Entity, Player
 from game.helper import Point
 from game.load_map import populate_entity_list
 from GAME_CONSTANTS import WORLD_NAME
-
-# TODO: Insert these as per instance variable with class method getter which Pulls from current_map's dims
-maps: dict[str, Map] = {}
-current_map: str = WORLD_NAME
 
 
 class Map:
@@ -20,23 +17,18 @@ class Map:
         self.map_file: Path = map_file
         self.dims: Point = Point(0, 0)
         self.entities: list[Entity] = []
-        self.player: Entity = Player()
+        self.player: Optional[Player] = None
         self.reset()
 
     def reset(self):
         # TODO: Collision map?
-        self.entities, self.dims = populate_entity_list(self.map_file)
-        for e in self.entities:
-            if Tags.player in e:
-                self.player = e
-        maps[self.map_file.stem] = self
+        self.entities, self.player, self.dims = populate_entity_list(self.map_file)
+        db.worlds[self.map_file.stem] = self
 
     def update_creatures(self) -> None:
         """Update all Creatures using move_object"""
         for entity in self.entities:
-            # TODO: Remove need to send through entity list with some global access to worlds.
-            entity.do_move(self.entities, Point(*self.dims))
-
+            entity.make_move()
         logging.info(self)
 
     def cull_entities(self):
@@ -93,8 +85,8 @@ class Map:
 
 
 def reset_maps():
-    global maps
-    for _map in maps.values():
+    # global maps
+    for _map in db.worlds.values():
         _map.reset()
 
 

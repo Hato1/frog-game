@@ -7,10 +7,10 @@ import logging
 from collections import Counter
 from typing import Iterable, Optional, Type
 
+from game import db
 from game.collision_registry import CollisionRegistryBase
 from game.entity import Entity
 from game.helper import IndentedLogging, Point, c
-from game.map import current_map, maps
 
 
 def get_collision_for_pair(log, pair) -> CollisionRegistryBase:
@@ -34,7 +34,7 @@ def get_collision_for_pair(log, pair) -> CollisionRegistryBase:
 
 def get_collision_for_tile(log, point: Point) -> CollisionRegistryBase:
     """Get the highest priority collision type for a point in the world"""
-    entities_here: list[Entity] = maps[current_map][point]
+    entities_here: list[Entity] = db.world[point]
     # Form a list containing all unique pairs of entities
     pairs: Iterable[tuple[Entity, Entity]] = itertools.combinations(entities_here, 2)
     highest: Optional[CollisionRegistryBase] = None
@@ -63,7 +63,7 @@ def resolve_highest_priority_collision(log, point):
 
 
 def get_points_to_check_for_collisions():
-    points = [entity.position for entity in maps[current_map].entities if entity.alive]
+    points = [entity.position for entity in db.world.entities if entity.alive]
     counts = Counter(points)
     # No need to check collisions on a point with just one entity.
     # Convert to set to remove duplicates.
@@ -79,7 +79,7 @@ def resolve_highest_priority_collisions(log):
     if not points_to_check:
         return True
     for point in points_to_check:
-        entities = [e for e in maps[current_map][point] if e.alive]
+        entities = [e for e in db.world[point] if e.alive]
         log(f"{point} contains {entities}")
         resolve_highest_priority_collision(log, point)
     return False

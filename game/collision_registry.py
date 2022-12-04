@@ -7,9 +7,9 @@ from __future__ import annotations
 import random
 from typing import Type
 
+from game import db
 from game.entity import Entity, Tags
 from game.helper import DOWN, LEFT, RIGHT, UP, Point
-from game.map import current_map, maps
 
 
 class CollisionRegistryBase:
@@ -56,7 +56,7 @@ class KillCollision(CollisionRegistryBase):
 
     def resolve_collision(self, **kwargs):
         self.marked_frog.alive = False
-        maps[current_map].cull_entities()
+        db.world.cull_entities()
 
 
 class PushCollision(CollisionRegistryBase):
@@ -85,7 +85,7 @@ class PushCollision(CollisionRegistryBase):
         new_pos = pushable.position + direction
         # There may be multiple things to push on this tile
         pushables = pushables or []
-        for entity in maps[current_map][new_pos]:
+        for entity in db.world[new_pos]:
             if Tags.solid in entity.tags or Tags.pusher in entity.tags:
                 return entity
             elif Tags.pushable in entity.tags:

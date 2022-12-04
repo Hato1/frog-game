@@ -51,9 +51,10 @@ def new_entity_from_char(entity: str, point: Point) -> Optional[Entity]:
     return None
 
 
-def populate_entity_list(map_file: Path) -> tuple[list[Entity], Point]:
+def populate_entity_list(map_file: Path) -> tuple[list[Entity], Player, Point]:
     """Read entities from a map file and insert them into the entity list"""
     entities = []
+    player: Optional[Player] = None
     with open(map_file) as file:
         y = 0
         max_x = 0
@@ -66,8 +67,11 @@ def populate_entity_list(map_file: Path) -> tuple[list[Entity], Point]:
                 if char in ["|", "-"]:
                     continue
                 if entity := new_entity_from_char(char, Point(x, y)):
+                    if type(entity) == Player:
+                        assert not player
+                        player = entity
                     entities.append(entity)
                 x += 1
                 max_x = max(x, max_x)
             y += 1
-    return entities, Point(max_x, y)
+    return entities, player, Point(max_x, y)

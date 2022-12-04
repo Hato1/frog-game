@@ -1,11 +1,11 @@
 """Module for maintaining game state and managing game interface.
 
 Managing interface includes determining valid game inputs and querying the game state."""
-from game import collision_registry
+from game import collision_registry, db
 from game.collision_resolver import resolve_collisions
 from game.entity import Entity, Tags
 from game.helper import Point
-from game.map import current_map, maps, reset_maps
+from game.map import reset_maps
 
 
 class Game:
@@ -16,7 +16,7 @@ class Game:
 
     @property
     def map(self):
-        return maps[current_map]
+        return db.world
 
     @property
     def entities(self):
@@ -31,7 +31,6 @@ class Game:
             e.alive = False
 
     def player_alive(self) -> bool:
-        # TODO: Does this work?
         return self.player.alive
 
     def get_player_pos(self) -> Point:

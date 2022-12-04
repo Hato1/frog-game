@@ -9,6 +9,7 @@ import random
 from enum import Enum
 from typing import Optional, Type
 
+from game import db
 from game.helper import DOWN, IDLE, LEFT, RIGHT, UP, Point, c, is_in_map
 
 SPECIES: dict[str, Type[Entity]] = {}
@@ -37,8 +38,8 @@ class InvalidState(Exception):
     pass
 
 
-def solid_entity_at(point, entity_list):
-    return any(Tags.solid in entity for entity in entity_list if entity.position == point)
+def solid_entity_at(point):
+    return any(Tags.solid in entity for entity in db.world.entities if entity.position == point)
 
 
 class Entity:
@@ -69,35 +70,30 @@ class Entity:
         self.alive: bool = True
         self.position_history: list[Point] = []
 
-    def do_move(self, entity_list: list, dims: Point):
-        """Move entity according to their strategy."""
-        self.position_history.append(self.position)
-        self.position = self.make_move(entity_list, dims)
-        assert type(self.position) == Point, f"{self.name} returned invalid move: {type(self.position)}."
-        assert len(self.position) == 2, f"{self.name} requests invalid move: {self.position}"
-        assert is_in_map(self.position, dims), f"{self} tried to leave the play area at {self.position}!"
-
     def _get_move(self, **kwargs) -> tuple[Point, int]:
         """Entities movement pattern.
         Get the next position object wants to move in, and the resulting state"""
         raise NotImplementedError
 
-    def make_move(self, entity_list: list, dims: tuple[int, int]) -> Point:
-        """Get next position and update state"""
-        move, self.state = self._get_move(entities=entity_list, dims=dims)
+    def make_move(self):
+        """Move entity and update their state according to their strategy."""
+        self.position_history.append(self.position)
+        move, self.state = self._get_move()
 
+        # Should this be in _get_move?
         new_position = self.position + move
-        if solid_entity_at(new_position, entity_list):
-            if type(self).__name__ == "BarellingBarrel":
-                self.state = 0
+        if solid_entity_at(new_position):
             new_position -= move
-        return Point._make(new_position)
+        self.position = new_position
+
+        assert type(self.position) == Point, f"{self.name} returned invalid move: {type(self.position)}."
+        assert len(self.position) == 2, f"{self.name} requests invalid move: {self.position}"
+        assert is_in_map(self.position, db.world.dims), f"{self} tried to leave the play area at {self.position}!"
 
     @property
     def facing(self) -> Facing:
         """Get the cardinal direction an entity should be facing."""
-        # TODO: Set map dimensions correctly.
-        next_move, _ = self._get_move(dims=(100, 100))
+        next_move, _ = self._get_move()
         if next_move != Point(0, 0):
             # Adding a cheeky +1 to degrees so 45 and -45 don't both equate to the same direction.
             degrees = math.atan2(*next_move) / math.pi * 180 + 1
@@ -242,7 +238,6 @@ class BarrelingBarrel(Entity):
     """Moves idle/up/down/left/right in state (0/1/2/3/4) until changed"""
 
     def _get_move(self, **kwargs) -> tuple[Point, int]:
-        # TODO: Get dims from map directly instead of method parameter.
         match self.state:
             case 0:
                 return IDLE, 0
@@ -257,7 +252,7 @@ class BarrelingBarrel(Entity):
             case _:
                 raise InvalidState
         dest = self.position + direction
-        if not is_in_map(dest, kwargs["dims"]):
+        if not is_in_map(dest, db.world.dims):
             return IDLE, 0
         # if any(entity for entity in entity_list if entity.position == dest):
         #    return IDLE, 0
