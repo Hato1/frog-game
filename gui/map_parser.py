@@ -1,12 +1,14 @@
 """Module for handling parsing of files created with the world builder for game use"""
 # import itertools
 import json
+import logging
 import pickle
 from pathlib import Path
 
+import pygame
 import pygame as pg
 
-from game.entity import Entity
+from game.entity import SPECIES, Entity, Facing
 from game.helper import Point
 from GAME_CONSTANTS import *
 
@@ -28,52 +30,57 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
 # Note these things down for later review.
 # - Jacob
 
+# TODO: make a fn to load sprites and inject into entity
+# This will require redoing how sprites are selected in gui.asset_loader
+# Likely a dict with a series of sprites, default requires sprites["idle"]
+# could include: facing specific, animation, state specific, all of which requite handling in gui.asset_loader
+# def parse_sprites() -> dict[str: list(pygame.surface)]:
 
-# def create_surface(entity_dict: dict) -> pg.Surface:
-#     """takes dict retrieved from .json, returns pygame.Surface loaded from correct file"""
-#     return pg.image.load(f"assets/{entity_dict['FileName']}")
-# #@lru_cache(maxsize=1)
-# def get_assets() -> dict[str, pg.Surface]:
-#     """returns asset dictionary from a .json file
-#
-#     This function is cached with size (1). That means it stores the output from the last
-#     (1) time it was run with unique arguments. In this case get_assets doesn't take
-#     arguments so changing cache size has no effect. ~The more you know~
-#     """
-#     # Name of json file to retrieve assets from
-#     map_name = "OLDbuilder.json"
-#     path_to_json = f"maps/{map_name}"
-#     with open(path_to_json) as open_file:
-#         json_file = json.load(open_file)
-#
-#     tiles = {tile["Name"]: create_surface(tile) for tile in json_file["Tiles"]}
-#     entities = {entity["Name"]: create_surface(entity) for entity in json_file["Entities"]}
-#
-#     return tiles | entities
+
+def str_to_facing(dir: str) -> Facing:
+    match dir:
+        case "Up":
+            return Facing.UP
+        case "Right":
+            return Facing.RIGHT
+        case "Down":
+            return Facing.DOWN
+        case "Left":
+            return Facing.LEFT
+    logging.warning(f"direction {dir} not recognised in map parser")
+    return Facing.UP
 
 
 def load_entities(unparsed_entities_list: list) -> list[Entity]:
+    """
+    turns the entity lololod into loEntities
+    Entities need: name
+    """
     all_entities_list = []
     for x, column in enumerate(unparsed_entities_list):
         for y, tile in enumerate(column):
-            for entity in tile:
+            for dict_entity in tile:
                 # InvisWall not currently supported
-                if entity["name"] == "InvisWall":
+                if dict_entity["name"] == "InvisWall":
                     continue
-                new_entity_obj = Entity(entity["name"], position=Point(x, y))
+                entity_class = SPECIES[dict_entity["name"]]
+                new_entity_obj = entity_class(position=Point(x, y))
+                # There is definetly a better wat to do this, maybe .get(), but that returns Nones
+                if "tags" in dict_entity:
+                    new_entity_obj.tags = dict_entity["tags"]
+                if "direction" in dict_entity:
+                    new_entity_obj._facing = str_to_facing(dict_entity["direction"])
+                # new_entity_obj.sprites_dict = parse_sprites()
                 all_entities_list.append(new_entity_obj)
 
     return all_entities_list
 
 
-def load_background(base_list: list) -> pg.Surface:
+def load_background(base_list: list, names_to_spritesheet: dict) -> pg.Surface:
     """
     Builds the basemap from the tile list(s)
-    Assumes the background tile is "Stone"
     """
     # TODO: Remove reliance upon the json file maybe
-    # pre-load sprites?
-    # into another fn?
 
     world_width = len(base_list[0])
     world_height = len(base_list)
@@ -84,9 +91,10 @@ def load_background(base_list: list) -> pg.Surface:
     for y, row in enumerate(base_list):
         for x, space in enumerate(row):
             for tile in space:
-                spritesheet = pg.image.load(f"assets/{tile['file_name']}")
                 play_area.blit(
-                    spritesheet, get_sprite_box(x, y), get_sprite_box(tile["sprite_col"], tile["sprite_row"])
+                    names_to_spritesheet[tile["name"]],
+                    get_sprite_box(x, y),
+                    get_sprite_box(tile["sprite_col"], tile["sprite_row"]),
                 )
 
     return play_area
@@ -105,55 +113,81 @@ def load_background(base_list: list) -> pg.Surface:
 world_name: str | Path = "map1.map"
 
 
-def add_file_names(base_list: list[dict], entity_list: list[dict]) -> None:
-    """Looks at json to find filenames by name, adds to each dict in list"""
-    # TODO: Please delete me
+def get_sprites(base_list: list[dict], entity_list: list[dict]) -> dict[str, pg.surface]:
+    """
+    Looks at json to find filenames by name
+    makes a corresponding dict of name: pg.surface
+    """
     # load the json
     with open("maps/map1.json") as file:
         mdata = json.load(file)
 
     # build name filename dict
-    names_to_filenames = {}
+    names_to_spritesheet = {}
     for dct in mdata["Tiles"]:
-        names_to_filenames[dct["Name"]] = dct["FileName"]
+        names_to_spritesheet[dct["Name"]] = pg.image.load(f"assets/{dct['FileName']}")
     for dct in mdata["Entities"]:
-        names_to_filenames[dct["Name"]] = dct["FileName"]
-
-    # Did I write good code jacob?
-    # Are you proud of me???
-    # for lst in [base_list, entity_list]:
-    # for row_I_think in lst:
-    #     for col_maybe in row_I_think:
-    #         for dct in col_maybe:
-    for dct in [a for d in [base_list, entity_list] for c in d for b in c for a in b]:
-        dct["file_name"] = names_to_filenames[dct["name"]]
-        # replace this hot garbage with a dict("name": pg.surface.Surface)
+        names_to_spritesheet[dct["Name"]] = pg.image.load(f"assets/{dct['FileName']}")
+    return names_to_spritesheet
 
 
-# Open the world pickle
+def parse_map(world_name) -> tuple[pygame.Surface, list]:
+    """loads map pickle, returns basemap and entity list"""
+    world_dir = Path("maps")
+    assert world_dir.exists(), "Can't find world_dir"
+    world_file = world_dir / world_name
+    assert world_file.exists(), f"Can't find world file: '{world_file}'"
 
-world_dir = Path("maps")
-assert world_dir.exists(), "Can't find world_dir"
-world_file = world_dir / world_name
-assert world_file.exists(), f"Can't find world file: '{world_file}'"
+    with open(world_file, "rb") as file:
+        base_list, entity_list = pickle.load(file)
 
-with open(world_file, "rb") as file:
-    base_list, entity_list = pickle.load(file)
+    # The shit bit where we add the file names to the dict:
+    names_to_spritesheet = get_sprites(base_list, entity_list)
 
-# The shit bit where we add the file names to the dict:
-add_file_names(base_list, entity_list)
+    bg = load_background(base_list, names_to_spritesheet)
+    en = load_entities(entity_list)
+    return bg, en
 
-bg = load_background(base_list)
-# en = load_entities(entity_list)
 
-pg.init()
-screen = pg.display.set_mode(
-    (WINDOW_TILE_WIDTH * TSIZE, WINDOW_TILE_HEIGHT * TSIZE),
-    pg.SCALED | pg.RESIZABLE,
-)
+def parse_entities_only(world_name) -> list:
+    """loads map pickle, returns entity list"""
+    world_dir = Path("maps")
+    assert world_dir.exists(), "Can't find world_dir"
+    # TODO: Figure out where the extra "maps/" is coming from
+    # world_file = world_dir / world_name
+    world_file = world_name
+    assert world_file.exists(), f"Can't find world file: '{world_file}'"
 
-screen.blit(bg, (0, 0))
-while True:
-    screen.blit(bg, (0, 0))
-    pg.display.flip()
-# screen.flip()
+    with open(world_file, "rb") as file:
+        base_list, entity_list = pickle.load(file)
+
+    en = load_entities(entity_list)
+    return en
+
+
+def get_dims(world_name) -> Point:
+    world_dir = Path("maps")
+    assert world_dir.exists(), "Can't find world_dir"
+    # TODO: Figure out where the extra "maps/" is coming from
+    # world_file = world_dir / world_name
+    world_file = world_name
+    assert world_file.exists(), f"Can't find world file: '{world_file}'"
+    with open(world_file, "rb") as file:
+        base_list, entity_list = pickle.load(file)
+    dims = Point(len(entity_list[0]), len(entity_list))
+    return dims
+
+
+#
+# # Draw so I can see if the basemap worked
+# pg.init()
+# screen = pg.display.set_mode(
+#     (WINDOW_TILE_WIDTH * TSIZE, WINDOW_TILE_HEIGHT * TSIZE),
+#     pg.SCALED | pg.RESIZABLE,
+# )
+#
+# screen.blit(bg, (0, 0))
+# while True:
+#     screen.blit(bg, (0, 0))
+#     pg.display.flip()
+# # screen.flip()
