@@ -54,7 +54,11 @@ class Asset:
         self.sprite_row = sprite_row
         self.num_sprites = num_sprites
         self.sprite_col = 0
-        self.hueadjust = 0
+        self.hue_adjust = 0
+        self.sprite_path = ""
+
+    def create_sprite_path(self):
+        self.sprite_path = f"assets/{self.name}.png"
 
 
 class Tile(Asset):
@@ -65,14 +69,16 @@ class Tile(Asset):
         sprite_col: int,
         level: int,
         sprite_row=None,
-        hueadjust=None,
+        hue_adjust=None,
+        sprite_path=None,
     ):
         super().__init__(name, num_sprites, 0)
         self.sprite_row = sprite_row or randint(0, num_sprites[sprite_col] - 1)
         self.sprite_col = sprite_col
         self.num_sprites = num_sprites
         self.level = level
-        self.hueadjust = hueadjust
+        self.hue_adjust = hue_adjust
+        self.sprite_path = sprite_path or f"assets/{self.name}.png"
 
     def randomise_tile(self):
         """re-randomise the sprite row"""
@@ -89,13 +95,15 @@ class Entity(Asset):
         direction=None,
         sprite_row=None,
         sprite_col=None,
-        hueadjust=None,
+        hue_adjust=None,
+        sprite_path=None
     ):
         super().__init__(name, num_sprites, 0)
         self.direction = direction or ["Up", "Left", "Right", "Down"][0]
         self.tags = tags
         self.sprite_names = sprite_names
-        self.hueadjust = hueadjust
+        self.hue_adjust = hue_adjust
+        self.sprite_path = sprite_path or f"assets/{self.name}.png"
 
     # sprites = loop over sprite names and make (x, y, 25, 25)
 
@@ -116,7 +124,7 @@ def resize_map_data(list_list: list[list], dimensions: [int], default_object: As
     for row in list_list:
         diff_row = dimensions[0] - len(row)
         if diff_row < 0:
-            del row[dimensions[0] :]
+            del row[dimensions[0]:]
         if diff_row > 0:
             for _ in range(diff_row):
                 row.extend([[default_object]])
@@ -381,7 +389,7 @@ def apply_selected(cell_list: list, tile: Asset, tile_type: str) -> list:
     return cell_list
 
 
-def drawbox(window: pg.surface.Surface, encyclopedia: dict) -> None:
+def draw_box(window: pg.surface.Surface, encyclopedia: dict) -> None:
     """drawer the selection box when dragging."""
     global ScreenSurf
     global ClickDown
@@ -461,7 +469,7 @@ def are_match(tile_level: int, corners: (), sides: ()) -> tuple[list[bool], list
 
 def determine_edge_case(corner_matches: [bool], side_matches: [bool]) -> tuple[int, int]:
     """determine based on the surrounding tiles levels what sprite column a tile it should be"""
-    """first number is the index of the tile second number is where to get the underpeice from"""
+    """first number is the index of the tile second number is where to get the under-piece from"""
 
     # location key:
     # 1 2 3
@@ -549,7 +557,7 @@ def determine_edge_case(corner_matches: [bool], side_matches: [bool]) -> tuple[i
 
 
 def add_outer_ring(tile_map: list[list[list]]) -> list[list[list]]:
-    """creates a new tile map witgh extra row of level 3 tiles on all sides"""
+    """creates a new tile map width extra row of level 3 tiles on all sides"""
     temp_map = deepcopy(tile_map)
 
     for row in temp_map:
@@ -760,7 +768,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
                         Foreground_Data[ind[1]][ind[0]] = Foreground_Data[ind[1]][ind[0]][:-1]
 
-            # if clickup with background tile type selected do a drag
+            # if click_up with background tile type selected do a drag
             case pg.MOUSEBUTTONUP:
                 MouseDown = False
                 if encyclopedia[SelectedTile]["Type"] == "Tile" and event.button == pg.BUTTON_LEFT:
@@ -782,13 +790,13 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                     Zoom = Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
 
         # redraw map now button has been released
-        if Redraw is True:
+        if Redraw:
             ScreenSurf = flip_display(encyclopedia, window)
             Redraw = False
 
     # if mouse state is down draw box of selection
     if MouseDown and encyclopedia[SelectedTile]["Type"] == "Tile":
-        drawbox(window, encyclopedia)
+        draw_box(window, encyclopedia)
 
     # Save map to pickle file
     if ActionFlag is False:  # If an action occurs
@@ -884,7 +892,7 @@ def main() -> None:
 
     ScreenSurf = flip_display(encyclopedia, window)
 
-    # loop that runs eventhandler at specific rate
+    # loop that runs event_handler at specific rate
     while True:
         t1_start = perf_counter()
 
