@@ -2,37 +2,42 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Iterator, Optional, overload
 
-from game import db
-from game.entity import Entity, Tags
-from game.helper import Point
-from gui.map_parser import get_dims, parse_entities
+from game.entity_base import Entity, Tags
+from game.helper import Point, classproperty
+from GAME_CONSTANTS import WORLD_NAME
 
 
 class Map:
-    def __init__(self, map_file: Path) -> None:
-        self.map_file: Path = map_file
-        self.dims: Point = Point(0, 0)
-        self.entities: list[Entity] = []
-        self.player: Optional[Entity] = None
-        self.reset()
+    worlds: dict[str, Map] = {}
+    current_world_name = WORLD_NAME
+    player: Optional[Entity] = None
 
-    def reset(self):
-        # TODO: Collision map?
-        self.dims = get_dims(self.map_file)  # Should this be here? it will not change between resets
-        self.entities = parse_entities(self.map_file)
-        players = [entity for entity in self.entities if Tags.player in entity.tags]
-        assert len(players) == 1, f"{len(players)} players found: {players}"
-        self.player = players[0]
-        db.worlds[self.map_file.stem] = self
+    def __init__(self, map_name: str, entities: list[Entity], player, dims) -> None:
+        self.map_name: str = map_name
+        self.dims: Point = dims
+        self.entities: list[Entity] = entities
+        self.player: Entity = player
+        self.worlds[self.map_name] = self
+
+    def set_entities(self, entities):
+        """Used to reset a map."""
+        self.entities = entities
 
     def update_creatures(self) -> None:
         """Update all Creatures using move_object"""
         for entity in self.entities:
-            entity.make_move()
+            new_position = entity.make_move()
+
+            if any(Tags.solid in e for e in self.entities if e.position == new_position and e != entity):
+                entity.position = entity.position_history[-1]
+            assert self.is_in_map(new_position), f"{entity} tried to leave the play area at {new_position}!"
         logging.info(self)
+
+    def is_in_map(self, point: Point) -> bool:
+        """Return whether point lies in the map"""
+        return 0 <= point.x < self.dims[0] and 0 <= point.y < self.dims[1]
 
     def cull_entities(self):
         # This should be in entities getter? less efficient, more readable?
@@ -47,6 +52,10 @@ class Map:
     def width(self) -> int:
         """Get the number of cols"""
         return self.dims.x
+
+    @classproperty
+    def world(self) -> Map:
+        return self.worlds[self.current_world_name]
 
     @overload
     def __getitem__(self, index: int) -> list:
@@ -85,12 +94,3 @@ class Map:
 
     def __len__(self) -> int:
         raise NotImplementedError
-
-
-def reset_maps():
-    # global maps
-    for _map in db.worlds.values():
-        _map.reset()
-
-
-Map(Path("maps/stage_test"))

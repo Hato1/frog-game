@@ -7,8 +7,9 @@ from pathlib import Path
 
 import pygame as pg
 
-from game.entity import SPECIES, Entity, Facing
+from game.entity_base import SPECIES, Entity, Facing, Tags
 from game.helper import Point
+from game.map import Map
 from GAME_CONSTANTS import *
 
 
@@ -139,7 +140,7 @@ def get_sprites(base_list: list[dict], entity_list: list[dict]) -> dict[str, pg.
     return names_to_spritesheet
 
 
-def unfuck_world_name(world_name: Path) -> Path:
+def unfuck_world_name(world_name: Path | str) -> Path:
     """
     Somewhere an extra maps/ is added to world name, and whether .map is included is inconsistent
     This is a bandage fn to fix these inconsistencies
@@ -147,7 +148,7 @@ def unfuck_world_name(world_name: Path) -> Path:
     # TODO: Figure out where the extra "maps/" is coming from
     # TODO: make this less dirty
     # TODO: Make the get world name a function so its not Write Everything Thrice
-    world_file_name: Path = world_name.with_suffix(".map")
+    world_file_name = Path(world_name).with_suffix(".map")
     world_file_name = WORLD_DIR / world_file_name.name
     assert world_file_name.exists(), f"Can't find world file: '{world_file_name}'"
     return world_file_name
@@ -169,7 +170,7 @@ def parse_basemap(world_name) -> pg.Surface:
     return bg
 
 
-def parse_entities(world_name) -> list:
+def parse_entities(world_name) -> None:
     """loads map pickle, returns entity list"""
     world_file = unfuck_world_name(world_name)
 
@@ -177,7 +178,8 @@ def parse_entities(world_name) -> list:
         base_list, entity_list = pickle.load(file)
 
     en = load_entities(entity_list)
-    return en
+    player = [e for e in en if Tags.player in e][0]
+    Map(world_name, en, player, get_dims(world_name))
 
 
 def get_dims(world_name) -> Point:

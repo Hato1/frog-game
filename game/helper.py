@@ -39,11 +39,6 @@ UP, LEFT, DOWN, RIGHT, IDLE = (
 )
 
 
-def is_in_map(point: Point, dims: tuple[int, int]) -> bool:
-    """Return whether point lies in the map"""
-    return 0 <= point.x < dims[0] and 0 <= point.y < dims[1]
-
-
 # TODO: Make these Enums
 COLORS = {
     "k": 0,  # black
@@ -103,3 +98,8 @@ class IndentedLogging:
         stack_delta = len(traceback.extract_stack()) - self.base_indent
         prefix = "    " * min(stack_delta, self.maximum_indent)
         self.level(c(prefix + msg, fg=self.fg))
+
+
+class classproperty(property):
+    def __get__(self, owner_self, owner_cls):
+        return self.fget(owner_cls)
