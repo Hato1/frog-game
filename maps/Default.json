@@ -29,78 +29,91 @@
       "AI": "None",
       "FileName": "Frog.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["walk1","walk2","walk3","walk4"]],
+      "Tags": ["player", "pusher", "hops"]
+
     },
     {
       "Name" : "FrogR",
       "AI": "NormalNorman",
       "FileName": "FrogR.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["walk1","walk2","walk3","walk4"]],
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "FrogY",
       "AI": "SpiralingStacy",
       "FileName": "FrogY.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["walk1","walk2","walk3","walk4"]],
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "FrogP",
       "AI": "TrickyTrent",
       "FileName": "FrogP.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["walk1","walk2","walk3","walk4"]],
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "Barrel",
       "AI": "None",
       "FileName": "Barrel.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["roll1","roll2","roll3","roll4"]],
+      "Tags": ["pushable", "barrel"]
     },
     {
       "Name" : "Leaves",
       "AI": "None",
       "FileName": "Leaves.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["Leaf1"],["Leaf2"],["Leaf3"],["Leaf4"]],
+      "Tags": []
     },
     {
       "Name" : "RockWall",
       "AI": "None",
       "FileName": "rockwall.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
-    },
-    {
-      "Name" : "Trees",
-      "AI": "None",
-      "FileName": "Trees.png",
-      "HueAdjust": "0",
-      "SpriteSize": [2, 2]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["Horizonal1","Horizonal1"],["Vertical1","Vertical1"],["RightSide"],["LeftSide"],["TopSide"],["BottomSide"]],
+      "Tags": ["solid"]
     },
     {
       "Name" : "Mushroom",
       "AI": "None",
       "FileName": "Mushroom.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["Mushroom1"]],
+      "Tags": []
     },
     {
       "Name" : "InvisWall",
       "AI": "None",
       "FileName": "Transparent.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["InvisibleWall"]],
+      "Tags": ["solid"]
     },
     {
       "Name" : "SlidingStone",
       "AI": "SlidingStone",
       "FileName": "SlidingStone.png",
       "HueAdjust": "0",
-      "SpriteSize": [1, 1]
+      "SpriteSize": [1, 1],
+      "SpriteNames": [["Sliding stone"]],
+      "Tags": ["pushable", "no_animation"]
     }
-
   ]
 }

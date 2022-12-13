@@ -31,7 +31,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["walk1","walk2","walk3","walk4"]],
-      "Tags": ["player"]
+      "Tags": ["player", "pusher", "hops"]
 
     },
     {
@@ -41,7 +41,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["walk1","walk2","walk3","walk4"]],
-      "Tags": []
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "FrogY",
@@ -50,7 +50,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["walk1","walk2","walk3","walk4"]],
-      "Tags": []
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "FrogP",
@@ -59,7 +59,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["walk1","walk2","walk3","walk4"]],
-      "Tags": []
+      "Tags": ["hops", "kills_player", "pusher"]
     },
     {
       "Name" : "Barrel",
@@ -68,7 +68,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["roll1","roll2","roll3","roll4"]],
-      "Tags": []
+      "Tags": ["pushable", "barrel"]
     },
     {
       "Name" : "Leaves",
@@ -86,7 +86,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["Horizonal1","Horizonal1"],["Vertical1","Vertical1"],["RightSide"],["LeftSide"],["TopSide"],["BottomSide"]],
-      "Tags": []
+      "Tags": ["solid"]
     },
     {
       "Name" : "Mushroom",
@@ -104,7 +104,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["InvisibleWall"]],
-      "Tags": []
+      "Tags": ["solid"]
     },
     {
       "Name" : "SlidingStone",
@@ -113,7 +113,7 @@
       "HueAdjust": "0",
       "SpriteSize": [1, 1],
       "SpriteNames": [["Sliding stone"]],
-      "Tags": []
+      "Tags": ["pushable", "no_animation"]
     }
   ]
 }
