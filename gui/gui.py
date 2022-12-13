@@ -20,16 +20,16 @@ def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
     game = Game()
     basemaps = {}
     for world in game.worlds.values():
-        basemaps[world.map_file] = parse_basemap(world.map_file)
+        basemaps[world.map_name] = parse_basemap(world.map_name)
     hud.update_step_counter(game.get_steps_left())
     map_changed = False
     entities = game.entities
 
     while True:
         if ANIMATIONS and map_changed:
-            animate_step(basemaps[game.map.map_file], screen, clock, entities)
+            animate_step(basemaps[game.map.map_name], screen, clock, entities)
         entities = game.entities
-        draw_game(basemaps[game.map.map_file], screen, clock, entities, center=game.get_player_pos())
+        draw_game(basemaps[game.map.map_name], screen, clock, entities, center=game.get_player_pos())
 
         if not game.player_alive():
             return

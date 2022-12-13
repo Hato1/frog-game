@@ -1,11 +1,13 @@
 """Module for maintaining game state and managing game interface.
 
 Managing interface includes determining valid game inputs and querying the game state."""
-from game import collision_registry, db
+
+from game import collision_registry
 from game.collision_resolver import resolve_collisions
-from game.entity import Entity, Tags
+from game.entity_base import Entity, Tags
 from game.helper import Point
-from game.map import reset_maps
+from game.map import Map
+from gui.map_parser import parse_entities
 
 
 class Game:
@@ -16,11 +18,11 @@ class Game:
 
     @property
     def map(self):
-        return db.world
+        return Map.world
 
     @property
     def worlds(self):
-        return db.worlds
+        return Map.worlds
 
     @property
     def entities(self):
@@ -36,8 +38,8 @@ class Game:
 
     @staticmethod
     def force_change_world(world: str):
-        db.current_world_name = world
-        db.world.reset()
+        Map.current_world_name = world
+        Map.world.reset()
 
     def player_alive(self) -> bool:
         return self.player.alive
@@ -60,7 +62,8 @@ class Game:
 
     @staticmethod
     def reset_game():
-        reset_maps()
+        for world in Map.worlds:
+            parse_entities(world)
 
     def move(self, direction: Point) -> bool:
         """Read a move and if valid, perform it and update the game.
@@ -105,3 +108,6 @@ class Game:
             if blocked.position != new_pos or Tags.solid in blocked.tags:
                 return True
         return False
+
+
+parse_entities("stage_test")
