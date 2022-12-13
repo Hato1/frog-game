@@ -10,7 +10,7 @@ from GAME_CONSTANTS import *
 from gui.death import play_death_animation
 from gui.drawing import animate_step, draw_game
 from gui.hud import hud
-from gui.make_basemap import make_basemap
+from gui.map_parser import parse_basemap
 from gui.user_input import process_user_input
 
 pg.init()
@@ -20,7 +20,7 @@ def play_game_loop(screen: pg.Surface, clock: pg.time.Clock) -> None:
     game = Game()
     basemaps = {}
     for world in game.worlds.values():
-        basemaps[world.map_file] = make_basemap(*world.dims)
+        basemaps[world.map_file] = parse_basemap(world.map_file)
     hud.update_step_counter(game.get_steps_left())
     map_changed = False
     entities = game.entities

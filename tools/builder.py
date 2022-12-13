@@ -96,7 +96,7 @@ class Entity(Asset):
         sprite_row=None,
         sprite_col=None,
         hue_adjust=None,
-        sprite_path=None
+        sprite_path=None,
     ):
         super().__init__(name, num_sprites, 0)
         self.direction = direction or ["Up", "Left", "Right", "Down"][0]
@@ -124,7 +124,7 @@ def resize_map_data(list_list: list[list], dimensions: [int], default_object: As
     for row in list_list:
         diff_row = dimensions[0] - len(row)
         if diff_row < 0:
-            del row[dimensions[0]:]
+            del row[dimensions[0] :]
         if diff_row > 0:
             for _ in range(diff_row):
                 row.extend([[default_object]])
@@ -139,9 +139,7 @@ def conv_list_dict(list_of_dicts: [dict], name_key: str) -> dict:
 def add_dict_surf(encyclopedia: dict, file_key: str, path: str) -> dict:
     """Adds a surface to each dict in the encyclopedia based on the file referenced in the same dictionary."""
     for dic in encyclopedia:
-        encyclopedia[dic]["Surface"] = amend_transparent(
-            pg.image.load(path + encyclopedia[dic][file_key])
-        )
+        encyclopedia[dic]["Surface"] = amend_transparent(pg.image.load(path + encyclopedia[dic][file_key]))
     return encyclopedia
 
 
@@ -240,15 +238,9 @@ def draw_screen(
 
 def flip_display(encyclopedia: dict, window: pg.surface.Surface) -> List[pg.surface.Surface]:
     """take data and draw it to the display"""
-    background_map = [
-        [cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Background_Data
-    ]
-    foreground_map = [
-        [cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Foreground_Data
-    ]
-    back_surface = create_map_surface(
-        background_map, Background_Data, CamPos, Zoom
-    )  # [1] = top, [0] = left
+    background_map = [[cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Background_Data]
+    foreground_map = [[cell_interpreter(cell, encyclopedia) for cell in row1] for row1 in Foreground_Data]
+    back_surface = create_map_surface(background_map, Background_Data, CamPos, Zoom)  # [1] = top, [0] = left
     fore_surface = create_map_surface(foreground_map, Foreground_Data, CamPos, Zoom)
 
     draw_screen(back_surface, fore_surface, window, encyclopedia)
@@ -310,15 +302,11 @@ def draw_grid(map_surf: pg.Surface, point: tuple, zoom: int):
     return map_surf
 
 
-def create_map_surface(
-    map_list: list, tile_list: list, display_origin: [int], zoom: int
-) -> pg.Surface:
+def create_map_surface(map_list: list, tile_list: list, display_origin: [int], zoom: int) -> pg.Surface:
     """loop over every tile on display and create a surface of the map."""
 
     # define map surface size and transparency settings
-    map_surf = pg.Surface(
-        (Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes), pg.SRCALPHA
-    )
+    map_surf = pg.Surface((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes), pg.SRCALPHA)
 
     # figure out what tiles to evaluate
     num_rows_on_display = ceil(Config["Width"] * (Config["WindowScale"] / zoom))
@@ -337,16 +325,10 @@ def create_map_surface(
 
     # for each row column to evaluate blit sprite
     for row, col in product(rows_to_evaluate, cols_to_evaluate):
-        surfs_at_point: List[pg.Surface] = map_list[(col + display_origin[1])][
-            (row + display_origin[0])
-        ]
-        assets_at_point: List[Asset] = tile_list[(col + display_origin[1])][
-            (row + display_origin[0])
-        ]
+        surfs_at_point: List[pg.Surface] = map_list[(col + display_origin[1])][(row + display_origin[0])]
+        assets_at_point: List[Asset] = tile_list[(col + display_origin[1])][(row + display_origin[0])]
 
-        map_surf: pg.Surface = blit_assets(
-            map_surf, surfs_at_point, assets_at_point, (row, col), zoom
-        )
+        map_surf: pg.Surface = blit_assets(map_surf, surfs_at_point, assets_at_point, (row, col), zoom)
 
         map_surf = draw_grid(map_surf, (row, col), zoom)
 
@@ -371,7 +353,7 @@ def clicked_index(click: tuple, campos: list, meta_data: dict) -> tuple:
 
 def write_map_pickle(dat: list) -> None:
     """Save the map file to a pickle."""
-    with open("maps/map1.map", "wb") as file:
+    with open(f"maps/{FileName}.map", "wb") as file:
         pickle.dump(dat, file)
 
 
@@ -624,15 +606,11 @@ def apply_edges(row: int, col: int) -> None:
     corner_match, side_match = are_match(tile_type, corners, sides)
     index = determine_edge_case(corner_match, side_match)
 
-    Background_Data[row][col][-1] = Tile(
-        current_tile.name, current_tile.num_sprites, index[0], current_tile.level
-    )
+    Background_Data[row][col][-1] = Tile(current_tile.name, current_tile.num_sprites, index[0], current_tile.level)
 
     tile_name = determine_background_type(index[1], row, col)
 
-    Background_Data[row][col] = [Tile(tile_name, current_tile.num_sprites, 0, 1)] + [
-        Background_Data[row][col][-1]
-    ]
+    Background_Data[row][col] = [Tile(tile_name, current_tile.num_sprites, 0, 1)] + [Background_Data[row][col][-1]]
 
 
 def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
@@ -676,9 +654,7 @@ def apply_tile(meta: dict, click_up: tuple, encyclopedia: dict) -> None:
 
         Background_Data[index_down[1] + row * row_sign][index_down[0] + col * col_sign] = the_map
 
-        apply_paired_ent(
-            encyclopedia, index_down[1] + row * row_sign, index_down[0] + col * col_sign
-        )
+        apply_paired_ent(encyclopedia, index_down[1] + row * row_sign, index_down[0] + col * col_sign)
 
     for row, col in product(range(rows + 2), range(cols + 2)):
         with contextlib.suppress(IndexError):
@@ -729,10 +705,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                     ClickDown = pg.mouse.get_pos()
 
                     # If clicking on editable area apply currently selected entity
-                    if (
-                        ClickDown[1] < Config["Height"] * NewRes
-                        and encyclopedia[SelectedTile]["Type"] == "Ent"
-                    ):
+                    if ClickDown[1] < Config["Height"] * NewRes and encyclopedia[SelectedTile]["Type"] == "Ent":
                         ActionFlag = False  # reset the save timer
                         pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
                         ind = clicked_index(ClickDown, CamPos, meta)
@@ -876,9 +849,7 @@ def main() -> None:
     with open(f"maps/{FileName}.json") as metadata_file:
         metadata = load(metadata_file)
 
-    window = pg.display.set_mode(
-        (Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes)
-    )  # set display size
+    window = pg.display.set_mode((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes))  # set display size
 
     # load in dicts
     encyclopedia = load_dicts(metadata, "Tiles", "Name", "Tile")

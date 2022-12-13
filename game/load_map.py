@@ -2,6 +2,7 @@ from pathlib import Path
 
 from game.entity import *
 from game.helper import Point
+from gui.map_parser import get_dims, parse_entities_only
 
 
 def new_entity_from_char(entity: str, point: Point) -> Optional[Entity]:
@@ -53,8 +54,17 @@ def new_entity_from_char(entity: str, point: Point) -> Optional[Entity]:
 
 def populate_entity_list(map_file: Path) -> tuple[list[Entity], Player, Point]:
     """Read entities from a map file and insert them into the entity list"""
-    entities = []
     player: Optional[Player] = None
+    if map_file.suffix == ".map":
+        entities = parse_entities_only(map_file)
+        for e in entities:
+            if type(e) == Player:
+                assert not player
+                player = e
+        assert player
+        return entities, player, get_dims(map_file)
+
+    entities = []
     with open(map_file) as file:
         y = 0
         max_x = 0
