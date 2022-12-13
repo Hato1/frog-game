@@ -31,6 +31,7 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
 # - Jacob
 
 # TODO: make a fn to load sprites and inject into entity
+# TODO: Actually that's probably a bad idea, lets just have a sprites dict in gui.
 # This will require redoing how sprites are selected in gui.asset_loader
 # Likely a dict with a series of sprites, default requires sprites["idle"]
 # could include: facing specific, animation, state specific, all of which requite handling in gui.asset_loader
@@ -38,6 +39,7 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
 
 
 def str_to_facing(dir: str) -> Facing:
+    # TODO: make this an enum? XD
     match dir:
         case "Up":
             return Facing.UP
@@ -65,11 +67,15 @@ def load_entities(unparsed_entities_list: list) -> list[Entity]:
                     continue
                 entity_class = SPECIES[dict_entity["name"]]
                 new_entity_obj = entity_class(position=Point(x, y))
-                # There is definetly a better wat to do this, maybe .get(), but that returns Nones
-                if "tags" in dict_entity:
-                    new_entity_obj.tags = dict_entity["tags"]
-                if "direction" in dict_entity:
-                    new_entity_obj._facing = str_to_facing(dict_entity["direction"])
+                # There is definitely a better way to do this, maybe .get(), but that returns Nones
+                # @Liam None is False. Time for a walrus? :)
+                # What happens when extending a list with None?
+                # All entities should have tags even if its empty []
+                assert "tags" in dict_entity
+                new_entity_obj.tags.extend(dict_entity["tags"])
+
+                assert "direction" in dict_entity
+                new_entity_obj._facing = str_to_facing(dict_entity["direction"])
                 # new_entity_obj.sprites_dict = parse_sprites()
                 all_entities_list.append(new_entity_obj)
 

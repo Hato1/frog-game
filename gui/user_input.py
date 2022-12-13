@@ -45,6 +45,8 @@ def process_event(event: pg.event.Event, game: Game) -> bool:
                 return game.force_change_world("map4")
             case pg.K_5:
                 return game.force_change_world("map5")
+            case pg.K_6:
+                return game.force_change_world("map1.map")
     return False
 
 

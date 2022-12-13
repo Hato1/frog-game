@@ -91,3 +91,5 @@ def reset_maps():
 
 for i in range(1, 6):
     Map(Path(f"maps/map{i}"))
+
+Map(Path("maps/map1.map"))
