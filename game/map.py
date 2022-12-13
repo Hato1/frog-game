@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Iterator, Optional, overload
 
 from game import db
-from game.entity import Entity, Player
+from game.entity import Entity, Tags
 from game.helper import Point
-from game.load_map import populate_entity_list
+from gui.map_parser import get_dims, parse_entities
 
 
 class Map:
@@ -16,12 +16,16 @@ class Map:
         self.map_file: Path = map_file
         self.dims: Point = Point(0, 0)
         self.entities: list[Entity] = []
-        self.player: Optional[Player] = None
+        self.player: Optional[Entity] = None
         self.reset()
 
     def reset(self):
         # TODO: Collision map?
-        self.entities, self.player, self.dims = populate_entity_list(self.map_file)
+        self.dims = get_dims(self.map_file)  # Should this be here? it will not change between resets
+        self.entities = parse_entities(self.map_file)
+        players = [entity for entity in self.entities if Tags.player in entity.tags]
+        assert len(players) == 1, f"{len(players)} players found: {players}"
+        self.player = players[0]
         db.worlds[self.map_file.stem] = self
 
     def update_creatures(self) -> None:
@@ -89,7 +93,4 @@ def reset_maps():
         _map.reset()
 
 
-for i in range(1, 6):
-    Map(Path(f"maps/map{i}"))
-
-Map(Path("maps/map1.map"))
+Map(Path("maps/stage_test"))

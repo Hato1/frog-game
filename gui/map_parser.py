@@ -5,7 +5,6 @@ import logging
 import pickle
 from pathlib import Path
 
-import pygame
 import pygame as pg
 
 from game.entity import SPECIES, Entity, Facing
@@ -37,17 +36,20 @@ def get_sprite_box(row: int = 0, col: int = 0) -> tuple[int, int, int, int]:
 # could include: facing specific, animation, state specific, all of which requite handling in gui.asset_loader
 # def parse_sprites() -> dict[str: list(pygame.surface)]:
 
+WORLD_DIR = Path("maps")
+assert WORLD_DIR.exists(), "Can't find world_dir"
+
 
 def str_to_facing(dir: str) -> Facing:
     # TODO: make this an enum? XD
-    match dir:
-        case "Up":
+    match dir.upper():
+        case "UP":
             return Facing.UP
-        case "Right":
+        case "RIGHT":
             return Facing.RIGHT
-        case "Down":
+        case "DOWN":
             return Facing.DOWN
-        case "Left":
+        case "LEFT":
             return Facing.LEFT
     logging.warning(f"direction {dir} not recognised in map parser")
     return Facing.UP
@@ -66,7 +68,7 @@ def load_entities(unparsed_entities_list: list) -> list[Entity]:
                 if dict_entity["name"] == "InvisWall":
                     continue
                 entity_class = SPECIES[dict_entity["name"]]
-                new_entity_obj = entity_class(position=Point(x, y))
+                new_entity_obj = entity_class(position=Point(y, x))
                 # There is definitely a better way to do this, maybe .get(), but that returns Nones
                 # @Liam None is False. Time for a walrus? :)
                 # What happens when extending a list with None?
@@ -82,7 +84,7 @@ def load_entities(unparsed_entities_list: list) -> list[Entity]:
     return all_entities_list
 
 
-def load_background(base_list: list, names_to_spritesheet: dict) -> pg.Surface:
+def load_background(base_list: list, names_to_spritesheet: dict[str, pg.Surface]) -> pg.Surface:
     """
     Builds the basemap from the tile list(s)
     """
@@ -91,7 +93,7 @@ def load_background(base_list: list, names_to_spritesheet: dict) -> pg.Surface:
     world_width = len(base_list[0])
     world_height = len(base_list)
 
-    play_area = pg.Surface((world_width * TSIZE, world_height * TSIZE))
+    play_area = pg.Surface(((world_width + WINDOW_TILE_WIDTH) * TSIZE, (world_height + WINDOW_TILE_HEIGHT) * TSIZE))
 
     # Populate the play area
     for y, row in enumerate(base_list):
@@ -99,7 +101,7 @@ def load_background(base_list: list, names_to_spritesheet: dict) -> pg.Surface:
             for tile in space:
                 play_area.blit(
                     names_to_spritesheet[tile["name"]],
-                    get_sprite_box(x, y),
+                    get_sprite_box(x + WINDOW_TILE_WIDTH // 2, y + WINDOW_TILE_HEIGHT // 2),
                     get_sprite_box(tile["sprite_col"], tile["sprite_row"]),
                 )
 
@@ -125,7 +127,7 @@ def get_sprites(base_list: list[dict], entity_list: list[dict]) -> dict[str, pg.
     makes a corresponding dict of name: pg.surface
     """
     # load the json
-    with open("maps/map1.json") as file:
+    with open("assets/assets.json") as file:
         mdata = json.load(file)
 
     # build name filename dict
@@ -137,32 +139,39 @@ def get_sprites(base_list: list[dict], entity_list: list[dict]) -> dict[str, pg.
     return names_to_spritesheet
 
 
-def parse_map(world_name) -> tuple[pygame.Surface, list]:
+def unfuck_world_name(world_name: Path) -> Path:
+    """
+    Somewhere an extra maps/ is added to world name, and whether .map is included is inconsistent
+    This is a bandage fn to fix these inconsistencies
+    """
+    # TODO: Figure out where the extra "maps/" is coming from
+    # TODO: make this less dirty
+    # TODO: Make the get world name a function so its not Write Everything Thrice
+    world_file_name: Path = world_name.with_suffix(".map")
+    world_file_name = WORLD_DIR / world_file_name.name
+    assert world_file_name.exists(), f"Can't find world file: '{world_file_name}'"
+    return world_file_name
+
+
+def parse_basemap(world_name) -> pg.Surface:
     """loads map pickle, returns basemap and entity list"""
-    world_dir = Path("maps")
-    assert world_dir.exists(), "Can't find world_dir"
-    world_file = world_dir / world_name
-    assert world_file.exists(), f"Can't find world file: '{world_file}'"
+    # Both the parse fns load the entities and basemap bits. This is less efficient that it could be
+
+    world_file = unfuck_world_name(world_name)
 
     with open(world_file, "rb") as file:
         base_list, entity_list = pickle.load(file)
-
+    # TODO: integrate with the latest builder change and remove this
     # The shit bit where we add the file names to the dict:
     names_to_spritesheet = get_sprites(base_list, entity_list)
 
     bg = load_background(base_list, names_to_spritesheet)
-    en = load_entities(entity_list)
-    return bg, en
+    return bg
 
 
-def parse_entities_only(world_name) -> list:
+def parse_entities(world_name) -> list:
     """loads map pickle, returns entity list"""
-    world_dir = Path("maps")
-    assert world_dir.exists(), "Can't find world_dir"
-    # TODO: Figure out where the extra "maps/" is coming from
-    # world_file = world_dir / world_name
-    world_file = world_name
-    assert world_file.exists(), f"Can't find world file: '{world_file}'"
+    world_file = unfuck_world_name(world_name)
 
     with open(world_file, "rb") as file:
         base_list, entity_list = pickle.load(file)
@@ -172,28 +181,8 @@ def parse_entities_only(world_name) -> list:
 
 
 def get_dims(world_name) -> Point:
-    world_dir = Path("maps")
-    assert world_dir.exists(), "Can't find world_dir"
-    # TODO: Figure out where the extra "maps/" is coming from
-    # world_file = world_dir / world_name
-    world_file = world_name
-    assert world_file.exists(), f"Can't find world file: '{world_file}'"
+    world_file = unfuck_world_name(world_name)
     with open(world_file, "rb") as file:
         base_list, entity_list = pickle.load(file)
     dims = Point(len(entity_list[0]), len(entity_list))
     return dims
-
-
-#
-# # Draw so I can see if the basemap worked
-# pg.init()
-# screen = pg.display.set_mode(
-#     (WINDOW_TILE_WIDTH * TSIZE, WINDOW_TILE_HEIGHT * TSIZE),
-#     pg.SCALED | pg.RESIZABLE,
-# )
-#
-# screen.blit(bg, (0, 0))
-# while True:
-#     screen.blit(bg, (0, 0))
-#     pg.display.flip()
-# # screen.flip()

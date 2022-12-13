@@ -34,8 +34,9 @@ def get_assets() -> dict[str, pg.Surface]:
     arguments so changing cache size has no effect. ~The more you know~
     """
     # Name of json file to retrieve assets from
-    map_name = "OLDbuilder.json"
-    path_to_json = f"maps/{map_name}"
+    # FIXME: remove this json (or at lease rename it)
+    map_name = "assets.json"
+    path_to_json = f"assets/{map_name}"
     with open(path_to_json) as open_file:
         json_file = json.load(open_file)
 
