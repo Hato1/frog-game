@@ -73,14 +73,14 @@ class Asset:
 
 class Tile(Asset):
     def __init__(
-        self,
-        name: str,
-        num_sprites: list[int],
-        sprite_col: int,
-        level: int,
-        sprite_row=None,
-        hue_adjust=None,
-        sprite_path=None,
+            self,
+            name: str,
+            num_sprites: list[int],
+            sprite_col: int,
+            level: int,
+            sprite_row=None,
+            hue_adjust=None,
+            sprite_path=None,
     ):
         super().__init__(name, num_sprites, 0)
         self.sprite_row = sprite_row or randint(0, num_sprites[sprite_col] - 1)
@@ -97,16 +97,16 @@ class Tile(Asset):
 
 class Entity(Asset):
     def __init__(
-        self,
-        name: str,
-        num_sprites: list[int],
-        tags: [str],
-        sprite_names: [[str]],
-        direction=None,
-        sprite_row=None,
-        sprite_col=None,
-        hue_adjust=None,
-        sprite_path=None,
+            self,
+            name: str,
+            num_sprites: list[int],
+            tags: [str],
+            sprite_names: [[str]],
+            direction=None,
+            sprite_row=None,
+            sprite_col=None,
+            hue_adjust=None,
+            sprite_path=None,
     ):
         super().__init__(name, num_sprites, 0)
         self.direction = direction or ["Up", "Left", "Right", "Down"][0]
@@ -134,7 +134,7 @@ def resize_map_data(list_list: list[list], dimensions: [int], default_object: As
     for row in list_list:
         diff_row = dimensions[0] - len(row)
         if diff_row < 0:
-            del row[dimensions[0] :]
+            del row[dimensions[0]:]
         if diff_row > 0:
             for _ in range(diff_row):
                 row.extend([[default_object]])
@@ -196,10 +196,10 @@ def cell_interpreter(cell: list[Asset], encyclopedia: dict) -> list:
 
 
 def draw_screen(
-    back_screen: pg.Surface,
-    fore_screen: pg.Surface,
-    window: pg.surface.Surface,
-    encyclopedia: dict,
+        back_screen: pg.Surface,
+        fore_screen: pg.Surface,
+        window: pg.surface.Surface,
+        encyclopedia: dict,
 ) -> None:
     """blit all elements on screen."""
     # Draw a grey rectangle over the screen to blank
@@ -273,11 +273,11 @@ def draw_buttons(encyclopedia: dict, window: pg.surface.Surface) -> None:
 
 
 def blit_assets(
-    map_surf: pg.Surface,
-    surfs_at_point: list[pg.Surface],
-    assets_at_point: list[Asset],
-    point: tuple,
-    zoom: int,
+        map_surf: pg.Surface,
+        surfs_at_point: list[pg.Surface],
+        assets_at_point: list[Asset],
+        point: tuple,
+        zoom: int,
 ) -> pg.Surface:
     for ind, surf in enumerate(surfs_at_point):
         w, h = surf.get_size()
@@ -705,6 +705,76 @@ def change_map(event_key: pg.event.Event) -> bool:
     return break_toggle
 
 
+def click_down_handler(button, encyclopedia: dict, meta: dict) -> None:
+    """function called upon left click"""
+    global MouseDown, Redraw, ClickDown, ActionFlag, SelectedTile
+
+    match button:
+        case pg.BUTTON_LEFT:
+            MouseDown = True
+            Redraw = True
+            ClickDown = pg.mouse.get_pos()
+
+            # If clicking on editable area apply currently selected entity
+            if ClickDown[1] < Config["Height"] * NewRes and encyclopedia[SelectedTile]["Type"] == "Ent":
+                ActionFlag = False  # reset the save timer
+                pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
+                ind = clicked_index(ClickDown, CamPos, meta)
+                Foreground_Data[ind[1]][ind[0]] = apply_selected(
+                    Foreground_Data[ind[1]][ind[0]],
+                    Entity(
+                        encyclopedia[SelectedTile]["Name"],
+                        encyclopedia[SelectedTile]["dims"],
+                        encyclopedia[SelectedTile]["Tags"],
+                        encyclopedia[SelectedTile]["SpriteNames"],
+                    ),
+                    encyclopedia[SelectedTile]["Type"],
+                )
+
+            # If clicking on tile selection area change paintbrush tile
+            if (
+                    Config["Height"] * NewRes + Config["SpriteRes"]
+                    < ClickDown[1]
+                    < Config["Height"] * NewRes + (2 * Config["SpriteRes"])
+            ):
+                SelectedTile = select_tile(ClickDown, encyclopedia)
+
+        case pg.BUTTON_RIGHT:
+            ClickDown = pg.mouse.get_pos()
+
+            # Remove top entity if it exists
+            if ClickDown[1] < Config["Height"] * NewRes:
+                ind = clicked_index(ClickDown, CamPos, meta)
+
+                ActionFlag = False  # reset the save timer
+                Redraw = True
+                pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
+                Foreground_Data[ind[1]][ind[0]] = Foreground_Data[ind[1]][ind[0]][:-1]
+
+
+def click_up_handler(button, encyclopedia, meta):
+    """when you finish dragging a box this is called"""
+    global MouseDown, Redraw, ClickDown, ActionFlag, SelectedTile
+    MouseDown = False
+    if encyclopedia[SelectedTile]["Type"] == "Tile" and button == pg.BUTTON_LEFT:
+        click_up = pg.mouse.get_pos()
+        if click_up[1] < Config["Height"] * NewRes > ClickDown[1]:
+            Redraw = True
+            ActionFlag = False  # reset the save timer
+            pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
+
+            apply_tile(meta, click_up, encyclopedia)
+
+
+def scroll_event(y, debounce_int: int) -> int:
+    global Redraw, Zoom, Config
+    if int(round(time() * 1000)) > debounce_int:
+        Redraw = True
+        Zoom = Zoom + y
+        Zoom = max(Zoom, 1)
+        Zoom = Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
+        return int(round(time() * Config["Debounce"])) + 150
+    return debounce_int
 
 
 def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) -> None:
@@ -721,6 +791,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
             pg.quit()
             exit(0)
 
+        # get pygame events
         match event.type:
             case pg.KEYDOWN:
                 Redraw = True
@@ -728,70 +799,13 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                 Break_Loop = change_map(event.key)
 
             case pg.MOUSEBUTTONDOWN:
-                # on left click
-                if event.button == pg.BUTTON_LEFT:
-                    MouseDown = True
-                    Redraw = True
-                    ClickDown = pg.mouse.get_pos()
+                click_down_handler(event.button, encyclopedia, meta)
 
-                    # If clicking on editable area apply currently selected entity
-                    if ClickDown[1] < Config["Height"] * NewRes and encyclopedia[SelectedTile]["Type"] == "Ent":
-                        ActionFlag = False  # reset the save timer
-                        pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
-                        ind = clicked_index(ClickDown, CamPos, meta)
-                        Foreground_Data[ind[1]][ind[0]] = apply_selected(
-                            Foreground_Data[ind[1]][ind[0]],
-                            Entity(
-                                encyclopedia[SelectedTile]["Name"],
-                                encyclopedia[SelectedTile]["dims"],
-                                encyclopedia[SelectedTile]["Tags"],
-                                encyclopedia[SelectedTile]["SpriteNames"],
-                            ),
-                            encyclopedia[SelectedTile]["Type"],
-                        )
-
-                    # If clicking on tile selection area change paintbrush tile
-                    if (
-                        Config["Height"] * NewRes + Config["SpriteRes"]
-                        < ClickDown[1]
-                        < Config["Height"] * NewRes + (2 * Config["SpriteRes"])
-                    ):
-                        SelectedTile = select_tile(ClickDown, encyclopedia)
-
-                # on right click delete top entity
-                if event.button == pg.BUTTON_RIGHT:
-                    ClickDown = pg.mouse.get_pos()
-
-                    # Remove top entity if it exists
-                    if ClickDown[1] < Config["Height"] * NewRes:
-                        ind = clicked_index(ClickDown, CamPos, meta)
-
-                        ActionFlag = False  # reset the save timer
-                        Redraw = True
-                        pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
-                        Foreground_Data[ind[1]][ind[0]] = Foreground_Data[ind[1]][ind[0]][:-1]
-
-            # if click_up with background tile type selected do a drag
             case pg.MOUSEBUTTONUP:
-                MouseDown = False
-                if encyclopedia[SelectedTile]["Type"] == "Tile" and event.button == pg.BUTTON_LEFT:
-                    click_up = pg.mouse.get_pos()
-                    if click_up[1] < Config["Height"] * NewRes > ClickDown[1]:
-                        Redraw = True
-                        ActionFlag = False  # reset the save timer
-                        pg.display.set_caption(f"Frog game editor{FileName} (Unsaved)")
+                click_up_handler(event.button, encyclopedia, meta)
 
-                        apply_tile(meta, click_up, encyclopedia)
-
-            # on scroll zoom
             case pg.MOUSEWHEEL:
-                if int(round(time() * 1000)) > debounce:
-                    Redraw = True
-                    debounce = int(round(time() * Config["Debounce"])) + 150
-                    Zoom = Zoom + event.y
-                    Zoom = max(Zoom, 1)
-                    Zoom = Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
-
+                debounce = scroll_event(event.y, debounce)
 
         # redraw map now button has been released
         if Redraw:
@@ -814,7 +828,6 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
         converted = convert_classes_to_dicts(deepcopy(Background_Data), deepcopy(Foreground_Data))
         write_map_pickle(converted)
         pg.display.set_caption(f"Frog game editor{FileName} (Saved)")
-
 
 
 def randomise_tiles(background: [[[Tile]]]):
@@ -876,15 +889,15 @@ def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
     return background, foreground
 
 
-def main() -> None:
-    global Background_Data, Foreground_Data, ScreenSurf,Break_Loop
-
-    Break_Loop = False
+def initialise():
+    """Initialise"""
+    global Background_Data, Foreground_Data, ScreenSurf
 
     with open(f"maps/{FileName}.json") as metadata_file:
         metadata = load(metadata_file)
 
-    window = pg.display.set_mode((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes))  # set display size
+    # set display size
+    game_window = pg.display.set_mode((Config["Width"] * NewRes, Config["Height"] * NewRes + NewRes))
 
     # load in dicts
     encyclopedia = load_dicts(metadata, "Tiles", "Name", "Tile")
@@ -896,7 +909,15 @@ def main() -> None:
 
     pg.display.set_caption(f"Frog game editor{FileName}")
 
-    ScreenSurf = flip_display(encyclopedia, window)
+    ScreenSurf = flip_display(encyclopedia, game_window)
+    return game_window, encyclopedia, metadata
+
+
+def main() -> None:
+    global Background_Data, Foreground_Data, ScreenSurf, Break_Loop
+
+    Break_Loop = False
+    window, encyclopedia, metadata = initialise()
 
     # loop that runs event_handler at specific rate
     while True:
