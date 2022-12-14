@@ -11,6 +11,7 @@ from random import randint
 from time import perf_counter, sleep, time
 from typing import List
 from warnings import warn
+from os import listdir
 
 import pygame as pg
 
@@ -43,9 +44,18 @@ Redraw = False
 CamPos = Config["CamPos"]
 Zoom = Config["Zoom"]
 debounce = Config["Debounce"]
+Break_Loop = False
+
+
+def get_list_of_maps():
+    files_names: [str] = [json_position for json_position in listdir("maps/") if json_position.endswith(".json")]
+    return [map_name[:-5] for map_name in files_names]
+
 
 # select which map to edit
-FileName = "map1"
+FileNames = get_list_of_maps()
+FileIndex = 1
+FileName = FileNames[FileIndex]
 
 
 class Asset:
@@ -679,12 +689,31 @@ def convert_classes_to_dicts(background: [[Tile]], foreground: [[Entity]]) -> []
     return [background, foreground]
 
 
+def change_map(event_key: pg.event.Event) -> bool:
+    """Change to the next map in the list of jason files in the maps folder"""
+    global FileIndex, FileName, FileNames
+    break_toggle = False
+    match event_key:
+        case pg.K_PAGEUP:
+            # change map reference
+            direction = 1
+            FileIndex = (FileIndex + direction) % len(FileNames)
+            FileName = FileNames[FileIndex]
+
+            # reinitialize the map
+            break_toggle = True
+    return break_toggle
+
+
+
+
 def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) -> None:
     """takes pygame event and calls actions."""
     global Zoom, SelectedTile, ClickDown
     global MouseDown, ScreenSurf, ActionFlag
     global SaveCounter, Redraw, debounce
     global Background_Data, Foreground_Data
+    global Break_Loop
 
     # handle pygame events
     for event in pg.event.get():
@@ -696,6 +725,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
             case pg.KEYDOWN:
                 Redraw = True
                 move_camera(event.key)
+                Break_Loop = change_map(event.key)
 
             case pg.MOUSEBUTTONDOWN:
                 # on left click
@@ -762,6 +792,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
                     Zoom = max(Zoom, 1)
                     Zoom = Config["WindowScale"] if Zoom > Config["WindowScale"] else Zoom
 
+
         # redraw map now button has been released
         if Redraw:
             ScreenSurf = flip_display(encyclopedia, window)
@@ -783,6 +814,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
         converted = convert_classes_to_dicts(deepcopy(Background_Data), deepcopy(Foreground_Data))
         write_map_pickle(converted)
         pg.display.set_caption(f"Frog game editor{FileName} (Saved)")
+
 
 
 def randomise_tiles(background: [[[Tile]]]):
@@ -845,7 +877,10 @@ def load_save(meta_data: any, encyclopedia: dict) -> tuple[list, list]:
 
 
 def main() -> None:
-    global Background_Data, Foreground_Data, ScreenSurf
+    global Background_Data, Foreground_Data, ScreenSurf,Break_Loop
+
+    Break_Loop = False
+
     with open(f"maps/{FileName}.json") as metadata_file:
         metadata = load(metadata_file)
 
@@ -870,6 +905,11 @@ def main() -> None:
         event_handler(window, encyclopedia, metadata)
 
         fps_limiter(t1_start)
+        # if changed map return to main loop
+        if Break_Loop:
+            break
+
+    main()
 
 
 main()
