@@ -394,8 +394,8 @@ def draw_box(window: pg.surface.Surface, encyclopedia: dict) -> None:
         pg.Rect(
             min(ClickDown[0], mouse_position[0]),
             min(ClickDown[1], mouse_position[1]),
-            abs(mouse_position[0] - ClickDown[0]),
-            abs(mouse_position[1] - ClickDown[1]),
+            max(abs(mouse_position[0] - ClickDown[0]), 2),
+            max(abs(mouse_position[1] - ClickDown[1]), 2),
         ),
         2,
     )
@@ -781,18 +781,17 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
     """takes pygame event and calls actions."""
     global Zoom, SelectedTile, ClickDown
     global MouseDown, ScreenSurf, ActionFlag
-    global SaveCounter, Redraw, debounce
+    global Redraw, debounce
     global Background_Data, Foreground_Data
     global Break_Loop
 
     # handle pygame events
     for event in pg.event.get():
-        if event.type == pg.QUIT:
-            pg.quit()
-            exit(0)
-
-        # get pygame events
         match event.type:
+            case pg.QUIT:
+                pg.quit()
+                exit(0)
+
             case pg.KEYDOWN:
                 Redraw = True
                 move_camera(event.key)
@@ -816,7 +815,14 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
     if MouseDown and encyclopedia[SelectedTile]["Type"] == "Tile":
         draw_box(window, encyclopedia)
 
-    # Save map to pickle file
+    save_after_delay()
+
+
+def save_after_delay():
+    """Save map to pickle file"""
+    global SaveCounter, ActionFlag
+    global Background_Data, Foreground_Data
+
     if ActionFlag is False:  # If an action occurs
         SaveCounter = 0  # Reset save delay
         ActionFlag = True  # Reset action flag to true
@@ -827,7 +833,7 @@ def event_handler(window: pg.surface.Surface, encyclopedia: dict, meta: dict) ->
     if SaveCounter == SaveCycles:
         converted = convert_classes_to_dicts(deepcopy(Background_Data), deepcopy(Foreground_Data))
         write_map_pickle(converted)
-        pg.display.set_caption(f"Frog game editor{FileName} (Saved)")
+        pg.display.set_caption(f"Frog game editor {FileName} (Saved)")
 
 
 def randomise_tiles(background: [[[Tile]]]):
@@ -924,6 +930,7 @@ def main() -> None:
         t1_start = perf_counter()
 
         event_handler(window, encyclopedia, metadata)
+
 
         fps_limiter(t1_start)
         # if changed map return to main loop
